@@ -48,7 +48,7 @@ const Asciidoc = ({ content }: { content: string }) => {
   const blocks = doc.getBlocks()
 
   return (
-    <div>
+    <div id="content">
       <Content blocks={blocks} />
     </div>
   )
