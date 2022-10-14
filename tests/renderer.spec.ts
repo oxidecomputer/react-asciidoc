@@ -43,11 +43,11 @@ const blocks = [
 blocks.forEach((block) => {
   test(`${block}_html`, async ({ page }) => {
     await page.goto(`/?example=${block}&renderer=html`)
-    await expect(page).toHaveScreenshot(`${block}.png`)
+    await expect(page).toHaveScreenshot(`${block}.png`, { fullPage: true })
   })
 
   test(`${block}_react`, async ({ page }) => {
     await page.goto(`/?example=${block}&renderer=react`)
-    await expect(page).toHaveScreenshot(`${block}.png`)
+    await expect(page).toHaveScreenshot(`${block}.png`, { fullPage: true })
   })
 })
