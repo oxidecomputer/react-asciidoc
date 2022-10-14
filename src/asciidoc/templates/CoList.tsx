@@ -4,8 +4,13 @@ import parse from 'html-react-parser'
 import { Content } from '../'
 
 const CoList = ({ node }: { node: Asciidoctor.List }) => {
+  const title = node.hasTitle() && (
+    <div className="title">{parse(node.getCaptionedTitle())}</div>
+  )
+
   return (
     <div className="colist">
+      {title}
       <table>
         <tbody>
           {node.getItems().map((item: Asciidoctor.ListItem, index) => (
