@@ -1,0 +1,51 @@
+{
+  "name": "@oxide/react-asciidoc",
+  "version": "0.0.1",
+  "description": "React renderer for AsciiDoc",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "release": "auto shipit",
+    "test": "npx playwright test"
+  },
+  "author": "Oxide Computer Company <bots@oxidecomputer.com>",
+  "license": "MPL 2.0",
+  "dependencies": {
+    "@djencks/asciidoctor-mathjax": "^0.0.8",
+    "asciidoctor": "^2.2.6",
+    "classnames": "^2.3.2",
+    "highlight.js": "^11.6.0",
+    "html-react-parser": "^3.0.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "vite-tsconfig-paths": "^3.5.1",
+    "vitest": "^0.24.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.27.1",
+    "@trivago/prettier-plugin-sort-imports": "^3.3.0",
+    "@types/react": "^18.0.18",
+    "@types/react-dom": "^18.0.6",
+    "@vitejs/plugin-react": "^2.1.0",
+    "auto": "^10.37.6",
+    "eslint": "^8.23.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.7.1",
+    "typescript": "^4.6.4",
+    "vite": "^3.1.0"
+  },
+  "auto": {
+    "plugins": [
+      "npm",
+      "released"
+    ]
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
+}
