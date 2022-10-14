@@ -13,7 +13,7 @@ const Quote = ({ node }: { node: Asciidoctor.Block }) => {
       <blockquote dangerouslySetInnerHTML={{ __html: node.getContent() }} />
       {attribution && (
         <div className="attribution">
-          {attribution}
+          — {attribution}
           {citetitle && <cite>{citetitle}</cite>}
         </div>
       )}
