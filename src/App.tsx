@@ -1,4 +1,5 @@
 import AsciidocProcessor from 'asciidoctor'
+import { useEffect } from 'react'
 
 import Asciidoc from './asciidoc'
 import './asciidoc.css'
@@ -9,8 +10,12 @@ function App() {
   const queryString = window.location.search
   const urlParams = new URLSearchParams(queryString)
 
-  const example = urlParams.get('example')
+  const example = urlParams.get('example') || ''
   const renderer = urlParams.get('renderer') || 'react'
+
+  useEffect(() => {
+    document.title = `${example} / ${renderer}`
+  }, [example, renderer])
 
   return (
     <div className="App">
