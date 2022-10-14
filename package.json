@@ -6,11 +6,12 @@
   "types": "./dist/index.d.ts",
   "type": "commonjs",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 8000",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "release": "auto shipit",
-    "test": "npx playwright test"
+    "test:init": "rm -rf ./tests/renderer.spec.ts-snapshots & npx playwright test -g html",
+    "test:run": "npx playwright test -g react"
   },
   "author": "Oxide Computer Company <bots@oxidecomputer.com>",
   "license": "MPL 2.0",
