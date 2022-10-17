@@ -8,6 +8,7 @@ import Image from './Image'
 import Listing from './Listing'
 import Literal from './Literal'
 import OList from './OList'
+import Open from './Open'
 import PageBreak from './PageBreak'
 import Paragraph from './Paragraph'
 import Pass from './Pass'
@@ -30,6 +31,7 @@ export {
   Literal,
   Image,
   OList,
+  Open,
   PageBreak,
   Pass,
   Paragraph,
