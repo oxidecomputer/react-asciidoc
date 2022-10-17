@@ -11,7 +11,9 @@ const Example = ({ node }: { node: Asciidoctor.Block }) => {
   return (
     <div className={`exampleblock ${node.getRole() || ''}`}>
       {title}
-      <Content blocks={node.getBlocks()} />
+      <div className="content">
+        <Content blocks={node.getBlocks()} />
+      </div>
     </div>
   )
 }
