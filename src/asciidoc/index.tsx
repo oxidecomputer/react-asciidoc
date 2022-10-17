@@ -8,10 +8,10 @@ import {
   Audio,
   CoList,
   DList,
+  Document,
   Example,
   FloatingTitle,
   Image,
-  InlineFootnote,
   Listing,
   Literal,
   OList,
@@ -24,6 +24,7 @@ import {
   Section,
   Sidebar,
   Table,
+  TableOfContents,
   ThematicBreak,
   UList,
   Verse,
@@ -53,13 +54,8 @@ const Asciidoc = ({ content }: { content: string }) => {
       icons: 'font',
     },
   })
-  const blocks = doc.getBlocks()
 
-  return (
-    <div id="content">
-      <Content blocks={blocks} />
-    </div>
-  )
+  return <Document document={doc} />
 }
 
 export const Content = ({ blocks }: { blocks: Asciidoctor.AbstractBlock[] }) => {
@@ -120,6 +116,8 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
       return <Quote node={node as Asciidoctor.Block} />
     case 'verse':
       return <Verse node={node as Asciidoctor.Block} />
+    case 'toc':
+      return <TableOfContents node={node as Asciidoctor.Block} />
     default:
       return (
         <div className="bg-error-secondary text-error rounded-lg my-1">
