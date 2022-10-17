@@ -25,6 +25,7 @@ import {
   Table,
   ThematicBreak,
   UList,
+  Verse,
 } from './templates'
 
 export const processor = Processor()
@@ -116,6 +117,8 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
       return <Sidebar node={node as Asciidoctor.Block} />
     case 'quote':
       return <Quote node={node as Asciidoctor.Block} />
+    case 'verse':
+      return <Verse node={node as Asciidoctor.Block} />
     default:
       return (
         <div className="bg-error-secondary text-error rounded-lg my-1">

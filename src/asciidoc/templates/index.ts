@@ -19,6 +19,7 @@ import Sidebar from './Sidebar'
 import Table from './Table'
 import ThematicBreak from './ThematicBreak'
 import UList from './UList'
+import Verse from './Verse'
 
 export {
   Audio,
@@ -42,4 +43,5 @@ export {
   ThematicBreak,
   UList,
   Quote,
+  Verse,
 }
