@@ -2257,3 +2257,12 @@ p.tableblock {
     padding: 0;
   }
 }
+
+/* Font Awesome */
+/* Source: https://fontawesome.com/v4/icons/ */
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('./lib/fontawesome-webfont.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
