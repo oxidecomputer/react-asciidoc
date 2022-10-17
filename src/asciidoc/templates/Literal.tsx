@@ -3,7 +3,7 @@ import parse from 'html-react-parser'
 
 const Literal = ({ node }: { node: Asciidoctor.Block }) => {
   const docAttrs = node.getDocument().getAttributes()
-  const nowrap = node.isOption('nowrap') || !docAttrs['prewrap']
+  const nowrap = docAttrs['prewrap'] === undefined || node.isOption('nowrap')
 
   const title = node.hasTitle() && (
     <div className="title">{parse(node.getCaptionedTitle())}</div>
