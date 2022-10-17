@@ -11,6 +11,7 @@ import {
   Example,
   FloatingTitle,
   Image,
+  InlineFootnote,
   Listing,
   Literal,
   OList,

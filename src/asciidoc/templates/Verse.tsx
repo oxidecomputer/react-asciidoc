@@ -1,6 +1,6 @@
 import type { Asciidoctor } from 'asciidoctor'
 
-const Verse = ({ node }: { node: Asciidoctor.List }) => {
+const Verse = ({ node }: { node: Asciidoctor.Block }) => {
   const attribution = node.getAttribute('attribution')
   const citetitle = node.getAttribute('citetitle')
 
