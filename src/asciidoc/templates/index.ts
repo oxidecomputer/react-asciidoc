@@ -1,4 +1,5 @@
 import Admonition from './Admonition'
+import Audio from './Audio'
 import CoList from './CoList'
 import DList from './DList'
 import Example from './Example'
@@ -17,6 +18,7 @@ import ThematicBreak from './ThematicBreak'
 import UList from './UList'
 
 export {
+  Audio,
   Admonition,
   CoList,
   DList,

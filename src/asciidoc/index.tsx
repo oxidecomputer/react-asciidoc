@@ -5,6 +5,7 @@ import hljs from 'highlight.js'
 import InlineConverter from './inlineConverter'
 import {
   Admonition,
+  Audio,
   CoList,
   DList,
   Example,
@@ -70,6 +71,8 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
   const transform = node.getNodeName()
 
   switch (transform) {
+    case 'audio':
+      return <Audio node={node as Asciidoctor.Block} />
     case 'preamble':
       return <Preamble node={node} />
     case 'section':
