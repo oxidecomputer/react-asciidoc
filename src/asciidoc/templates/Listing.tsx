@@ -25,7 +25,7 @@ const Listing = ({ node }: { node: Asciidoctor.Block }) => {
                 dangerouslySetInnerHTML={{ __html: node.getContent() }}
               />
             ) : (
-              <code>{node.getContent()}</code>
+              <code dangerouslySetInnerHTML={{ __html: node.getContent() }} />
             )}
           </pre>
         </div>
