@@ -77,7 +77,7 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
     case 'preamble':
       return <Preamble node={node} />
     case 'section':
-      return <Section node={node as Asciidoctor.Block} />
+      return <Section node={node as Asciidoctor.Section} />
     case 'paragraph':
       return <Paragraph node={node as Asciidoctor.Block} />
     case 'dlist':
