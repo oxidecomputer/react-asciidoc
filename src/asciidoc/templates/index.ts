@@ -3,6 +3,7 @@ import Audio from './Audio'
 import CoList from './CoList'
 import DList from './DList'
 import Example from './Example'
+import FloatingTitle from './FloatingTitle'
 import Image from './Image'
 import Listing from './Listing'
 import Literal from './Literal'
@@ -24,6 +25,7 @@ export {
   CoList,
   DList,
   Example,
+  FloatingTitle,
   Listing,
   Literal,
   Image,

@@ -9,6 +9,7 @@ import {
   CoList,
   DList,
   Example,
+  FloatingTitle,
   Image,
   Listing,
   Literal,
@@ -84,6 +85,8 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
       return <DList node={node as Asciidoctor.List} />
     case 'ulist':
       return <UList node={node as Asciidoctor.List} />
+    case 'floating_title':
+      return <FloatingTitle node={node as Asciidoctor.Block} />
     case 'admonition':
       return <Admonition node={node as Asciidoctor.Block} />
     case 'listing':
