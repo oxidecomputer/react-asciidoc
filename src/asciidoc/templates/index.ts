@@ -9,6 +9,7 @@ import Literal from './Literal'
 import OList from './OList'
 import PageBreak from './PageBreak'
 import Paragraph from './Paragraph'
+import Pass from './Pass'
 import Preamble from './Preamble'
 import Quote from './Quote'
 import Section from './Section'
@@ -28,6 +29,7 @@ export {
   Image,
   OList,
   PageBreak,
+  Pass,
   Paragraph,
   Preamble,
   Section,

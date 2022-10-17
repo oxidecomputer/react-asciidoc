@@ -15,6 +15,7 @@ import {
   OList,
   PageBreak,
   Paragraph,
+  Pass,
   Preamble,
   Quote,
   Section,
@@ -99,6 +100,8 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
       return <Table node={node as Asciidoctor.Table} />
     case 'thematic_break':
       return <ThematicBreak />
+    case 'pass':
+      return <Pass node={node as Asciidoctor.Block} />
     case 'page_break':
       return <PageBreak />
     case 'example':
