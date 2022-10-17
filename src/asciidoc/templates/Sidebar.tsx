@@ -10,8 +10,10 @@ const Sidebar = ({ node }: { node: Asciidoctor.Block }) => {
 
   return (
     <div className={`sidebarblock ${node.getRole() || ''}`}>
-      {title}
-      <Content blocks={node.getBlocks()} />
+      <div className="content">
+        {title}
+        <Content blocks={node.getBlocks()} />
+      </div>
     </div>
   )
 }
