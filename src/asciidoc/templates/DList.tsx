@@ -60,8 +60,6 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
     const labelWidth = node.getAttribute('labelwidth')
     const itemWidth = node.getAttribute('itemwidth')
 
-    console.log(labelWidth, itemWidth)
-
     return (
       <div className={`hdlist ${node.getRole() || ''}`}>
         {title}

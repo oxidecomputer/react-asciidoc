@@ -34,7 +34,10 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
   const bodyRows = node.getBodyRows()
 
   return (
-    <table className={cn('tableblock', ...classes, width && `width-[${width}]`)}>
+    <table
+      className={cn('tableblock', ...classes)}
+      style={{ width: width ? `${width}%` : 'auto' }}
+    >
       {node.hasTitle() && <caption className="title">{node.getCaptionedTitle()}</caption>}
 
       {rowCount > 0 && (
@@ -44,7 +47,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
             // Undocumented feature
             const colWidth = col.getAttribute('colpcwidth')
 
-            return <col className={cn('col', autowidth ? '' : `width-[${colWidth}%]`)} />
+            return <col style={{ width: `${colWidth}%` }} />
           })}
         </colgroup>
       )}
