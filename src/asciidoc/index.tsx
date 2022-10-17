@@ -12,12 +12,14 @@ import {
   Listing,
   Literal,
   OList,
+  PageBreak,
   Paragraph,
   Preamble,
   Quote,
   Section,
   Sidebar,
   Table,
+  ThematicBreak,
   UList,
 } from './templates'
 
@@ -92,6 +94,10 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
       return <OList node={node as Asciidoctor.List} />
     case 'table':
       return <Table node={node as Asciidoctor.Table} />
+    case 'thematic_break':
+      return <ThematicBreak />
+    case 'page_break':
+      return <PageBreak />
     case 'example':
       return <Example node={node as Asciidoctor.Block} />
     case 'sidebar':
