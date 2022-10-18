@@ -3,7 +3,7 @@
 > **Warning** Work in progress, not ready for use
 
 A React renderer for AsciiDoc. Built on top of
-[Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js/) Designed to be equivalent
+[Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js/). Designed to be equivalent
 in output of the built-in HTML5 converter. Will allow for custom components to be passed in
 similar to
 [Custom converters in Asciidoctor.js](https://docs.asciidoctor.org/asciidoctor.js/latest/extend/converter/custom-converter/)
