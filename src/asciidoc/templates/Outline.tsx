@@ -1,4 +1,5 @@
 import type { Asciidoctor } from 'asciidoctor'
+import parse from 'html-react-parser'
 
 const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
   if (!node.hasSections()) return null
@@ -44,7 +45,7 @@ const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
 
         return (
           <li key={section.getId()}>
-            <a href={`#${section.getId()}`}>{title}</a>
+            <a href={`#${section.getId()}`}>{parse(title)}</a>
             {level < tocLevels && <Outline node={section as Asciidoctor.AbstractBlock} />}
           </li>
         )

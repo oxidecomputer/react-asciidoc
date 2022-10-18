@@ -39,20 +39,22 @@ const Section = ({ node }: { node: Asciidoctor.Section }) => {
 
   if (docAttrs.sectlinks) {
     title = (
-      <a
-        className="link"
-        href={`#${node.getId()}`}
-        dangerouslySetInnerHTML={{
-          __html: title,
-        }}
-      />
+      <>
+        <a className="anchor" href={`${node.getId() || ''}`} />
+        <a
+          className="link"
+          href={`#${node.getId()}`}
+          dangerouslySetInnerHTML={{
+            __html: title,
+          }}
+        />
+      </>
     )
   }
 
   if (level === 0) {
     return (
       <>
-        <a className="sectionanchor" id={`${node.getId() || ''}`} />
         <h1 className={`sect0${node.getRole() || ''}`} data-sectnum={sectNum}>
           {title}
         </h1>
@@ -62,8 +64,11 @@ const Section = ({ node }: { node: Asciidoctor.Section }) => {
   } else {
     return (
       <div className={`sect${level} ${node.getRole() || ''}`}>
-        <a className="sectionanchor" id={`${node.getId() || ''}`} />
-        {createElement(`h${level + 1}`, { 'data-sectnum': sectNum }, title)}
+        {createElement(
+          `h${level + 1}`,
+          { 'data-sectnum': sectNum, id: node.getId() },
+          title,
+        )}
         <div className="sectionbody">
           <Content blocks={node.getBlocks()} />
         </div>

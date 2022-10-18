@@ -12,7 +12,7 @@ const Admonition = ({ node }: { node: Asciidoctor.Block }) => {
   )
 
   const renderIcon = () =>
-    document.getAttribute('icons', 'font') && !attrs.icon ? (
+    document.getAttribute('icons') === 'font' && !attrs.icon ? (
       <i className={`fa icon-${attrs.name}`} title={attrs.textlabel} />
     ) : (
       <img src={node.getIconUri(attrs.name)} alt={attrs.textlabel} />
@@ -29,7 +29,7 @@ const Admonition = ({ node }: { node: Asciidoctor.Block }) => {
         <tbody>
           <tr>
             <td className="icon">
-              {document.getAttribute('icons') ? (
+              {document.hasAttribute('icons') ? (
                 renderIcon()
               ) : (
                 <div className="title">{node.getAttribute('textlabel')}</div>

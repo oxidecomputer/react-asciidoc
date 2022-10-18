@@ -51,3 +51,19 @@ blocks.forEach((block) => {
     await expect(page).toHaveScreenshot(`${block}.png`, { fullPage: true })
   })
 })
+
+// test(`writersGuide_html`, async ({ page }) => {
+//   await page.goto(`/?example=writersGuide&renderer=html`)
+//   await expect(page).toHaveScreenshot(`writersGuide.png`, {
+//     fullPage: true,
+//     timeout: 60000,
+//   })
+// })
+//
+// test(`writersGuide_react`, async ({ page }) => {
+//   await page.goto(`/?example=writersGuide&renderer=react`)
+//   await expect(page).toHaveScreenshot(`writersGuide.png`, {
+//     fullPage: true,
+//     timeout: 60000,
+//   })
+// })

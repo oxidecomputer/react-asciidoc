@@ -17,7 +17,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
   let tablewidth = node.getAttribute('tablepcwidth')
   let width: string | null = null
 
-  if (autowidth && !node.getAttribute('width')) {
+  if (autowidth && !node.hasAttribute('width')) {
     classes.push('fit-content')
   } else if (tablewidth == 100) {
     classes.push('stretch')
@@ -25,7 +25,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
     width = `${tablewidth}%`
   }
 
-  if (node.getAttribute('float')) classes.push(node.getAttribute('float'))
+  if (node.hasAttribute('float')) classes.push(node.getAttribute('float'))
   if (node.getRole()) classes.push(node.getRole())
 
   const rowCount = node.getRowCount()

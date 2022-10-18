@@ -35,6 +35,7 @@ import toc from './toc'
 import uList from './uList'
 import verse from './verse'
 import video from './video'
+import writersGuide from './writersGuide'
 
 export {
   audio,
@@ -74,4 +75,5 @@ export {
   uList,
   verse,
   video,
+  writersGuide,
 }

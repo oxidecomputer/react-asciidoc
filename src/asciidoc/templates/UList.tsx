@@ -1,4 +1,5 @@
 import type { Asciidoctor } from 'asciidoctor'
+import parse from 'html-react-parser'
 
 import { Content } from '../'
 
@@ -12,7 +13,7 @@ const UList = ({ node }: { node: Asciidoctor.List }) => {
         isChecklist ? 'checklist' : ''
       }`}
     >
-      {node.hasTitle() && <div className="title">{node.getCaptionedTitle()}</div>}
+      {node.hasTitle() && <div className="title">{parse(node.getCaptionedTitle())}</div>}
 
       <ul className={isChecklist ? 'checklist' : ''}>
         {node.getItems().map((item: Asciidoctor.ListItem, index) => {
@@ -27,7 +28,7 @@ const UList = ({ node }: { node: Asciidoctor.List }) => {
                       }`}
                     />
                   )}{' '}
-                  {item.getText()}
+                  {parse(item.getText())}
                 </p>
               </li>
             )

@@ -2,9 +2,9 @@ import type { Asciidoctor } from 'asciidoctor'
 import parse from 'html-react-parser'
 
 const Listing = ({ node }: { node: Asciidoctor.Block }) => {
-  const docAttrs = node.getDocument().getAttributes()
+  const document = node.getDocument()
   const attrs = node.getAttributes()
-  const nowrap = node.isOption('nowrap') || !docAttrs['prewrap']
+  const nowrap = node.isOption('nowrap') || !document.hasAttribute('prewrap')
 
   const title = node.hasTitle() && (
     <div className="title">{parse(node.getCaptionedTitle())}</div>
