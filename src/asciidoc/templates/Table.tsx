@@ -1,5 +1,6 @@
 import type { Asciidoctor } from 'asciidoctor'
 import cn from 'classnames'
+import parse from 'html-react-parser'
 
 const Table = ({ node }: { node: Asciidoctor.Table }) => {
   let classes = [
@@ -32,11 +33,22 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
   const columns = node.getColumns()
   const headRows = node.getHeadRows()
   const bodyRows = node.getBodyRows()
+  const footRows = node.getFootRows()
+
+  const getCellClass = (cell: Asciidoctor.Table.Cell): string => {
+    const classAttr = cn(
+      'tableblock', // @ts-ignore
+      `halign-${cell.getAttribute('halign')}`, // @ts-ignore
+      `valign-${cell.getAttribute('valign')}`, // Undocumented feature
+    )
+
+    return classAttr
+  }
 
   return (
     <table
       className={cn('tableblock', ...classes)}
-      style={{ width: width ? `${width}%` : 'auto' }}
+      style={{ width: width ? width : undefined }}
     >
       {node.hasTitle() && <caption className="title">{node.getCaptionedTitle()}</caption>}
 
@@ -56,7 +68,10 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
         <thead>
           <tr>
             {row.map((cell) => (
-              <th dangerouslySetInnerHTML={{ __html: cell.getText() }} />
+              <th
+                className={getCellClass(cell)}
+                dangerouslySetInnerHTML={{ __html: cell.getText() }}
+              />
             ))}
           </tr>
         </thead>
@@ -66,19 +81,13 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
         {bodyRows.map((row) => (
           <tr>
             {row.map((cell) => {
-              // @ts-ignore
-              // Undocumented feature
-              var classAttr = `tableblock halign-${cell.getAttribute(
-                'halign',
-                // @ts-ignore
-              )} valign-${cell.getAttribute('valign')}`
               const colSpan = cell.getColumnSpan()
               const rowSpan = cell.getRowSpan()
 
               const cellProps = {
                 colSpan,
                 rowSpan,
-                className: classAttr,
+                className: getCellClass(cell),
               }
 
               const style = cell.getStyle()
@@ -100,20 +109,48 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
                     </div>
                   </td>
                 )
-              } else {
+              } else if (style === 'header') {
                 return (
-                  <td {...cellProps}>
+                  <th {...cellProps}>
                     <p
                       className="tableblock"
-                      dangerouslySetInnerHTML={{ __html: cell.getText() }}
+                      dangerouslySetInnerHTML={{ __html: cell.getContent() }}
                     />
-                  </td>
+                  </th>
                 )
+              } else {
+                const cellContent = cell.getContent() as unknown as string[]
+                if (cellContent.length > 0) {
+                  return (
+                    <td {...cellProps}>
+                      {parse(
+                        `<p class="tableblock">${cellContent.join(
+                          '</p>\n<p class="tableblock">',
+                        )}</p>`,
+                      )}
+                    </td>
+                  )
+                }
               }
             })}
           </tr>
         ))}
       </tbody>
+
+      {footRows.map((row) => (
+        <tfoot>
+          <tr>
+            {row.map((cell, index) => (
+              <td key={index} className={getCellClass(cell)}>
+                <p
+                  className="tableblock"
+                  dangerouslySetInnerHTML={{ __html: cell.getText() }}
+                />
+              </td>
+            ))}
+          </tr>
+        </tfoot>
+      ))}
     </table>
   )
 }
