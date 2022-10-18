@@ -1,6 +1,8 @@
 # React AsciiDoc
 
-WIP
+> **Warning**
+> Work in progress, not ready for use
+
 A React renderer for AsciiDoc. Designed to be equivalent in output of the built-in HTML5 converter.
 Will allow for custom components to be passed in similar to [Custom converters in Asciidoctor.js](https://docs.asciidoctor.org/asciidoctor.js/latest/extend/converter/custom-converter/) and custom block types.
 
@@ -17,7 +19,8 @@ npm install
 
 You can then preview any of the examples by running `npm run dev` and visting `http://localhost:8000/?example=[EXAMPLE]&renderer=[RENDERER]`. See [here](https://github.com/oxidecomputer/react-asciidoc/tree/main/src/examples) for the example names. Use `renderer=react` for the React renderer and `renderer=html` for the HTML one. 
 
-> **_NOTE:_**  The example name must be identical to the file name without the file ending, it is case sensitive
+> **Note**
+> The example name must be identical to the file name without the file ending, it is case sensitive
 
 ## Running tests
 Before running the full set of tests we must first generate the screenshots. The tests are running a visual diff on the original renderer and the React one. You must therefore run the following command first:
@@ -32,7 +35,7 @@ This will produce an error on first run; this is expected, as it needs to genera
 npm run test:run
 ```
 
-![Uploading ezgif-2-3313785e65.gif…](GIF of the visual diff tests)
+![GIF of the visual diff tests](https://user-images.githubusercontent.com/4020798/196468163-a3fac4eb-ddec-43d1-99ee-a38fe7cd7062.gif)
 
 ## Limitations
 We do not have access to the inline nodes. They can be customised but not with React. You can write a standard asciidoctor.js custom converter instead. Using a JSX to string converter is planned to make it easier to create converters for inline nodes.
