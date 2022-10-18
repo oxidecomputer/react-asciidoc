@@ -1,13 +1,13 @@
 const inlineFootnote = `
 // .basic
-Apocalyptic party.footnote:[The double hail-and-rainbow level makes my toes tingle.]
+Apocalyptic party footnote:[The double hail-and-rainbow level makes my toes tingle.]
 
 // .xref
-A bold statement.footnoteref:[disclaimer,Opinions are my own.]
-Another outrageous statement.footnoteref:[disclaimer]
+A bold statement.footnote:disclaimer[Opinions are my own.]
+Another outrageous statement
 
 // .xref-unresolved
-A bold statement.footnoteref:[foobar]
+A bold statement.footnote:disclaimer[]
 `
 
 export default inlineFootnote
