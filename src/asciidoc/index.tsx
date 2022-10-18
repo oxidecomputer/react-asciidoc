@@ -1,6 +1,7 @@
 import Processor from 'asciidoctor'
 import type { Asciidoctor } from 'asciidoctor'
 import hljs from 'highlight.js'
+import parse from 'html-react-parser'
 
 import InlineConverter from './inlineConverter'
 import {
@@ -119,11 +120,7 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
     case 'toc':
       return <TableOfContents node={node as Asciidoctor.Block} />
     default:
-      return (
-        <div className="bg-error-secondary text-error rounded-lg my-1">
-          {node.getNodeName()}
-        </div>
-      )
+      return <>{parse(node.getContent())}</>
   }
 }
 
