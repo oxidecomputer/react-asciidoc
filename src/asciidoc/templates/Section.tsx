@@ -1,7 +1,9 @@
 import type { Asciidoctor } from 'asciidoctor'
+import cn from 'classnames'
 import { createElement } from 'react'
 
 import { Content } from '../'
+import { getRole } from './util'
 
 const Section = ({ node }: { node: Asciidoctor.Section }) => {
   const docAttrs = node.getDocument().getAttributes()
@@ -40,7 +42,7 @@ const Section = ({ node }: { node: Asciidoctor.Section }) => {
   if (docAttrs.sectlinks) {
     title = (
       <>
-        <a className="anchor" href={`${node.getId() || ''}`} />
+        <a className="anchor" href={node.getId() || ''} />
         <a
           className="link"
           href={`#${node.getId()}`}
@@ -55,7 +57,7 @@ const Section = ({ node }: { node: Asciidoctor.Section }) => {
   if (level === 0) {
     return (
       <>
-        <h1 className={`sect0${node.getRole() || ''}`} data-sectnum={sectNum}>
+        <h1 className={cn('sect0', getRole(node))} data-sectnum={sectNum}>
           {title}
         </h1>
         <Content blocks={node.getBlocks()} />
@@ -63,7 +65,7 @@ const Section = ({ node }: { node: Asciidoctor.Section }) => {
     )
   } else {
     return (
-      <div className={`sect${level} ${node.getRole() || ''}`}>
+      <div className={cn(`sect${level}`, getRole(node))}>
         {createElement(
           `h${level + 1}`,
           { 'data-sectnum': sectNum, id: node.getId() },

@@ -10,7 +10,7 @@ const Literal = ({ node }: { node: Asciidoctor.Block }) => {
     <div className="literalblock">
       <Title node={node} />
       <div className="content">
-        <pre className={`${nowrap ? ' nowrap' : ''}`}>{node.getSource()}</pre>
+        <pre className={nowrap ? 'nowrap' : ''}>{node.getSource()}</pre>
       </div>
     </div>
   )

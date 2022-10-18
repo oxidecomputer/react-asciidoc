@@ -1,8 +1,10 @@
 import type { Asciidoctor } from 'asciidoctor'
+import cn from 'classnames'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
 import { Content } from '../'
+import { getRole } from './util'
 
 const DList = ({ node }: { node: Asciidoctor.List }) => {
   const style = node.getStyle()
@@ -36,7 +38,7 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
 
   if (style === 'qanda') {
     return (
-      <div className={`qlist qanda ${node.getRole() || ''}`}>
+      <div className={cn('qlist qanda', getRole(node))}>
         {title}
         <ol>
           {node.getItems().map((item: any, index) => {
@@ -61,7 +63,7 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
     const itemWidth = node.getAttribute('itemwidth')
 
     return (
-      <div className={`hdlist ${node.getRole() || ''}`}>
+      <div className={cn('hdlist', getRole(node))}>
         {title}
         <table>
           {(labelWidth || itemWidth) && (
@@ -84,7 +86,7 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
 
             return (
               <tr key={index}>
-                <td className={`hdlist1 ${node.isOption('strong') ? 'strong' : ''}`}>
+                <td className={cn('hdlist1', node.isOption('strong') ? 'strong' : '')}>
                   {terms.map((dt: any, index: number) => (
                     <Fragment key={index}>
                       {index !== 0 && <br />}
@@ -106,7 +108,7 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
     )
   } else {
     return (
-      <div className={`dlist ${node.getStyle() || ''} ${node.getRole() || ''}`}>
+      <div className={cn('dlist', node.getStyle(), getRole(node))}>
         {title}
         <dl>
           {node.getItems().map((item: any, index) => {

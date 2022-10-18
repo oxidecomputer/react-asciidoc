@@ -1,5 +1,5 @@
 import type { Asciidoctor } from 'asciidoctor'
-import cn from 'classNames'
+import cn from 'classnames'
 
 const Table = ({ node }: { node: Asciidoctor.Table }) => {
   let classes = [

@@ -1,12 +1,13 @@
 import type { Asciidoctor } from 'asciidoctor'
+import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { Title } from './util'
+import { Title, getRole } from './util'
 
 const OList = ({ node }: { node: Asciidoctor.List }) => {
   return (
-    <div className={`olist ${node.getStyle()} ${node.getRole()}`}>
+    <div className={cn('olist', getRole(node), node.getStyle())}>
       <Title node={node} />
       <ol
         className={node.getStyle()}
@@ -14,7 +15,7 @@ const OList = ({ node }: { node: Asciidoctor.List }) => {
         start={node.getAttribute('start')}
       >
         {node.getItems().map((item: Asciidoctor.ListItem, index) => (
-          <li key={index} className={`${item.getRole()}`}>
+          <li key={index} className={getRole(node) ? getRole(node) : ''}>
             <p>{parse(item.getText())}</p>
             <Content blocks={item.getBlocks()} />
           </li>

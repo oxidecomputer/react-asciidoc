@@ -1,4 +1,5 @@
 import type { Asciidoctor } from 'asciidoctor'
+import cn from 'classnames'
 
 import { CaptionedTitle } from './util'
 
@@ -14,7 +15,7 @@ const Listing = ({ node }: { node: Asciidoctor.Block }) => {
       <div className="listingblock">
         <CaptionedTitle node={node} />
         <div className="content">
-          <pre className={`highlight${nowrap ? ' nowrap' : ''}`}>
+          <pre className={cn('highlight', nowrap ? ' nowrap' : '')}>
             {lang ? (
               <code
                 className={lang ? `language-${lang}` : ''}
@@ -33,7 +34,7 @@ const Listing = ({ node }: { node: Asciidoctor.Block }) => {
       <div className="listingblock">
         <CaptionedTitle node={node} />
         <div className="content">
-          <pre className={`${nowrap ? ' nowrap' : ''}`}>
+          <pre className={nowrap ? ' nowrap' : ''}>
             <code dangerouslySetInnerHTML={{ __html: node.getSource() }} />
           </pre>
         </div>

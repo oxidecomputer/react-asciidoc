@@ -1,4 +1,5 @@
 import type { Asciidoctor } from 'asciidoctor'
+import cn from 'classnames'
 import parse from 'html-react-parser'
 
 const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
@@ -17,7 +18,7 @@ const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
   sectNum = sectNum === '.' ? '' : sectNum
 
   return (
-    <ul className={`sectlevel${sections[0].getLevel()}`}>
+    <ul className={cn('sectlevel', sections[0].getLevel())}>
       {sections.map((section) => {
         const level = section.getLevel()
         let title = ''

@@ -15,3 +15,7 @@ export const CaptionedTitle = ({
   node.hasTitle() ? (
     <div className="title">{parse(node.getCaptionedTitle() || '')}</div>
   ) : null
+
+export const getRole = (
+  node: Asciidoctor.AbstractBlock | Asciidoctor.Block | Asciidoctor.List,
+) => (typeof node.getRole() === 'string' ? node.getRole() : undefined)
