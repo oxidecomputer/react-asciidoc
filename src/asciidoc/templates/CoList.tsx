@@ -2,15 +2,12 @@ import type { Asciidoctor } from 'asciidoctor'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { Title } from './util'
 
 const CoList = ({ node }: { node: Asciidoctor.List }) => {
-  const title = node.hasTitle() && (
-    <div className="title">{parse(node.getCaptionedTitle())}</div>
-  )
-
   return (
     <div className="colist">
-      {title}
+      <Title node={node} />
       <table>
         <tbody>
           {node.getItems().map((item: Asciidoctor.ListItem, index) => (

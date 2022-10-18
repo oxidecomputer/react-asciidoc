@@ -2,11 +2,12 @@ import type { Asciidoctor } from 'asciidoctor'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { Title } from './util'
 
 const OList = ({ node }: { node: Asciidoctor.List }) => {
   return (
     <div className={`olist ${node.getStyle()} ${node.getRole()}`}>
-      {node.hasTitle() && <div className="title">{node.getCaptionedTitle()}</div>}
+      <Title node={node} />
       <ol
         className={node.getStyle()}
         reversed={node.isOption('reversed')}

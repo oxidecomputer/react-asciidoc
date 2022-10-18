@@ -2,14 +2,11 @@ import type { Asciidoctor } from 'asciidoctor'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { Title } from './util'
 
 const Admonition = ({ node }: { node: Asciidoctor.Block }) => {
   const attrs = node.getAttributes()
   const document = node.getDocument()
-
-  const title = node.hasTitle() && (
-    <div className="title">{parse(node.getCaptionedTitle())}</div>
-  )
 
   const renderIcon = () =>
     document.getAttribute('icons') === 'font' && !attrs.icon ? (
@@ -36,7 +33,7 @@ const Admonition = ({ node }: { node: Asciidoctor.Block }) => {
               )}
             </td>
             <td className="content">
-              {title}
+              <Title node={node} />
               {contentModel === 'simple' ? (
                 parse(node.getContent())
               ) : (

@@ -100,7 +100,7 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
               key={footnote.getIndex()}
             >
               <a href={`#_footnoteref_${footnote.getIndex()}`}>{footnote.getIndex()}</a>.{' '}
-              {footnote.getText()}
+              {parse(footnote.getText() || '')}
             </div>
           ))}
         </div>

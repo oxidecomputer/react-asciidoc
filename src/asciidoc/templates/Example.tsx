@@ -1,16 +1,12 @@
 import type { Asciidoctor } from 'asciidoctor'
-import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { CaptionedTitle } from './util'
 
 const Example = ({ node }: { node: Asciidoctor.Block }) => {
-  const title = node.hasTitle() && (
-    <div className="title">{parse(node.getCaptionedTitle())}</div>
-  )
-
   return (
     <div className={`exampleblock ${node.getRole() || ''}`}>
-      {title}
+      <CaptionedTitle node={node} />
       <div className="content">
         <Content blocks={node.getBlocks()} />
       </div>

@@ -1,5 +1,6 @@
 import type { Asciidoctor } from 'asciidoctor'
-import parse from 'html-react-parser'
+
+import { Title } from './util'
 
 const Audio = ({ node }: { node: Asciidoctor.Block }) => {
   const startTime = node.getAttribute('start')
@@ -7,13 +8,9 @@ const Audio = ({ node }: { node: Asciidoctor.Block }) => {
   const timeAnchor =
     startTime || endTime ? (`#t=${startTime || ''}` + endTime ? `,${endTime}` : '') : ''
 
-  const title = node.hasTitle() && (
-    <div className="title">{parse(node.getCaptionedTitle())}</div>
-  )
-
   return (
     <div className="audioblock">
-      {title}
+      <Title node={node} />
       <div className="content">
         <audio
           src={`${node.getMediaUri(node.getAttribute('target'))}${timeAnchor}`}

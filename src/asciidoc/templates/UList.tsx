@@ -2,6 +2,7 @@ import type { Asciidoctor } from 'asciidoctor'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { Title } from './util'
 
 const UList = ({ node }: { node: Asciidoctor.List }) => {
   const isChecklist = node.isOption('checklist')
@@ -13,8 +14,7 @@ const UList = ({ node }: { node: Asciidoctor.List }) => {
         isChecklist ? 'checklist' : ''
       }`}
     >
-      {node.hasTitle() && <div className="title">{parse(node.getCaptionedTitle())}</div>}
-
+      <Title node={node} />
       <ul className={isChecklist ? 'checklist' : ''}>
         {node.getItems().map((item: Asciidoctor.ListItem, index) => {
           if (isChecklist) {

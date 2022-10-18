@@ -1,21 +1,18 @@
 import type { Asciidoctor } from 'asciidoctor'
-import parse from 'html-react-parser'
+
+import { CaptionedTitle } from './util'
 
 const Listing = ({ node }: { node: Asciidoctor.Block }) => {
   const document = node.getDocument()
   const attrs = node.getAttributes()
   const nowrap = node.isOption('nowrap') || !document.hasAttribute('prewrap')
 
-  const title = node.hasTitle() && (
-    <div className="title">{parse(node.getCaptionedTitle())}</div>
-  )
-
   if (node.getStyle() === 'source') {
     const lang = attrs.language
 
     return (
       <div className="listingblock">
-        {title}
+        <CaptionedTitle node={node} />
         <div className="content">
           <pre className={`highlight${nowrap ? ' nowrap' : ''}`}>
             {lang ? (
@@ -34,7 +31,7 @@ const Listing = ({ node }: { node: Asciidoctor.Block }) => {
   } else {
     return (
       <div className="listingblock">
-        {title}
+        <CaptionedTitle node={node} />
         <div className="content">
           <pre className={`${nowrap ? ' nowrap' : ''}`}>
             <code dangerouslySetInnerHTML={{ __html: node.getSource() }} />

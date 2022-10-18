@@ -1,5 +1,7 @@
 import type { Asciidoctor } from 'asciidoctor'
 
+import { Title } from './util'
+
 const Quote = ({ node }: { node: Asciidoctor.Block }) => {
   const attribution = node.getAttribute('attribution')
   const citetitle = node.getAttribute('citetitle')
@@ -9,7 +11,7 @@ const Quote = ({ node }: { node: Asciidoctor.Block }) => {
       id={node.getId ? node.getId() : ''}
       className={`quoteblock ${node.getRole() || ''}`}
     >
-      {node.hasTitle() && <div className="title">{node.getCaptionedTitle()}</div>}
+      <Title node={node} />
       <blockquote dangerouslySetInnerHTML={{ __html: node.getContent() }} />
       {attribution && (
         <div className="attribution">

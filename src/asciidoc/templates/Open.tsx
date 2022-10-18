@@ -1,15 +1,15 @@
 import type { Asciidoctor } from 'asciidoctor'
 
 import { Content } from '../'
+import { Title } from './util'
 
 const Open = ({ node }: { node: Asciidoctor.Block }) => {
-  const title = node.hasTitle() && <div className="title">{node.getCaptionedTitle()}</div>
   const style = node.getStyle()
 
   if (style === 'abstract') {
     return (
       <div className={`quoteblock abstract ${node.getRole() ? node.getRole() : ''}`}>
-        {title}
+        <Title node={node} />
         <blockquote className="content">
           <Content blocks={node.getBlocks()} />
         </blockquote>
@@ -23,7 +23,7 @@ const Open = ({ node }: { node: Asciidoctor.Block }) => {
         node.getRole() ? node.getRole() : ''
       }`}
     >
-      {title}
+      <Title node={node} />
       <div className="content">
         <Content blocks={node.getBlocks()} />
       </div>

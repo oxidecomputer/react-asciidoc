@@ -1,5 +1,6 @@
 import type { Asciidoctor } from 'asciidoctor'
-import parse from 'html-react-parser'
+
+import { Title } from './util'
 
 const Image = ({ node }: { node: Asciidoctor.Block }) => {
   const target = node.getAttribute('target')
@@ -21,10 +22,6 @@ const Image = ({ node }: { node: Asciidoctor.Block }) => {
     )
   }
 
-  const title = node.hasTitle() && (
-    <div className="title">{parse(node.getCaptionedTitle())}</div>
-  )
-
   return (
     <div
       className={`imageblock ${
@@ -34,7 +31,7 @@ const Image = ({ node }: { node: Asciidoctor.Block }) => {
       }`}
     >
       <div className="content">{img}</div>
-      {title}
+      <Title node={node} />
     </div>
   )
 }

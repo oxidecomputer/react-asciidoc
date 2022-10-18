@@ -88,7 +88,7 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
                   {terms.map((dt: any, index: number) => (
                     <Fragment key={index}>
                       {index !== 0 && <br />}
-                      {dt.getText()}
+                      {parse(dt.getText())}
                     </Fragment>
                   ))}
                 </td>
@@ -116,7 +116,7 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
               <Fragment key={index}>
                 {terms.map((dt: any, index: number) => (
                   <dt key={index} className="hdlist1">
-                    {dt.getText()}
+                    {parse(dt.getText())}
                   </dt>
                 ))}
                 {renderDd(dd)}
