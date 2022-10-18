@@ -19,7 +19,7 @@ const Section = ({ node }: { node: Asciidoctor.Section }) => {
 
   if (node.getCaption()) {
     title = node.getCaptionedTitle()
-  } else if (node.isNumbered() && level < sectNumLevels) {
+  } else if (node.isNumbered() && level <= sectNumLevels) {
     // todo: investigate sectnumlevels overrides not working
     if (level < 2 && node.getDocument().getDoctype() == 'book') {
       const sectionName = node.getSectionName()

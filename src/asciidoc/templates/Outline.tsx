@@ -5,26 +5,30 @@ import parse from 'html-react-parser'
 const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
   if (!node.hasSections()) return null
 
-  const document = node.getDocument()
-  const docAttrs = document.getAttributes()
-
-  const sectNumLevels = docAttrs['sectnumlevels'] ? parseInt(docAttrs['sectnumlevels']) : 3
-  const tocLevels = docAttrs['toclevels'] ? parseInt(docAttrs['toclevels']) : 2
   const sections = node.getSections()
-
-  // @ts-ignore
-  // Swap with getSectionNumeral() when it is released
-  let sectNum = node.getNodeName() === 'document' ? '' : node.$sectnum()
-  sectNum = sectNum === '.' ? '' : sectNum
 
   return (
     <ul className={cn('sectlevel', sections[0].getLevel())}>
       {sections.map((section) => {
+        // @ts-ignore
+        // Swap with getSectionNumeral() when it is released
+        let sectNum = section.$sectnum()
+        sectNum = sectNum === '.' ? '' : sectNum
+
+        const document = node.getDocument()
+        const docAttrs = document.getAttributes()
+
+        const sectNumLevels = docAttrs['sectnumlevels']
+          ? parseInt(docAttrs['sectnumlevels'])
+          : 3
+        const tocLevels = docAttrs['toclevels'] ? parseInt(docAttrs['toclevels']) : 2
+
         const level = section.getLevel()
+
         let title = ''
         if (section.getCaption()) {
           title = section.getCaptionedTitle()
-        } else if (section.isNumbered() && level < sectNumLevels) {
+        } else if (section.isNumbered() && level <= sectNumLevels) {
           // todo: investigate sectnumlevels overrides not working
           if (level < 2 && document.getDoctype() == 'book') {
             const sectionName = section.getSectionName()

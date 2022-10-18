@@ -72,6 +72,10 @@ export const Content = ({ blocks }: { blocks: Asciidoctor.AbstractBlock[] }) => 
 const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
   const transform = node.getNodeName()
 
+  const document = node.getDocument()
+  const blockAttributes = node.getAttributes()
+  document.playbackAttributes(blockAttributes)
+
   switch (transform) {
     case 'audio':
       return <Audio node={node as Asciidoctor.Block} />
