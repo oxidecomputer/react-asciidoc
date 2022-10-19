@@ -1,12 +1,14 @@
-import type { Asciidoctor } from 'asciidoctor'
+import type { Asciidoctor } from '@asciidoctor/core'
 import cn from 'classnames'
 
 import { CaptionedTitle } from './util'
+import useGetContent from '../hooks/useGetContent'
 
 const Listing = ({ node }: { node: Asciidoctor.Block }) => {
   const document = node.getDocument()
   const attrs = node.getAttributes()
   const nowrap = node.isOption('nowrap') || !document.hasAttribute('prewrap')
+  const content = useGetContent(node)
 
   if (node.getStyle() === 'source') {
     const lang = attrs.language
@@ -20,10 +22,10 @@ const Listing = ({ node }: { node: Asciidoctor.Block }) => {
               <code
                 className={lang ? `language-${lang}` : ''}
                 data-lang={lang}
-                dangerouslySetInnerHTML={{ __html: node.getContent() }}
+                dangerouslySetInnerHTML={{ __html: content }}
               />
             ) : (
-              <code dangerouslySetInnerHTML={{ __html: node.getContent() }} />
+              <code dangerouslySetInnerHTML={{ __html: content }} />
             )}
           </pre>
         </div>

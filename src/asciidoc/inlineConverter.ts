@@ -1,12 +1,12 @@
-import type { Asciidoctor } from 'asciidoctor'
+import type { Asciidoctor } from '@asciidoctor/core'
 
-import { processor } from './'
+import { ad } from './'
 
 class InlineConverter {
   baseConverter: Asciidoctor.Html5Converter
 
   constructor() {
-    this.baseConverter = new processor.Html5Converter()
+    this.baseConverter = new ad.Html5Converter()
   }
 
   convert(node: Asciidoctor.Block, transform: string) {

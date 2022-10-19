@@ -1,4 +1,4 @@
-import type { Asciidoctor } from 'asciidoctor'
+import type { Asciidoctor } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
 export const Title = ({

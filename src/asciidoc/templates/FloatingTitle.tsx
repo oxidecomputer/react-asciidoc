@@ -1,4 +1,4 @@
-import type { Asciidoctor } from 'asciidoctor'
+import type { Asciidoctor } from '@asciidoctor/core'
 import { createElement } from 'react'
 
 import { Title } from './util'

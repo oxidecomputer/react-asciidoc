@@ -1,12 +1,14 @@
-import type { Asciidoctor } from 'asciidoctor'
+import type { Asciidoctor } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
 import { Title } from './util'
+import useGetContent from '../hooks/useGetContent'
 
 const Admonition = ({ node }: { node: Asciidoctor.Block }) => {
   const attrs = node.getAttributes()
   const document = node.getDocument()
+  const content = useGetContent(node)
 
   const renderIcon = () =>
     document.getAttribute('icons') === 'font' && !attrs.icon ? (
@@ -35,7 +37,7 @@ const Admonition = ({ node }: { node: Asciidoctor.Block }) => {
             <td className="content">
               <Title node={node} />
               {contentModel === 'simple' ? (
-                parse(node.getContent())
+                parse(content)
               ) : (
                 <Content blocks={node.getBlocks()} />
               )}

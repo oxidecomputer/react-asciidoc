@@ -1,6 +1,7 @@
-import type { Asciidoctor } from 'asciidoctor'
+import type { Asciidoctor } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
+import useGetContent from '../hooks/useGetContent'
 
 const Table = ({ node }: { node: Asciidoctor.Table }) => {
   let classes = [
@@ -27,7 +28,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
   }
 
   if (node.hasAttribute('float')) classes.push(node.getAttribute('float'))
-  if (node.getRole()) classes.push(node.getRole())
+  if (node.getRole()) classes.push(node.getRole() || '')
 
   const rowCount = node.getRowCount()
   const columns = node.getColumns()
@@ -83,6 +84,8 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
             {row.map((cell) => {
               const colSpan = cell.getColumnSpan()
               const rowSpan = cell.getRowSpan()
+              const content = useGetContent(node)
+
 
               const cellProps = {
                 colSpan,
@@ -97,7 +100,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
                   <td {...cellProps}>
                     <div
                       className="content"
-                      dangerouslySetInnerHTML={{ __html: cell.getContent() }}
+                      dangerouslySetInnerHTML={{ __html: content }}
                     />
                   </td>
                 )
@@ -105,7 +108,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
                 return (
                   <td {...cellProps}>
                     <div className="literal">
-                      <pre dangerouslySetInnerHTML={{ __html: cell.getContent() }} />
+                      <pre dangerouslySetInnerHTML={{ __html: content }} />
                     </div>
                   </td>
                 )
@@ -114,7 +117,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
                   <th {...cellProps}>
                     <p
                       className="tableblock"
-                      dangerouslySetInnerHTML={{ __html: cell.getContent() }}
+                      dangerouslySetInnerHTML={{ __html: content }}
                     />
                   </th>
                 )

@@ -1,16 +1,18 @@
-import type { Asciidoctor } from 'asciidoctor'
+import type { Asciidoctor } from '@asciidoctor/core'
 import cn from 'classnames'
 
 import { Title, getRole } from './util'
+import useGetContent from '../hooks/useGetContent'
 
 const Verse = ({ node }: { node: Asciidoctor.Block }) => {
   const attribution = node.getAttribute('attribution')
   const citetitle = node.getAttribute('citetitle')
+  const content = useGetContent(node)
 
   return (
     <div id={node.getId ? node.getId() : ''} className={cn('verseblock', getRole(node))}>
       <Title node={node} />
-      <pre className="content" dangerouslySetInnerHTML={{ __html: node.getContent() }} />
+      <pre className="content" dangerouslySetInnerHTML={{ __html: content }} />
       {attribution && (
         <div className="attribution">
           — {attribution}

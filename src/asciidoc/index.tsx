@@ -1,9 +1,9 @@
-import Processor from 'asciidoctor'
-import type { Asciidoctor } from 'asciidoctor'
+import Asciidoctor from '@asciidoctor/core'
+import type { Asciidoctor as AdType } from '@asciidoctor/core'
 import hljs from 'highlight.js'
 import parse from 'html-react-parser'
 
-import InlineConverter from './inlineConverter'
+{/* import InlineConverter from './inlineConverter' */}
 import {
   Admonition,
   Audio,
@@ -31,10 +31,11 @@ import {
   Verse,
 } from './templates'
 
-export const processor = Processor()
+
+export const ad = Asciidoctor()
 
 // needs its own name so it doesn't get mixed up with built-in highlight.js (I think)
-processor.SyntaxHighlighter.register('highlight.js-server', {
+ad.SyntaxHighlighter.register('highlight.js-server', {
   handlesHighlighting: () => true,
   highlight: (_node, source, lang) => {
     if (!lang) return source
@@ -44,10 +45,10 @@ processor.SyntaxHighlighter.register('highlight.js-server', {
   },
 })
 
-processor.ConverterFactory.register(new InlineConverter(), ['html5'])
+{/* ad.ConverterFactory.register(new InlineConverter(), ['html5']) */}
 
 const Asciidoc = ({ content }: { content: string }) => {
-  const doc = processor.load(content, {
+  const doc = ad.load(content, {
     standalone: true,
     attributes: {
       'source-highlighter': 'highlight.js-server',
@@ -59,17 +60,17 @@ const Asciidoc = ({ content }: { content: string }) => {
   return <Document document={doc} />
 }
 
-export const Content = ({ blocks }: { blocks: Asciidoctor.AbstractBlock[] }) => {
+export const Content = ({ blocks }: { blocks: AdType.AbstractBlock[] }) => {
   return (
     <>
-      {blocks.map((block: Asciidoctor.AbstractBlock, index: number) => (
+      {blocks.map((block: AdType.AbstractBlock, index: number) => (
         <Converter key={`${index}-${block.getNodeName()}`} node={block} />
       ))}
     </>
   )
 }
 
-const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
+const Converter = ({ node }: { node: AdType.AbstractBlock }) => {
   const transform = node.getNodeName()
 
   const document = node.getDocument()
@@ -78,53 +79,53 @@ const Converter = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
 
   switch (transform) {
     case 'audio':
-      return <Audio node={node as Asciidoctor.Block} />
+      return <Audio node={node as AdType.Block} />
     case 'preamble':
       return <Preamble node={node} />
     case 'section':
-      return <Section node={node as Asciidoctor.Section} />
+      return <Section node={node as AdType.Section} />
     case 'paragraph':
-      return <Paragraph node={node as Asciidoctor.Block} />
+      return <Paragraph node={node as AdType.Block} />
     case 'dlist':
-      return <DList node={node as Asciidoctor.List} />
+      return <DList node={node as AdType.List} />
     case 'ulist':
-      return <UList node={node as Asciidoctor.List} />
+      return <UList node={node as AdType.List} />
     case 'floating_title':
-      return <FloatingTitle node={node as Asciidoctor.Block} />
+      return <FloatingTitle node={node as AdType.Block} />
     case 'admonition':
-      return <Admonition node={node as Asciidoctor.Block} />
+      return <Admonition node={node as AdType.Block} />
     case 'listing':
-      return <Listing node={node as Asciidoctor.Block} />
+      return <Listing node={node as AdType.Block} />
     case 'literal':
-      return <Literal node={node as Asciidoctor.Block} />
+      return <Literal node={node as AdType.Block} />
     case 'image':
-      return <Image node={node as Asciidoctor.Block} />
+      return <Image node={node as AdType.Block} />
     case 'colist':
-      return <CoList node={node as Asciidoctor.List} />
+      return <CoList node={node as AdType.List} />
     case 'olist':
-      return <OList node={node as Asciidoctor.List} />
+      return <OList node={node as AdType.List} />
     case 'table':
-      return <Table node={node as Asciidoctor.Table} />
+      return <Table node={node as AdType.Table} />
     case 'thematic_break':
       return <ThematicBreak />
     case 'open':
-      return <Open node={node as Asciidoctor.Block} />
+      return <Open node={node as AdType.Block} />
     case 'pass':
-      return <Pass node={node as Asciidoctor.Block} />
+      return <Pass node={node as AdType.Block} />
     case 'page_break':
       return <PageBreak />
     case 'example':
-      return <Example node={node as Asciidoctor.Block} />
+      return <Example node={node as AdType.Block} />
     case 'sidebar':
-      return <Sidebar node={node as Asciidoctor.Block} />
+      return <Sidebar node={node as AdType.Block} />
     case 'quote':
-      return <Quote node={node as Asciidoctor.Block} />
+      return <Quote node={node as AdType.Block} />
     case 'verse':
-      return <Verse node={node as Asciidoctor.Block} />
+      return <Verse node={node as AdType.Block} />
     case 'toc':
-      return <TableOfContents node={node as Asciidoctor.Block} />
+      return <TableOfContents node={node as AdType.Block} />
     default:
-      return <>{parse(node.getContent())}</>
+      return <>{parse(node.convert())}</>
   }
 }
 

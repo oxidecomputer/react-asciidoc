@@ -1,6 +1,7 @@
-import AsciidocProcessor from 'asciidoctor'
+import Asciidoctor from '@asciidoctor/core'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
+
 
 import Asciidoc from './asciidoc'
 import './asciidoc.css'
@@ -42,9 +43,8 @@ function App() {
   )
 }
 
-const renderHtml5 = (content: string) => {
-  const ad = AsciidocProcessor()
-
+const renderHtml5 = (content: string) => {  
+  const ad = Asciidoctor()
   const document = ad.load(content, {
     standalone: true,
     attributes: {
