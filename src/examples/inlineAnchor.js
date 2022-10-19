@@ -1,5 +1,5 @@
-const inlineAnchor = `
-[[bookmark-a]] Inline anchors make arbitrary content referenceable.
+const inlineAnchor = [
+  `[[bookmark-a]] Inline anchors make arbitrary content referenceable.
 
 // .xref
 The section <<page-break>> describes how to add a page break.
@@ -19,9 +19,9 @@ Refer to <<Section A>>.
 Refer to <<install>>.
 
 [#install, reftext="Installation Procedure"]
-== Installation
+== Installation`,
 
-// .xref-xrefstyle
+  `// .xref-xrefstyle
 // Supported since Asciidoctor 1.5.6.
 :sectnums:
 :section-refsig: Sec.
@@ -54,6 +54,7 @@ link:view-source:asciidoctor.org[Asciidoctor homepage^]
 // .link-with-role
 :linkattrs:
 http://discuss.asciidoctor.org/[*mailing list*, role="green"]
-`
+`,
+]
 
 export default inlineAnchor

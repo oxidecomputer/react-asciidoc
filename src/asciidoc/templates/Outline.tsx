@@ -1,5 +1,4 @@
 import type { Asciidoctor } from 'asciidoctor'
-import cn from 'classnames'
 import parse from 'html-react-parser'
 import { useMemo } from 'react'
 
@@ -27,7 +26,7 @@ const Outline = ({
   const tocLevels = opts?.tocLevels || (tocLevelsAttr ? parseInt(tocLevelsAttr) : 2)
 
   return (
-    <ul className={cn('sectlevel', sections[0].getLevel())}>
+    <ul className={`sectlevel${sections[0].getLevel()}`}>
       {sections.map((section) => {
         // @ts-ignore
         // Swap with getSectionNumeral() when it is released

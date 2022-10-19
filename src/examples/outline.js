@@ -1,4 +1,5 @@
-const outline = `
+const outline = [
+  `
 // .basic
 = Document Title
 :toc:
@@ -11,9 +12,9 @@ const outline = `
 
 ==== Section 2.1.1
 
-== Section 3
+== Section 3`,
 
-// .toclevels
+  `// .toclevels
 = Document Title
 :toc:
 :toclevels: 1
@@ -43,9 +44,9 @@ const outline = `
 
 === Section 2.1
 
-== Section 3
+== Section 3`,
 
-// .sectnumlevels
+  `// .sectnumlevels
 = Document Title
 :toc:
 :toclevels: 3
@@ -59,6 +60,7 @@ const outline = `
 ==== Section 1.1.1
 
 == Section 2
-`
+`,
+]
 
 export default outline

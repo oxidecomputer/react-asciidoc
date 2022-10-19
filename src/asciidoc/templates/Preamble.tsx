@@ -1,4 +1,5 @@
 import type { Asciidoctor } from 'asciidoctor'
+import parse from 'html-react-parser'
 
 import { Content } from '../'
 import Outline from './Outline'
@@ -15,7 +16,12 @@ const Preamble = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
     <div id="preamble">
       <div className="sectionbody">
         <Content blocks={node.getBlocks()} />
-        {hasToc && <Outline node={document as Asciidoctor.AbstractBlock} />}
+        {hasToc && (
+          <div id="toc" className={document.getAttribute('toc-class', 'toc')}>
+            <div id="toctitle">{parse(document.getAttribute('toc-title'))}</div>
+            <Outline node={document as Asciidoctor.AbstractBlock} />
+          </div>
+        )}
       </div>
     </div>
   )

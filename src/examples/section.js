@@ -1,4 +1,5 @@
-const section = `
+const section = [
+  `
 // .level1
 == Section Level 1
 
@@ -33,22 +34,22 @@ const section = `
 
 // .with-roles
 [.center.red]
-== Section Title
+== Section Title`,
 
-// .sectanchors
+  `// .sectanchors
 :sectanchors:
-== Title with anchor
+== Title with anchor`,
 
-// .sectlinks
+  `// .sectlinks
 :sectlinks:
-== Linked title
+== Linked title`,
 
-// .sectanchors-and-sectlinks
+  `// .sectanchors-and-sectlinks
 :sectanchors:
 :sectlinks:
-== Linked title with anchor
+== Linked title with anchor`,
 
-// .numbered
+  `// .numbered
 :numbered:
 == Introduction to Asciidoctor
 
@@ -62,9 +63,9 @@ const section = `
 
 === Syntax
 
-== Terms and Concepts
+== Terms and Concepts`,
 
-// .numbered-sectnumlevels-1
+  `// .numbered-sectnumlevels-1
 :numbered:
 :sectnumlevels: 1
 == Introduction to Asciidoctor
@@ -87,6 +88,7 @@ const section = `
 = Part Title
 
 == Section Level 1
-`
+`,
+]
 
 export default section

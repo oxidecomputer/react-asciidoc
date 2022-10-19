@@ -1,55 +1,57 @@
-const document = `
+const document = [
+  `
 // .title
-= The Dangerous and Thrilling Documentation Chronicles
+= The Dangerous and Thrilling Documentation Chronicles`,
 
-// .title-with-author
+  `// .title-with-author
 = The Dangerous and Thrilling Documentation Chronicles
-Kismet Rainbow Chameleon <kismet@asciidoctor.org>
+Kismet Rainbow Chameleon <kismet@asciidoctor.org>`,
 
-// .title-with-author-no-email
+  `// .title-with-author-no-email
 = The Dangerous and Thrilling Documentation Chronicles
-Kismet Rainbow Chameleon
+Kismet Rainbow Chameleon`,
 
-// .title-with-multiple-authors
+  `// .title-with-multiple-authors
 = The Dangerous and Thrilling Documentation Chronicles
-Kismet Rainbow Chameleon <kismet@asciidoctor.org>; Lazarus het_Draeke <lazarus@asciidoctor.org>
+Kismet Rainbow Chameleon <kismet@asciidoctor.org>; Lazarus het_Draeke <lazarus@asciidoctor.org>`,
 
-// .title-with-revnumber
+  `// .title-with-revnumber
 = Document Title
 Kismet Chameleon
-v1.0
+v1.0`,
 
-// .title-with-revdate
+  `// .title-with-revdate
 = Document Title
 Kismet Chameleon
-v1.0, 2013-10-02
+v1.0, 2013-10-02`,
 
-// .title-with-revremark
+  `// .title-with-revremark
 = Document Title
 Kismet Chameleon
-v1.0, October 2, 2013: First incarnation
+v1.0, October 2, 2013: First incarnation`,
 
-// .footnotes
+  `// .footnotes
 The hail-and-rainbow protocol can be initiated at five levels: double, tertiary, supernumerary,
 supermassive, and apocalyptic party.footnote:[The double hail-and-rainbow level makes my toes tingle.]
 A bold statement.footnoteref:[disclaimer,Opinions are my own.]
 
-Another outrageous statement.footnoteref:[disclaimer]
+Another outrageous statement.footnoteref:[disclaimer]`,
 
-// .toc
+  `// .toc
 // Actual TOC content is rendered in the outline template, this template
 // usually renders just a "border".
 = Document Title
 :toc:
 
-== Cavern Glow
+== Cavern Glow`,
 
-// .toc-title
+  `// .toc-title
 = Document Title
 :toc:
 :toc-title: Table of Adventures
 
 == Cavern Glow
-`
+`,
+]
 
 export default document

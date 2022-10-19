@@ -1,5 +1,6 @@
 import AsciidocProcessor from 'asciidoctor'
 import { useEffect } from 'react'
+import { Fragment } from 'react'
 
 import Asciidoc from './asciidoc'
 import './asciidoc.css'
@@ -17,13 +18,26 @@ function App() {
     document.title = `${example} / ${renderer}`
   }, [example, renderer])
 
+  const getContent = (): string[] => {
+    // @ts-ignore
+    let input: string | string[] = content[example]
+
+    if (!Array.isArray(input)) {
+      input = [input]
+    }
+
+    return input
+  }
+
+  getContent()
+
   return (
     <div className="App">
-      {renderer === 'react' ? (
-        <Asciidoc content={content[example]} />
-      ) : (
-        example && renderHtml5(content[example])
-      )}
+      {renderer === 'react'
+        ? getContent().map((content, index) => <Asciidoc key={index} content={content} />)
+        : getContent().map((content, index) => (
+            <Fragment key={index}>{renderHtml5(content)}</Fragment>
+          ))}
     </div>
   )
 }

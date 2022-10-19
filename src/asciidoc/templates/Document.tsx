@@ -13,7 +13,7 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
 
   useEffect(() => {
     if (blocks || blocks[0]) {
-      setFootnotes(blocks[0].getDocument().getFootnotes())
+      setFootnotes(document.getFootnotes())
     }
   }, [blocks])
 
@@ -89,21 +89,29 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
         <div className="details">
           {document.getAuthors().map((author, index) => (
             <Fragment key={index}>
-              <span id={`author${index + 1 > 1 ? index + 1 : ''}`} className="author">
-                {parse(document.applySubstitutions(author.getName() || ''))}
-              </span>
-              <br />
-              <span id={`email${index + 1 > 1 ? index + 1 : ''}`} className="email">
-                {parse(document.applySubstitutions(author.getEmail() || ''))}
-              </span>
-              <br />
+              {author.getName() && (
+                <>
+                  <span id={`author${index + 1 > 1 ? index + 1 : ''}`} className="author">
+                    {parse(document.applySubstitutions(author.getName() || ''))}
+                  </span>
+                  <br />
+                </>
+              )}
+              {author.getEmail() && (
+                <>
+                  <span id={`email${index + 1 > 1 ? index + 1 : ''}`} className="email">
+                    {parse(document.applySubstitutions(author.getEmail() || ''))}
+                  </span>
+                  <br />
+                </>
+              )}
             </Fragment>
           ))}
 
           {document.hasAttribute('revnumber') && (
             <span id="revnumber">{`${document
               .getAttribute('version-label')
-              .toLowerCase()} ${document.getAttribute('revnumber')} ${
+              .toLowerCase()} ${document.getAttribute('revnumber')}${
               document.hasAttribute('revdate') ? ',' : ''
             }`}</span>
           )}

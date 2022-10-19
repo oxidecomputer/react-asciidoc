@@ -1,6 +1,6 @@
 import type { Asciidoctor } from 'asciidoctor'
 
-import { Title } from './util'
+import { CaptionedTitle } from './util'
 
 const Image = ({ node }: { node: Asciidoctor.Block }) => {
   const target = node.getAttribute('target')
@@ -31,7 +31,7 @@ const Image = ({ node }: { node: Asciidoctor.Block }) => {
       }`}
     >
       <div className="content">{img}</div>
-      <Title node={node} />
+      <CaptionedTitle node={node} />
     </div>
   )
 }
