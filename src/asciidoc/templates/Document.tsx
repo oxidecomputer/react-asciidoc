@@ -1,12 +1,21 @@
 import type { Asciidoctor } from 'asciidoctor'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Content } from '../'
 import Outline from './Outline'
 
 const Document = ({ document }: { document: Asciidoctor.Document }) => {
   const blocks = document.getBlocks()
+
+  const [footnotes, setFootnotes] = useState<Asciidoctor.Document.Footnote[]>()
+
+  useEffect(() => {
+    if (blocks || blocks[0]) {
+      setFootnotes(blocks[0].getDocument().getFootnotes())
+    }
+  }, [blocks])
 
   const Header = () => {
     if (!document.getNoheader()) {
@@ -32,6 +41,35 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
                 )}
             </>
           )}
+        </div>
+      )
+    } else {
+      return null
+    }
+  }
+
+  const Footnotes = () => {
+    if (!footnotes) return null
+
+    if (
+      footnotes.length > 0 &&
+      blocks &&
+      !blocks[0].getDocument().hasAttribute('nofootnotes')
+    ) {
+      return (
+        <div id="footnotes">
+          <hr />
+
+          {footnotes.map((footnote: Asciidoctor.Document.Footnote) => (
+            <div
+              className="footnote"
+              id={`_footnotedef_${footnote.getIndex()}`}
+              key={footnote.getIndex()}
+            >
+              <a href={`#_footnoteref_${footnote.getIndex()}`}>{footnote.getIndex()}</a>.{' '}
+              {parse(footnote.getText() || '')}
+            </div>
+          ))}
         </div>
       )
     } else {
@@ -80,29 +118,6 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
               <span id="revremark">{document.getAttribute('revremark')}</span>
             </>
           )}
-        </div>
-      )
-    } else {
-      return null
-    }
-  }
-
-  const Footnotes = () => {
-    if (document.hasFootnotes() && !document.hasAttribute('nofootnotes')) {
-      return (
-        <div id="footnotes">
-          <hr />
-
-          {document.getFootnotes().map((footnote) => (
-            <div
-              className="footnote"
-              id={`_footnotedef_${footnote.getIndex()}`}
-              key={footnote.getIndex()}
-            >
-              <a href={`#_footnoteref_${footnote.getIndex()}`}>{footnote.getIndex()}</a>.{' '}
-              {parse(footnote.getText() || '')}
-            </div>
-          ))}
         </div>
       )
     } else {

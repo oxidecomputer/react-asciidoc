@@ -1,11 +1,30 @@
 import type { Asciidoctor } from 'asciidoctor'
 import cn from 'classnames'
 import parse from 'html-react-parser'
+import { useMemo } from 'react'
 
-const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
+const Outline = ({
+  node,
+  opts,
+}: {
+  node: Asciidoctor.AbstractBlock
+  opts?: {
+    tocLevels?: number
+    sectNumLevels?: number
+  }
+}) => {
   if (!node.hasSections()) return null
 
   const sections = node.getSections()
+  const document = node.getDocument()
+  const docAttrs = useMemo(() => document.getAttributes(), [node])
+
+  const sectNumLevelsAttr = useMemo(() => document.getAttribute('sectnumlevels'), [node])
+  const tocLevelsAttr = useMemo(() => document.getAttribute('toclevels'), [node])
+
+  const sectNumLevels =
+    opts?.sectNumLevels || (sectNumLevelsAttr ? parseInt(sectNumLevelsAttr) : 3)
+  const tocLevels = opts?.tocLevels || (tocLevelsAttr ? parseInt(tocLevelsAttr) : 2)
 
   return (
     <ul className={cn('sectlevel', sections[0].getLevel())}>
@@ -13,22 +32,14 @@ const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
         // @ts-ignore
         // Swap with getSectionNumeral() when it is released
         let sectNum = section.$sectnum()
-        sectNum = sectNum === '.' ? '' : sectNum
-
-        const document = node.getDocument()
-        const docAttrs = document.getAttributes()
-
-        const sectNumLevels = docAttrs['sectnumlevels']
-          ? parseInt(docAttrs['sectnumlevels'])
-          : 3
-        const tocLevels = docAttrs['toclevels'] ? parseInt(docAttrs['toclevels']) : 2
+        sectNum = sectNum === '.' || sectNum === '..' ? '' : sectNum
 
         const level = section.getLevel()
 
         let title = ''
         if (section.getCaption()) {
           title = section.getCaptionedTitle()
-        } else if (section.isNumbered() && level <= sectNumLevels) {
+        } else if (level <= sectNumLevels) {
           // todo: investigate sectnumlevels overrides not working
           if (level < 2 && document.getDoctype() == 'book') {
             const sectionName = section.getSectionName()
@@ -51,7 +62,15 @@ const Outline = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
         return (
           <li key={section.getId()}>
             <a href={`#${section.getId()}`}>{parse(title)}</a>
-            {level < tocLevels && <Outline node={section as Asciidoctor.AbstractBlock} />}
+            {level < tocLevels && (
+              <Outline
+                node={section as Asciidoctor.AbstractBlock}
+                opts={{
+                  tocLevels,
+                  sectNumLevels,
+                }}
+              />
+            )}
           </li>
         )
       })}
