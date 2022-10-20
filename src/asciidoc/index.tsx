@@ -1,9 +1,9 @@
-import Asciidoctor from '@asciidoctor/core'
-import type { Asciidoctor as AdType } from '@asciidoctor/core'
 import hljs from 'highlight.js'
 import parse from 'html-react-parser'
 
-{/* import InlineConverter from './inlineConverter' */}
+import Asciidoctor from '~/lib/asciidoctor'
+import type { Asciidoctor as AdType } from '~/lib/asciidoctor'
+
 import {
   Admonition,
   Audio,
@@ -31,6 +31,9 @@ import {
   Verse,
 } from './templates'
 
+{
+  /* import InlineConverter from './inlineConverter' */
+}
 
 export const ad = Asciidoctor()
 
@@ -45,7 +48,22 @@ ad.SyntaxHighlighter.register('highlight.js-server', {
   },
 })
 
-{/* ad.ConverterFactory.register(new InlineConverter(), ['html5']) */}
+/* class InlineConverter {
+  baseConverter: AdType.Html5Converter
+
+  constructor() {
+    this.baseConverter = new ad.Html5Converter()
+  }
+
+  convert(node: AdType.Block, transform: string) {
+    switch (node.getNodeName()) {
+      default:
+        break
+    }
+
+    return this.baseConverter.convert(node, transform)
+  }
+} */
 
 const Asciidoc = ({ content }: { content: string }) => {
   const doc = ad.load(content, {

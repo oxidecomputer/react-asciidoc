@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Asciidoctor } from '@asciidoctor/core'
+import type { Asciidoctor } from '~/lib/asciidoctor'
 
 const useGetContent = (node: Asciidoctor.Block | Asciidoctor.AbstractBlock) => {
 	const getContentRef = useRef(false)

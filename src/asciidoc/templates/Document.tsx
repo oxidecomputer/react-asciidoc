@@ -1,4 +1,4 @@
-import type { Asciidoctor } from '@asciidoctor/core'
+import type { Asciidoctor } from '~/lib/asciidoctor'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 import { useEffect, useState } from 'react'

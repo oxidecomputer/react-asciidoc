@@ -1,4 +1,4 @@
-import type { Asciidoctor } from '@asciidoctor/core'
+import type { Asciidoctor } from '~/lib/asciidoctor'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 import { useMemo } from 'react'
