@@ -1,6 +1,8 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import cn from 'classnames'
 import parse from 'html-react-parser'
+
+import type { Asciidoctor } from '~/lib/asciidoctor'
+
 import useGetContent from '../hooks/useGetContent'
 
 const Table = ({ node }: { node: Asciidoctor.Table }) => {
@@ -84,8 +86,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
             {row.map((cell) => {
               const colSpan = cell.getColumnSpan()
               const rowSpan = cell.getRowSpan()
-              const content = useGetContent(node)
-
+              const content = useGetContent(cell)
 
               const cellProps = {
                 colSpan,
