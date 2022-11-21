@@ -93,7 +93,7 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
               {author.getName() && (
                 <>
                   <span id={`author${index + 1 > 1 ? index + 1 : ''}`} className="author">
-                    {parse(document.applySubstitutions(author.getName() || ''))}
+                    {parse(document.applySubstitutions(author.getName() || '').toString())}
                   </span>
                   <br />
                 </>
@@ -101,7 +101,7 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
               {author.getEmail() && (
                 <>
                   <span id={`email${index + 1 > 1 ? index + 1 : ''}`} className="email">
-                    {parse(document.applySubstitutions(author.getEmail() || ''))}
+                    {parse(document.applySubstitutions(author.getEmail() || '').toString())}
                   </span>
                   <br />
                 </>
