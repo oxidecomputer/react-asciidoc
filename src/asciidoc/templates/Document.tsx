@@ -1,7 +1,8 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 import { useEffect, useState } from 'react'
+
+import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import Outline from './Outline'
