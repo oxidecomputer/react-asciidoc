@@ -1,9 +1,10 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import cn from 'classnames'
 
+import type { Asciidoctor } from '~/lib/asciidoctor'
+
+import useGetContent from '../hooks/useGetContent'
 import { getRole } from './util'
 import { Title } from './util'
-import useGetContent from '../hooks/useGetContent'
 
 const Quote = ({ node }: { node: Asciidoctor.Block }) => {
   const attribution = node.getAttribute('attribution')

@@ -58,7 +58,8 @@ converter is planned to make it easier to create converters for inline nodes.
 
 ## Current Progress
 
-Tests are showing the following examples are identical to the HTML5 renderer using the [default asciidoctor stylesheet](https://github.com/asciidoctor/asciidoctor/blob/f80441fd2ad46439cce19bf54581eb9d79097f3d/src/stylesheets/asciidoctor.css).
+Tests are showing the following examples are identical to the HTML5 renderer using the
+[default asciidoctor stylesheet](https://github.com/asciidoctor/asciidoctor/blob/f80441fd2ad46439cce19bf54581eb9d79097f3d/src/stylesheets/asciidoctor.css).
 
 - [x] Audio
 - [x] Admonition

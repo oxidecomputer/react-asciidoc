@@ -1,6 +1,7 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import parse from 'html-react-parser'
 import { useMemo } from 'react'
+
+import type { Asciidoctor } from '~/lib/asciidoctor'
 
 const Outline = ({
   node,

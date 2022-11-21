@@ -1,8 +1,9 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import cn from 'classnames'
 
-import { CaptionedTitle } from './util'
+import type { Asciidoctor } from '~/lib/asciidoctor'
+
 import useGetContent from '../hooks/useGetContent'
+import { CaptionedTitle } from './util'
 
 const Listing = ({ node }: { node: Asciidoctor.Block }) => {
   const document = node.getDocument()

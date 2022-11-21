@@ -1,5 +1,6 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import parse from 'html-react-parser'
+
+import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { Title } from './util'

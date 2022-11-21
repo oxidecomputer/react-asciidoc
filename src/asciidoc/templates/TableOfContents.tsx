@@ -1,7 +1,8 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 import { useMemo } from 'react'
+
+import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import Outline from './Outline'
 import { getRole } from './util'

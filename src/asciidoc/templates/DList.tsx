@@ -1,7 +1,8 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
+
+import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { getRole } from './util'

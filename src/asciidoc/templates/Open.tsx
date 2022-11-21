@@ -1,5 +1,6 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
 import cn from 'classnames'
+
+import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { Title } from './util'
