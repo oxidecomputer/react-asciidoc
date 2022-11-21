@@ -15,7 +15,6 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "declaration": true,
     "paths": {
       "~/*": ["src/*"]
     }
