@@ -1,5 +1,5 @@
 {
-  "include": ["src/*.ts", "src/*.tsx", "./types/*"],
+  "include": ["src/asciidoc/*.ts", "src/asciidoc/*.tsx", "./types/*"],
   "compilerOptions": {
     "outDir": "./dist",
     "incremental": true,
@@ -15,6 +15,7 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
+    "declaration": true,
     "paths": {
       "~/*": ["src/*"]
     }
