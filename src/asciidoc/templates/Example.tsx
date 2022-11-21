@@ -7,7 +7,7 @@ import { getRole } from './util'
 
 const Example = ({ node }: { node: Asciidoctor.Block }) => {
   return (
-    <div className={cn('exampleblock', node.getRole())}>
+    <div className={cn('exampleblock', getRole(node))}>
       <CaptionedTitle node={node} />
       <div className="content">
         <Content blocks={node.getBlocks()} />
