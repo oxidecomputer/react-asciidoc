@@ -73,6 +73,7 @@ const Asciidoc = ({ content }: { content: string }) => {
       sectlinks: 'true',
       icons: 'font',
     },
+    sourcemap: true,
   })
 
   return <Document document={doc} />
