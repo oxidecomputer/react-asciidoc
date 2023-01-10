@@ -31,10 +31,6 @@ import {
   Verse,
 } from './templates'
 
-{
-  /* import InlineConverter from './inlineConverter' */
-}
-
 export const ad = Asciidoctor()
 
 // needs its own name so it doesn't get mixed up with built-in highlight.js (I think)
@@ -48,6 +44,10 @@ ad.SyntaxHighlighter.register('highlight.js-server', {
   },
 })
 
+// Add support for inline blocks
+// Cannot use react but could probably convert
+// jsx syntax to html with some helper functions
+// for the content
 /* class InlineConverter {
   baseConverter: AdType.Html5Converter
 
