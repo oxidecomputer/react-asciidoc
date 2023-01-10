@@ -1,11 +1,10 @@
 import { useEffect } from 'react'
 import { Fragment } from 'react'
 
-import Asciidoctor from '~/lib/asciidoctor'
-
 import Asciidoc from './asciidoc'
 import './asciidoc.css'
 import * as content from './examples'
+import Asciidoctor from './lib/asciidoctor'
 import './test.css'
 
 function App() {
