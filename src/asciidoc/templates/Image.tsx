@@ -1,8 +1,8 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
+import type { Block } from '@asciidoctor/core'
 
 import { CaptionedTitle } from './util'
 
-const Image = ({ node }: { node: Asciidoctor.Block }) => {
+const Image = ({ node }: { node: Block }) => {
   const target = node.getAttribute('target')
 
   let img = (

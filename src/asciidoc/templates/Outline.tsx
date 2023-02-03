@@ -1,13 +1,12 @@
+import type { AbstractBlock } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { useMemo } from 'react'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 const Outline = ({
   node,
   opts,
 }: {
-  node: Asciidoctor.AbstractBlock
+  node: AbstractBlock
   opts?: {
     tocLevels?: number
     sectNumLevels?: number
@@ -64,7 +63,7 @@ const Outline = ({
             <a href={`#${section.getId()}`}>{parse(title)}</a>
             {level < tocLevels && (
               <Outline
-                node={section as Asciidoctor.AbstractBlock}
+                node={section as AbstractBlock}
                 opts={{
                   tocLevels,
                   sectNumLevels,

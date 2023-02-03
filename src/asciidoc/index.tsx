@@ -1,8 +1,13 @@
+import asciidoctor from '@asciidoctor/core'
+import type {
+  AbstractBlock,
+  Block,
+  List,
+  Section as SectionType,
+  Table as TableType,
+} from '@asciidoctor/core'
 import hljs from 'highlight.js'
 import parse from 'html-react-parser'
-
-import Asciidoctor from '~/lib/asciidoctor'
-import type { Asciidoctor as AdType } from '~/lib/asciidoctor'
 
 import {
   Admonition,
@@ -31,7 +36,7 @@ import {
   Verse,
 } from './templates'
 
-export const ad = Asciidoctor()
+export const ad = asciidoctor()
 
 // needs its own name so it doesn't get mixed up with built-in highlight.js (I think)
 ad.SyntaxHighlighter.register('highlight.js-server', {
@@ -79,17 +84,17 @@ const Asciidoc = ({ content }: { content: string }) => {
   return <Document document={doc} />
 }
 
-export const Content = ({ blocks }: { blocks: AdType.AbstractBlock[] }) => {
+export const Content = ({ blocks }: { blocks: AbstractBlock[] }) => {
   return (
     <>
-      {blocks.map((block: AdType.AbstractBlock, index: number) => (
+      {blocks.map((block: AbstractBlock, index: number) => (
         <Converter key={`${index}-${block.getNodeName()}`} node={block} />
       ))}
     </>
   )
 }
 
-const Converter = ({ node }: { node: AdType.AbstractBlock }) => {
+const Converter = ({ node }: { node: AbstractBlock }) => {
   const transform = node.getNodeName()
 
   const document = node.getDocument()
@@ -98,51 +103,51 @@ const Converter = ({ node }: { node: AdType.AbstractBlock }) => {
 
   switch (transform) {
     case 'audio':
-      return <Audio node={node as AdType.Block} />
+      return <Audio node={node as Block} />
     case 'preamble':
       return <Preamble node={node} />
     case 'section':
-      return <Section node={node as AdType.Section} />
+      return <Section node={node as SectionType} />
     case 'paragraph':
-      return <Paragraph node={node as AdType.Block} />
+      return <Paragraph node={node as Block} />
     case 'dlist':
-      return <DList node={node as AdType.List} />
+      return <DList node={node as List} />
     case 'ulist':
-      return <UList node={node as AdType.List} />
+      return <UList node={node as List} />
     case 'floating_title':
-      return <FloatingTitle node={node as AdType.Block} />
+      return <FloatingTitle node={node as Block} />
     case 'admonition':
-      return <Admonition node={node as AdType.Block} />
+      return <Admonition node={node as Block} />
     case 'listing':
-      return <Listing node={node as AdType.Block} />
+      return <Listing node={node as Block} />
     case 'literal':
-      return <Literal node={node as AdType.Block} />
+      return <Literal node={node as Block} />
     case 'image':
-      return <Image node={node as AdType.Block} />
+      return <Image node={node as Block} />
     case 'colist':
-      return <CoList node={node as AdType.List} />
+      return <CoList node={node as List} />
     case 'olist':
-      return <OList node={node as AdType.List} />
+      return <OList node={node as List} />
     case 'table':
-      return <Table node={node as AdType.Table} />
+      return <Table node={node as TableType} />
     case 'thematic_break':
       return <ThematicBreak />
     case 'open':
-      return <Open node={node as AdType.Block} />
+      return <Open node={node as Block} />
     case 'pass':
-      return <Pass node={node as AdType.Block} />
+      return <Pass node={node as Block} />
     case 'page_break':
       return <PageBreak />
     case 'example':
-      return <Example node={node as AdType.Block} />
+      return <Example node={node as Block} />
     case 'sidebar':
-      return <Sidebar node={node as AdType.Block} />
+      return <Sidebar node={node as Block} />
     case 'quote':
-      return <Quote node={node as AdType.Block} />
+      return <Quote node={node as Block} />
     case 'verse':
-      return <Verse node={node as AdType.Block} />
+      return <Verse node={node as Block} />
     case 'toc':
-      return <TableOfContents node={node as AdType.Block} />
+      return <TableOfContents node={node as Block} />
     default:
       return <>{parse(node.convert())}</>
   }

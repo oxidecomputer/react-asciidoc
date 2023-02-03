@@ -1,11 +1,10 @@
+import type { Table as TableType } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 
-import type { Asciidoctor } from '~/lib/asciidoctor'
-
 import useGetContent from '../hooks/useGetContent'
 
-const Table = ({ node }: { node: Asciidoctor.Table }) => {
+const Table = ({ node }: { node: TableType }) => {
   let classes = [
     'frame-' + node.getAttribute('frame', 'all', 'table-frame'),
     'grid-' + node.getAttribute('grid', 'all', 'table-grid'),
@@ -38,7 +37,7 @@ const Table = ({ node }: { node: Asciidoctor.Table }) => {
   const bodyRows = node.getBodyRows()
   const footRows = node.getFootRows()
 
-  const getCellClass = (cell: Asciidoctor.Table.Cell): string => {
+  const getCellClass = (cell: TableType.Cell): string => {
     const classAttr = cn(
       'tableblock', // @ts-ignore
       `halign-${cell.getAttribute('halign')}`, // @ts-ignore

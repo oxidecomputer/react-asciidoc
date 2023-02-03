@@ -1,12 +1,11 @@
+import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { CaptionedTitle } from './util'
 import { getRole } from './util'
 
-const Example = ({ node }: { node: Asciidoctor.Block }) => {
+const Example = ({ node }: { node: Block }) => {
   return (
     <div className={cn('exampleblock', getRole(node))}>
       <CaptionedTitle node={node} />

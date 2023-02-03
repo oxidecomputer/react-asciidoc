@@ -7,7 +7,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "vite --port 8000",
-    "build": "tsc && vite build",
+    "clean": "rimraf dist/",
+    "build": "npm run clean && tsc",
     "preview": "vite preview",
     "release": "auto shipit",
     "test:init": "rm -rf ./tests/renderer.spec.ts-snapshots & npx playwright test -g html",
@@ -19,6 +20,7 @@
   "author": "Oxide Computer Company <bots@oxidecomputer.com>",
   "license": "MPL 2.0",
   "dependencies": {
+    "@asciidoctor/core": "^3.0.0-alpha.4",
     "classnames": "^2.3.2",
     "highlight.js": "^11.6.0",
     "html-react-parser": "^3.0.4",

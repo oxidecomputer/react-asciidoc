@@ -1,12 +1,11 @@
+import type { List, ListItem } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { Title, getRole } from './util'
 
-const OList = ({ node }: { node: Asciidoctor.List }) => {
+const OList = ({ node }: { node: List }) => {
   return (
     <div className={cn('olist', getRole(node), node.getStyle())}>
       <Title node={node} />
@@ -15,7 +14,7 @@ const OList = ({ node }: { node: Asciidoctor.List }) => {
         reversed={node.isOption('reversed')}
         start={node.getAttribute('start')}
       >
-        {node.getItems().map((item: Asciidoctor.ListItem, index) => (
+        {node.getItems().map((item: ListItem, index) => (
           <li key={index} className={getRole(node) ? getRole(node) : ''}>
             <p>{parse(item.getText())}</p>
             <Content blocks={item.getBlocks()} />

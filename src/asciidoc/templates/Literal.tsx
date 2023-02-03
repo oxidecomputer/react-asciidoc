@@ -1,8 +1,8 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
+import type { Block } from '@asciidoctor/core'
 
 import { Title } from './util'
 
-const Literal = ({ node }: { node: Asciidoctor.Block }) => {
+const Literal = ({ node }: { node: Block }) => {
   const docAttrs = node.getDocument().getAttributes()
   const nowrap = docAttrs['prewrap'] === undefined || node.isOption('nowrap')
 

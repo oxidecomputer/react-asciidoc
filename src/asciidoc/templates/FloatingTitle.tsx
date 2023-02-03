@@ -1,10 +1,9 @@
+import type { Block } from '@asciidoctor/core'
 import { createElement } from 'react'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Title } from './util'
 
-const FloatingTitle = ({ node }: { node: Asciidoctor.Block }) => {
+const FloatingTitle = ({ node }: { node: Block }) => {
   const level = node.getLevel()
 
   return (

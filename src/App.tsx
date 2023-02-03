@@ -1,10 +1,10 @@
+import asciidoctor from '@asciidoctor/core'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
 
 import Asciidoc from './asciidoc'
 import './asciidoc.css'
 import * as content from './examples'
-import Asciidoctor from './lib/asciidoctor'
 import './test.css'
 
 function App() {
@@ -43,7 +43,7 @@ function App() {
 }
 
 const renderHtml5 = (content: string) => {
-  const ad = Asciidoctor()
+  const ad = asciidoctor()
   const document = ad.load(content, {
     standalone: true,
     attributes: {

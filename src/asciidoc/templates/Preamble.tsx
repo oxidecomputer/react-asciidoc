@@ -1,11 +1,10 @@
+import type { AbstractBlock } from '@asciidoctor/core'
 import parse from 'html-react-parser'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import Outline from './Outline'
 
-const Preamble = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
+const Preamble = ({ node }: { node: AbstractBlock }) => {
   const document = node.getDocument()
 
   const hasToc =
@@ -20,7 +19,7 @@ const Preamble = ({ node }: { node: Asciidoctor.AbstractBlock }) => {
         {hasToc && (
           <div id="toc" className={document.getAttribute('toc-class', 'toc')}>
             <div id="toctitle">{parse(document.getAttribute('toc-title'))}</div>
-            <Outline node={document as Asciidoctor.AbstractBlock} />
+            <Outline node={document as AbstractBlock} />
           </div>
         )}
       </div>

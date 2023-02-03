@@ -1,11 +1,10 @@
+import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import useGetContent from '../hooks/useGetContent'
 import { Title, getRole } from './util'
 
-const Verse = ({ node }: { node: Asciidoctor.Block }) => {
+const Verse = ({ node }: { node: Block }) => {
   const attribution = node.getAttribute('attribution')
   const citetitle = node.getAttribute('citetitle')
   const content = useGetContent(node)

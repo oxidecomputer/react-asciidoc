@@ -1,8 +1,8 @@
-import type { Asciidoctor } from '~/lib/asciidoctor'
+import type { Block } from '@asciidoctor/core'
 
 import { Title } from './util'
 
-const Audio = ({ node }: { node: Asciidoctor.Block }) => {
+const Audio = ({ node }: { node: Block }) => {
   const startTime = node.getAttribute('start')
   const endTime = node.getAttribute('start')
   const timeAnchor =

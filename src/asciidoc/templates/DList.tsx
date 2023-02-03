@@ -1,19 +1,18 @@
+import type { List, ListItem } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
-import type { Asciidoctor } from '~/lib/asciidoctor'
-
 import { Content } from '../'
 import { getRole } from './util'
 
-const DList = ({ node }: { node: Asciidoctor.List }) => {
+const DList = ({ node }: { node: List }) => {
   const style = node.getStyle()
 
   const getItem = (item: any) => {
-    const listItem: [Asciidoctor.ListItem[], Asciidoctor.ListItem] = item
+    const listItem: [ListItem[], ListItem] = item
     const terms = listItem[0]
-    let dd: Asciidoctor.ListItem | null = listItem[1]
+    let dd: ListItem | null = listItem[1]
     // If there isn't a description we get a shell of an object
     // this is checking that it is actually a real block
     if (!dd.getNodeName) dd = null
@@ -24,7 +23,7 @@ const DList = ({ node }: { node: Asciidoctor.List }) => {
     }
   }
 
-  const renderDd = (dd: Asciidoctor.ListItem | null) => {
+  const renderDd = (dd: ListItem | null) => {
     if (dd) {
       return (
         <dd>

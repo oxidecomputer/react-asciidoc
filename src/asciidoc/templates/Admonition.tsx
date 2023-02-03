@@ -1,12 +1,11 @@
+import type { Block } from '@asciidoctor/core'
 import parse from 'html-react-parser'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import useGetContent from '../hooks/useGetContent'
 import { Title } from './util'
 
-const Admonition = ({ node }: { node: Asciidoctor.Block }) => {
+const Admonition = ({ node }: { node: Block }) => {
   const attrs = node.getAttributes()
   const document = node.getDocument()
   const content = useGetContent(node)

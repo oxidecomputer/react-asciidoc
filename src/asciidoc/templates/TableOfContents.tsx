@@ -1,13 +1,12 @@
+import type { AbstractBlock, Block } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 import { useMemo } from 'react'
 
-import type { Asciidoctor } from '~/lib/asciidoctor'
-
 import Outline from './Outline'
 import { getRole } from './util'
 
-const TableOfContents = ({ node }: { node: Asciidoctor.Block }) => {
+const TableOfContents = ({ node }: { node: Block }) => {
   let idAttr: string = node.getId() || 'toc'
   const document = node.getDocument()
   const title = node.hasTitle() ? node.getTitle() : document.getAttribute('toc-title')
@@ -25,10 +24,7 @@ const TableOfContents = ({ node }: { node: Asciidoctor.Block }) => {
         <div id={`${idAttr}title`} className="title">
           {parse(title || '')}
         </div>
-        <Outline
-          node={node.getDocument() as Asciidoctor.AbstractBlock}
-          opts={{ tocLevels: levels }}
-        />
+        <Outline node={node.getDocument() as AbstractBlock} opts={{ tocLevels: levels }} />
       </div>
     )
   } else {

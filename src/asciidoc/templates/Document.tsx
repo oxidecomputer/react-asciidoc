@@ -1,16 +1,15 @@
+import type { AbstractBlock, Document as DocumentType } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 import { useEffect, useState } from 'react'
 
-import type { Asciidoctor } from '~/lib/asciidoctor'
-
 import { Content } from '../'
 import Outline from './Outline'
 
-const Document = ({ document }: { document: Asciidoctor.Document }) => {
+const Document = ({ document }: { document: DocumentType }) => {
   const blocks = document.getBlocks()
 
-  const [footnotes, setFootnotes] = useState<Asciidoctor.Document.Footnote[]>()
+  const [footnotes, setFootnotes] = useState<DocumentType.Footnote[]>()
 
   useEffect(() => {
     if (blocks || blocks[0]) {
@@ -37,7 +36,7 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
                 document.getAttribute('toc-placement') === 'auto' && (
                   <div id="toc" className={document.getAttribute('toc-class', 'toc')}>
                     <div id="toctitle">{document.getAttribute('toc-title')}</div>
-                    <Outline node={document as Asciidoctor.AbstractBlock} />
+                    <Outline node={document as AbstractBlock} />
                   </div>
                 )}
             </>
@@ -61,7 +60,7 @@ const Document = ({ document }: { document: Asciidoctor.Document }) => {
         <div id="footnotes">
           <hr />
 
-          {footnotes.map((footnote: Asciidoctor.Document.Footnote) => (
+          {footnotes.map((footnote: DocumentType.Footnote) => (
             <div
               className="footnote"
               id={`_footnotedef_${footnote.getIndex()}`}

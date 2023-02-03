@@ -1,12 +1,11 @@
+import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { Title } from './util'
 import { getRole } from './util'
 
-const Open = ({ node }: { node: Asciidoctor.Block }) => {
+const Open = ({ node }: { node: Block }) => {
   const style = node.getStyle()
 
   if (style === 'abstract') {

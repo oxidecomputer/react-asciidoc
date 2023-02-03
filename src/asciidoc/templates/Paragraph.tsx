@@ -1,11 +1,10 @@
+import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import useGetContent from '../hooks/useGetContent'
 import { Title, getRole } from './util'
 
-const Paragraph = ({ node }: { node: Asciidoctor.Block }) => {
+const Paragraph = ({ node }: { node: Block }) => {
   const content = useGetContent(node)
 
   return (

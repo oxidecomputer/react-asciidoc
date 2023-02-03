@@ -1,13 +1,12 @@
+import type { List, ListItem } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { Title } from './util'
 import { getRole } from './util'
 
-const UList = ({ node }: { node: Asciidoctor.List }) => {
+const UList = ({ node }: { node: List }) => {
   const isChecklist = node.isOption('checklist')
 
   return (
@@ -17,7 +16,7 @@ const UList = ({ node }: { node: Asciidoctor.List }) => {
     >
       <Title node={node} />
       <ul className={isChecklist ? 'checklist' : ''}>
-        {node.getItems().map((item: Asciidoctor.ListItem, index) => {
+        {node.getItems().map((item: ListItem, index) => {
           if (isChecklist) {
             return (
               <li key={index} id={item.getId()} className={getRole(node)}>

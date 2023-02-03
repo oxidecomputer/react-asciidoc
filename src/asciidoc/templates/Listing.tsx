@@ -1,11 +1,10 @@
+import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import useGetContent from '../hooks/useGetContent'
 import { CaptionedTitle } from './util'
 
-const Listing = ({ node }: { node: Asciidoctor.Block }) => {
+const Listing = ({ node }: { node: Block }) => {
   const document = node.getDocument()
   const attrs = node.getAttributes()
   const nowrap = node.isOption('nowrap') || !document.hasAttribute('prewrap')

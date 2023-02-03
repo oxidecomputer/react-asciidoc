@@ -1,12 +1,11 @@
+import type { Section as SectionType } from '@asciidoctor/core'
 import cn from 'classnames'
 import { createElement } from 'react'
-
-import type { Asciidoctor } from '~/lib/asciidoctor'
 
 import { Content } from '../'
 import { getRole } from './util'
 
-const Section = ({ node }: { node: Asciidoctor.Section }) => {
+const Section = ({ node }: { node: SectionType }) => {
   const docAttrs = node.getDocument().getAttributes()
   const level = node.getLevel()
   let title: JSX.Element | string = ''
