@@ -25,7 +25,7 @@ export default defineConfig({
       formats: ['es', 'umd'],
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', 'html-react-parser'],
       output: {
         globals: {
           react: 'React',
