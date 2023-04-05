@@ -1,6 +1,6 @@
 import asciidoctor from '@asciidoctor/core'
 import { useEffect } from 'react'
-import React, { Fragment } from 'react'
+import { Fragment } from 'react'
 
 import Asciidoc from './asciidoc'
 import './asciidoc.css'

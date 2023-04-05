@@ -1,7 +1,7 @@
 {
   "include": ["src/asciidoc/*.ts", "src/asciidoc/*.tsx", "./types/*"],
   "compilerOptions": {
-    "outDir": "./dist",
+    "noEmit": true,
     "incremental": true,
     "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "isolatedModules": true,
