@@ -19,7 +19,6 @@
     "dev": "vite --port 8000",
     "clean": "rimraf dist/",
     "build": "npm run clean && vite build && tsc",
-    "preview": "vite preview",
     "test:init": "rm -rf ./tests/renderer.spec.ts-snapshots & npx playwright test -g html",
     "test:run": "npx playwright test -g react",
     "fmt": "prettier --write --ignore-path ./.gitignore  .",
