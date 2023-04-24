@@ -42,7 +42,7 @@ const Section = ({ node }: { node: SectionType }) => {
   if (docAttrs.sectlinks) {
     title = (
       <>
-        <a className="anchor" href={node.getId() || ''} />
+        <a className="anchor" id={node.getId() || ''} />
         <a
           className="link"
           href={`#${node.getId()}`}
@@ -66,11 +66,7 @@ const Section = ({ node }: { node: SectionType }) => {
   } else {
     return (
       <div className={cn(`sect${level}`, getRole(node))}>
-        {createElement(
-          `h${level + 1}`,
-          { 'data-sectnum': sectNum, id: node.getId() },
-          title,
-        )}
+        {createElement(`h${level + 1}`, { 'data-sectnum': sectNum }, title)}
         <div className="sectionbody">
           <Content blocks={node.getBlocks()} />
         </div>

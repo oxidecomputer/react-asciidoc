@@ -56,21 +56,22 @@ const Table = ({ node }: { node: TableType }) => {
 
       {rowCount > 0 && (
         <colgroup>
-          {columns.map((col) => {
+          {columns.map((col, index) => {
             // @ts-ignore
             // Undocumented feature
             const colWidth = col.getAttribute('colpcwidth')
 
-            return <col style={{ width: `${colWidth}%` }} />
+            return <col key={index} style={{ width: `${colWidth}%` }} />
           })}
         </colgroup>
       )}
 
-      {headRows.map((row) => (
-        <thead>
+      {headRows.map((row, hIndex) => (
+        <thead key={hIndex}>
           <tr>
-            {row.map((cell) => (
+            {row.map((cell, index) => (
               <th
+                key={index}
                 className={getCellClass(cell)}
                 dangerouslySetInnerHTML={{ __html: cell.getText() }}
               />
@@ -80,9 +81,9 @@ const Table = ({ node }: { node: TableType }) => {
       ))}
 
       <tbody>
-        {bodyRows.map((row) => (
-          <tr>
-            {row.map((cell) => {
+        {bodyRows.map((row, bIndex) => (
+          <tr key={bIndex}>
+            {row.map((cell, index) => {
               const colSpan = cell.getColumnSpan()
               const rowSpan = cell.getRowSpan()
               const content = useGetContent(cell)
@@ -97,7 +98,7 @@ const Table = ({ node }: { node: TableType }) => {
 
               if (style === 'asciidoc') {
                 return (
-                  <td {...cellProps}>
+                  <td {...cellProps} key={index}>
                     <div
                       className="content"
                       dangerouslySetInnerHTML={{ __html: content }}
@@ -106,7 +107,7 @@ const Table = ({ node }: { node: TableType }) => {
                 )
               } else if (style === 'literal') {
                 return (
-                  <td {...cellProps}>
+                  <td {...cellProps} key={index}>
                     <div className="literal">
                       <pre dangerouslySetInnerHTML={{ __html: content }} />
                     </div>
@@ -114,7 +115,7 @@ const Table = ({ node }: { node: TableType }) => {
                 )
               } else if (style === 'header') {
                 return (
-                  <th {...cellProps}>
+                  <th {...cellProps} key={index}>
                     <p
                       className="tableblock"
                       dangerouslySetInnerHTML={{ __html: content }}
@@ -125,7 +126,7 @@ const Table = ({ node }: { node: TableType }) => {
                 const cellContent = cell.getContent() as unknown as string[]
                 if (cellContent.length > 0) {
                   return (
-                    <td {...cellProps}>
+                    <td {...cellProps} key={index}>
                       {parse(
                         `<p class="tableblock">${cellContent.join(
                           '</p>\n<p class="tableblock">',
@@ -140,8 +141,8 @@ const Table = ({ node }: { node: TableType }) => {
         ))}
       </tbody>
 
-      {footRows.map((row) => (
-        <tfoot>
+      {footRows.map((row, fIndex) => (
+        <tfoot key={fIndex}>
           <tr>
             {row.map((cell, index) => (
               <td key={index} className={getCellClass(cell)}>

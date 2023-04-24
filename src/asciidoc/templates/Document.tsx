@@ -1,7 +1,7 @@
 import type { AbstractBlock, Document as DocumentType } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Content } from '../'
 import Outline from './Outline'
@@ -11,7 +11,7 @@ const Document = ({ document }: { document: DocumentType }) => {
 
   const [footnotes, setFootnotes] = useState<DocumentType.Footnote[]>()
 
-  useEffect(() => {
+  useMemo(() => {
     if (blocks || blocks[0]) {
       setFootnotes(document.getFootnotes())
     }

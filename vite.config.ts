@@ -1,22 +1,10 @@
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { defineConfig } from 'vite'
-import dts from 'vite-plugin-dts'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    dts({
-      insertTypesEntry: true,
-      skipDiagnostics: false,
-    }),
-  ],
-  resolve: {
-    alias: {
-      '~': path.resolve('./src'),
-    },
-  },
+  plugins: [react()],
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/asciidoc/index.tsx'),
@@ -25,7 +13,7 @@ export default defineConfig({
       formats: ['es', 'umd'],
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'html-react-parser'],
+      external: ['react', '@asciidoctor/core', 'react-dom', 'html-react-parser'],
       output: {
         globals: {
           react: 'React',

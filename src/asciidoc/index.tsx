@@ -1,14 +1,18 @@
 import asciidoctor from '@asciidoctor/core'
 import type {
   AbstractBlock,
+  Attributes,
   Block,
   List,
   Section as SectionType,
   Table as TableType,
 } from '@asciidoctor/core'
+import type * as AdocTypes from '@asciidoctor/core'
 import hljs from 'highlight.js'
 import parse from 'html-react-parser'
+import { createContext, useContext } from 'react'
 
+import useGetContent from './hooks/useGetContent'
 import {
   Admonition,
   Audio,
@@ -35,8 +39,9 @@ import {
   UList,
   Verse,
 } from './templates'
+import { CaptionedTitle, Title, getRole } from './templates/util'
 
-export const ad = asciidoctor()
+const ad = asciidoctor()
 
 // needs its own name so it doesn't get mixed up with built-in highlight.js (I think)
 ad.SyntaxHighlighter.register('highlight.js-server', {
@@ -70,21 +75,65 @@ ad.SyntaxHighlighter.register('highlight.js-server', {
   }
 } */
 
-const Asciidoc = ({ content }: { content: string }) => {
-  const doc = ad.load(content, {
-    standalone: true,
-    attributes: {
-      'source-highlighter': 'highlight.js-server',
-      sectlinks: 'true',
-      icons: 'font',
-    },
-    sourcemap: true,
-  })
-
-  return <Document document={doc} />
+type Overrides = {
+  admonition?: typeof Admonition
+  audio?: typeof Audio
+  colist?: typeof CoList
+  dlist?: typeof DList
+  example?: typeof Example
+  floating_title?: typeof FloatingTitle
+  image?: typeof Image
+  listing?: typeof Listing
+  literal?: typeof Literal
+  olist?: typeof OList
+  open?: typeof Open
+  page_break?: typeof PageBreak
+  paragraph?: typeof Paragraph
+  pass?: typeof Pass
+  preamble?: typeof Preamble
+  quote?: typeof Quote
+  section?: typeof Section
+  sidebar?: typeof Sidebar
+  table?: typeof Table
+  toc?: typeof TableOfContents
+  thematic_break?: typeof ThematicBreak
+  ulist?: typeof UList
+  verse?: typeof Verse
 }
 
-export const Content = ({ blocks }: { blocks: AbstractBlock[] }) => {
+type Options = {
+  overrides?: Overrides
+  customDocument?: typeof Document
+  attributes?: Attributes
+}
+
+const OptionsContext = createContext<Options>({})
+
+const Asciidoc = ({ content, options }: { content: string; options?: Options }) => {
+  const defaultAttrs = {
+    'source-highlighter': 'highlight.js-server',
+    sectlinks: 'true',
+    icons: 'font',
+  }
+  const optAttrs = options && options.attributes ? options.attributes : {}
+  const opts = {
+    standalone: true,
+    attributes: { ...defaultAttrs, ...optAttrs },
+    sourcemap: true,
+  }
+
+  const doc = ad.load(content, opts)
+
+  const CustomDocument = options && options.customDocument
+
+  return (
+    <OptionsContext.Provider value={options || {}}>
+      {CustomDocument ? <CustomDocument document={doc} /> : <Document document={doc} />}
+    </OptionsContext.Provider>
+  )
+}
+
+const Content = ({ blocks }: { blocks: AbstractBlock[] }) => {
   return (
     <>
       {blocks.map((block: AbstractBlock, index: number) => (
@@ -95,11 +144,19 @@ export const Content = ({ blocks }: { blocks: AbstractBlock[] }) => {
 }
 
 const Converter = ({ node }: { node: AbstractBlock }) => {
-  const transform = node.getNodeName()
+  const opts = useContext(OptionsContext)
+
+  const transform = node.getNodeName() as keyof Overrides
 
   const document = node.getDocument()
   const blockAttributes = node.getAttributes()
   document.playbackAttributes(blockAttributes)
+
+  const OverrideComponent = opts && opts.overrides && opts.overrides[transform]
+
+  if (OverrideComponent) {
+    return <OverrideComponent node={node as any} />
+  }
 
   switch (transform) {
     case 'audio':
@@ -154,3 +211,5 @@ const Converter = ({ node }: { node: AbstractBlock }) => {
 }
 
 export default Asciidoc
+export { asciidoctor, Content, useGetContent, Title, getRole, CaptionedTitle, AdocTypes }
+export * from './templates'

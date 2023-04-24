@@ -81,28 +81,30 @@ const DList = ({ node }: { node: List }) => {
             </colgroup>
           )}
 
-          {node.getItems().map((item: any, index) => {
-            const { terms, dd } = getItem(item)
+          <tbody>
+            {node.getItems().map((item: any, index) => {
+              const { terms, dd } = getItem(item)
 
-            return (
-              <tr key={index}>
-                <td className={cn('hdlist1', node.isOption('strong') ? 'strong' : '')}>
-                  {terms.map((dt: any, index: number) => (
-                    <Fragment key={index}>
-                      {index !== 0 && <br />}
-                      {parse(dt.getText())}
-                    </Fragment>
-                  ))}
-                </td>
-                {dd && (
-                  <td className="hdlist2">
-                    {dd.hasText() && <p>{parse(dd.getText())}</p>}
-                    {dd.hasBlocks() && <Content blocks={dd.getBlocks()} />}
+              return (
+                <tr key={index}>
+                  <td className={cn('hdlist1', node.isOption('strong') ? 'strong' : '')}>
+                    {terms.map((dt: any, index: number) => (
+                      <Fragment key={index}>
+                        {index !== 0 && <br />}
+                        {parse(dt.getText())}
+                      </Fragment>
+                    ))}
                   </td>
-                )}
-              </tr>
-            )
-          })}
+                  {dd && (
+                    <td className="hdlist2">
+                      {dd.hasText() && <p>{parse(dd.getText())}</p>}
+                      {dd.hasBlocks() && <Content blocks={dd.getBlocks()} />}
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
         </table>
       </div>
     )

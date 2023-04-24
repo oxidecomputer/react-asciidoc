@@ -1,8 +1,6 @@
 {
   "include": ["src/asciidoc/*.ts", "src/asciidoc/*.tsx", "./types/*"],
   "compilerOptions": {
-    "noEmit": true,
-    "incremental": true,
     "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "isolatedModules": true,
     "esModuleInterop": true,
@@ -16,8 +14,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "declaration": true,
-    "paths": {
-      "~/*": ["src/*"]
-    }
+    "emitDeclarationOnly": true,
+    "outDir": "dist/types"
   }
 }

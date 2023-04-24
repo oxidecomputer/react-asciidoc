@@ -2,10 +2,37 @@ import asciidoctor from '@asciidoctor/core'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
 
-import Asciidoc from './asciidoc'
+import Asciidoc, { AdocTypes, Title, getRole, useGetContent } from './asciidoc'
 import './asciidoc.css'
 import * as content from './examples'
 import './test.css'
+
+// const CustomParagraph = ({ node }: { node: AdocTypes.Block }) => {
+//   const content = useGetContent(node)
+//
+//   return (
+//     <div
+//       id={node.getId ? node.getId() : ''}
+//       className={`custom-paragraph paragraph ${getRole(node) || ''}`}
+//     >
+//       <Title node={node} />
+//       <p dangerouslySetInnerHTML={{ __html: content }} />
+//     </div>
+//   )
+// }
+//
+// const CustomDocument = ({ document }: { document: AdocTypes.Document }) => {
+//   console.log(document)
+//   return <div>Hello</div>
+// }
+//
+// const opts = {
+//   overrides: {
+//     paragraph: CustomParagraph,
+//   },
+//   customDocument: CustomDocument,
+// }
+const opts = {}
 
 function App() {
   const queryString = window.location.search
@@ -34,7 +61,9 @@ function App() {
   return (
     <div className="App">
       {renderer === 'react'
-        ? getContent().map((content, index) => <Asciidoc key={index} content={content} />)
+        ? getContent().map((content, index) => (
+            <Asciidoc key={index} content={content} options={opts} />
+          ))
         : getContent().map((content, index) => (
             <Fragment key={index}>{renderHtml5(content)}</Fragment>
           ))}
