@@ -1,8 +1,7 @@
-import asciidoctor from '@asciidoctor/core'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
 
-import Asciidoc from './asciidoc'
+import Asciidoc, { asciidoctor } from './asciidoc'
 import './asciidoc.css'
 import * as content from './examples'
 import './test.css'
@@ -32,12 +31,13 @@ function App() {
   }
 
   getContent()
+  const ad = asciidoctor()
 
   return (
     <div className="App">
       {renderer === 'react'
         ? getContent().map((content, index) => (
-            <Asciidoc key={index} content={content} options={opts} />
+            <Asciidoc key={index} content={ad.load(content, opts)} options={opts} />
           ))
         : getContent().map((content, index) => (
             <Fragment key={index}>{renderHtml5(content)}</Fragment>

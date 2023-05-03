@@ -109,7 +109,7 @@ type Options = {
 
 const OptionsContext = createContext<Options>({})
 
-const Asciidoc = ({ content, options }: { content: string; options?: Options }) => {
+const Asciidoc = ({ content, options }: { content: AdocTypes.Document; options?: Options }) => {
   const defaultAttrs = {
     'source-highlighter': 'highlight.js-server',
     sectlinks: 'true',
@@ -122,13 +122,11 @@ const Asciidoc = ({ content, options }: { content: string; options?: Options }) 
     sourcemap: true,
   }
 
-  const doc = ad.load(content, opts)
-
   const CustomDocument = options && options.customDocument
 
   return (
     <OptionsContext.Provider value={options || {}}>
-      {CustomDocument ? <CustomDocument document={doc} /> : <Document document={doc} />}
+      {CustomDocument ? <CustomDocument document={content} /> : <Document document={content} />}
     </OptionsContext.Provider>
   )
 }
