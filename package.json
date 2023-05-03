@@ -5,6 +5,10 @@
     "dist"
   ],
   "description": "React renderer for AsciiDoc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oxidecomputer/react-asciidoc.git"
+  },
   "main": "./dist/react-asciidoc.umd.cjs",
   "module": "./dist/react-asciidoc.js",
   "exports": {
