@@ -1,7 +1,7 @@
 import asciidoctor from '@asciidoctor/core'
 import type {
   AbstractBlock,
-  Block, // Extensions,
+  Block,
   List,
   Section as SectionType,
   Table as TableType,
