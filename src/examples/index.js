@@ -1,6 +1,7 @@
 import admonition from './admonition'
 import audio from './audio'
 import coList from './coList'
+import customInlineMacro from './customInlineMacro'
 import dList from './dList'
 import document from './document'
 import embedded from './embedded'
@@ -41,6 +42,7 @@ export {
   audio,
   admonition,
   coList,
+  customInlineMacro,
   dList,
   document,
   embedded,

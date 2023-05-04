@@ -626,6 +626,7 @@ body > div[id]::after,
 #header > h1:first-child {
   color: rgb(0 0 0 / 0.85);
   margin-top: 2.25rem;
+  margin-left: 15rem;
   margin-bottom: 0;
 }
 
@@ -643,6 +644,7 @@ body.toc2 #header > h1:nth-last-child(2) {
 #header .details {
   border-bottom: 1px solid #dddddf;
   line-height: 1.45;
+  margin-left: 15rem;
   padding-top: 0.25em;
   padding-bottom: 0.25em;
   padding-left: 0.25em;
@@ -856,6 +858,7 @@ body.toc2 #header > h1:nth-last-child(2) {
 @media screen and (min-width: 768px) {
   #content {
     margin-bottom: 1.25em;
+    margin-left: 15rem;
   }
 
   .sect1 {

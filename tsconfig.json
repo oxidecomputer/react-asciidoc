@@ -1,5 +1,5 @@
 {
-  "include": ["src/asciidoc/*.ts", "src/asciidoc/*.tsx", "./types/*"],
+  "include": ["src/asciidoc/*.ts", "src/asciidoc/*.tsx", "./types/*", "src/App.tsx"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "isolatedModules": true,

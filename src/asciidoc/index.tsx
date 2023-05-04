@@ -1,14 +1,12 @@
 import asciidoctor from '@asciidoctor/core'
 import type {
   AbstractBlock,
-  Attributes,
-  Block,
+  Block, // Extensions,
   List,
   Section as SectionType,
   Table as TableType,
 } from '@asciidoctor/core'
 import type * as AdocTypes from '@asciidoctor/core'
-import hljs from 'highlight.js'
 import parse from 'html-react-parser'
 import { createContext, useContext } from 'react'
 
@@ -40,19 +38,6 @@ import {
   Verse,
 } from './templates'
 import { CaptionedTitle, Title, getRole } from './templates/util'
-
-const ad = asciidoctor()
-
-// needs its own name so it doesn't get mixed up with built-in highlight.js (I think)
-ad.SyntaxHighlighter.register('highlight.js-server', {
-  handlesHighlighting: () => true,
-  highlight: (_node, source, lang) => {
-    if (!lang) return source
-    return hljs.getLanguage(lang)
-      ? hljs.highlight(source, { language: lang }).value
-      : source
-  },
-})
 
 // Add support for inline blocks
 // Cannot use react but could probably convert
@@ -101,32 +86,29 @@ type Overrides = {
   verse?: typeof Verse
 }
 
-type Options = {
+export type Options = {
   overrides?: Overrides
   customDocument?: typeof Document
-  attributes?: Attributes
 }
 
 const OptionsContext = createContext<Options>({})
 
-const Asciidoc = ({ content, options }: { content: AdocTypes.Document; options?: Options }) => {
-  const defaultAttrs = {
-    'source-highlighter': 'highlight.js-server',
-    sectlinks: 'true',
-    icons: 'font',
-  }
-  const optAttrs = options && options.attributes ? options.attributes : {}
-  const opts = {
-    standalone: true,
-    attributes: { ...defaultAttrs, ...optAttrs },
-    sourcemap: true,
-  }
-
+const Asciidoc = ({
+  content,
+  options,
+}: {
+  content: AdocTypes.Document
+  options?: Options
+}) => {
   const CustomDocument = options && options.customDocument
 
   return (
     <OptionsContext.Provider value={options || {}}>
-      {CustomDocument ? <CustomDocument document={content} /> : <Document document={content} />}
+      {CustomDocument ? (
+        <CustomDocument document={content} />
+      ) : (
+        <Document document={content} />
+      )}
     </OptionsContext.Provider>
   )
 }
