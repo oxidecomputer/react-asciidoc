@@ -1,13 +1,32 @@
 import asciidoctor from '@asciidoctor/core'
+import type { Extensions } from '@asciidoctor/core'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
 
-import Asciidoc from './asciidoc'
+import Asciidoc, { type Options } from './asciidoc'
 import './asciidoc.css'
 import * as content from './examples'
 import './test.css'
 
-const opts = {}
+const opts: Options = {}
+
+const ext = function (this: Extensions.Registry) {
+  this.inlineMacro('emoticon', function () {
+    this.process(function (parent, target) {
+      let text = ''
+      if (target === 'grin') {
+        text = ':D'
+      } else if (target === 'wink') {
+        text = ';)'
+      } else {
+        text = ':)'
+      }
+      return this.createInline(parent, 'quoted', text, { type: 'strong' })
+    })
+  })
+}
+
+opts.extensions = [ext]
 
 function App() {
   const queryString = window.location.search

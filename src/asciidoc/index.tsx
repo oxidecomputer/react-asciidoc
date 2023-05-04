@@ -3,6 +3,7 @@ import type {
   AbstractBlock,
   Attributes,
   Block,
+  Extensions,
   List,
   Section as SectionType,
   Table as TableType,
@@ -101,15 +102,22 @@ type Overrides = {
   verse?: typeof Verse
 }
 
-type Options = {
+export type ExtensionFn = (this: Extensions.Registry) => void
+
+export type Options = {
   overrides?: Overrides
   customDocument?: typeof Document
   attributes?: Attributes
+  extensions?: ExtensionFn[]
 }
 
 const OptionsContext = createContext<Options>({})
 
 const Asciidoc = ({ content, options }: { content: string; options?: Options }) => {
+  if (options && options.extensions) {
+    options.extensions.forEach((extension) => ad.Extensions.register(extension))
+  }
+
   const defaultAttrs = {
     'source-highlighter': 'highlight.js-server',
     sectlinks: 'true',
