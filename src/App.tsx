@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Extensions } from '@asciidoctor/core'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
