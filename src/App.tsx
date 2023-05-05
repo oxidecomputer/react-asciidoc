@@ -1,14 +1,21 @@
-import asciidoctor from '@asciidoctor/core'
+// @ts-nocheck
 import type { Extensions } from '@asciidoctor/core'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
 
-import Asciidoc, { type Options } from './asciidoc'
+import Asciidoc, { type Options, asciidoctor } from './asciidoc'
 import './asciidoc.css'
 import * as content from './examples'
 import './test.css'
 
 const opts: Options = {}
+const attrs = {
+  'source-highlighter': 'highlight.js',
+  sectlinks: 'true',
+  icons: 'font',
+  stem: 'latexmath',
+  stylesheet: false,
+}
 
 const ext = function (this: Extensions.Registry) {
   this.inlineMacro('emoticon', function () {
@@ -25,8 +32,6 @@ const ext = function (this: Extensions.Registry) {
     })
   })
 }
-
-opts.extensions = [ext]
 
 function App() {
   const queryString = window.location.search
@@ -51,12 +56,23 @@ function App() {
   }
 
   getContent()
+  const ad = asciidoctor()
+
+  const extensions = [ext]
+  extensions.forEach((extension) => ad.Extensions.register(extension))
 
   return (
     <div className="App">
       {renderer === 'react'
         ? getContent().map((content, index) => (
-            <Asciidoc key={index} content={content} options={opts} />
+            <Asciidoc
+              key={index}
+              content={ad.load(content, {
+                standalone: true,
+                attributes: attrs,
+              })}
+              options={opts}
+            />
           ))
         : getContent().map((content, index) => (
             <Fragment key={index}>{renderHtml5(content)}</Fragment>
@@ -69,13 +85,7 @@ const renderHtml5 = (content: string) => {
   const ad = asciidoctor()
   const document = ad.load(content, {
     standalone: true,
-    attributes: {
-      'source-highlighter': 'highlight.js-server',
-      sectlinks: 'true',
-      icons: 'font',
-      stem: 'latexmath',
-      stylesheet: false,
-    },
+    attributes: attrs,
   })
 
   return <div dangerouslySetInnerHTML={{ __html: document.convert() }} />

@@ -1,10 +1,14 @@
 {
   "name": "@oxide/react-asciidoc",
-  "version": "0.0.1-alpha.19",
+  "version": "0.0.1-alpha.21",
   "files": [
     "dist"
   ],
   "description": "React renderer for AsciiDoc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oxidecomputer/react-asciidoc.git"
+  },
   "main": "./dist/react-asciidoc.umd.cjs",
   "module": "./dist/react-asciidoc.js",
   "exports": {
