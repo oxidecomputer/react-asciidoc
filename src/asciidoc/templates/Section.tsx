@@ -3,16 +3,14 @@ import cn from 'classnames'
 import { createElement } from 'react'
 
 import { Content } from '../'
-import { getRole } from './util'
+import { getLineNumber, getRole } from './util'
 
 const Section = ({ node }: { node: SectionType }) => {
   const docAttrs = node.getDocument().getAttributes()
   const level = node.getLevel()
   let title: JSX.Element | string = ''
 
-  // @ts-ignore
-  // Swap with getSectionNumeral() when it is released
-  let sectNum = node.$sectnum()
+  let sectNum = node.getSectionNumeral()
   sectNum = sectNum === '.' ? '' : sectNum
 
   const sectNumLevels = docAttrs['sectnumlevels'] ? parseInt(docAttrs['sectnumlevels']) : 3
@@ -42,7 +40,7 @@ const Section = ({ node }: { node: SectionType }) => {
   if (docAttrs.sectlinks) {
     title = (
       <>
-        <a className="anchor" id={node.getId() || ''} />
+        <a className="anchor" id={node.getId() || ''} {...getLineNumber(node)} />
         <a
           className="link"
           href={`#${node.getId()}`}
@@ -57,7 +55,11 @@ const Section = ({ node }: { node: SectionType }) => {
   if (level === 0) {
     return (
       <>
-        <h1 className={cn('sect0', getRole(node))} data-sectnum={sectNum}>
+        <h1
+          className={cn('sect0', getRole(node))}
+          data-sectnum={sectNum}
+          {...getLineNumber(node)}
+        >
           {title}
         </h1>
         <Content blocks={node.getBlocks()} />
@@ -65,7 +67,7 @@ const Section = ({ node }: { node: SectionType }) => {
     )
   } else {
     return (
-      <div className={cn(`sect${level}`, getRole(node))}>
+      <div className={cn(`sect${level}`, getRole(node))} {...getLineNumber(node)}>
         {createElement(`h${level + 1}`, { 'data-sectnum': sectNum }, title)}
         <div className="sectionbody">
           <Content blocks={node.getBlocks()} />

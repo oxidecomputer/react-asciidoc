@@ -3,11 +3,11 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { Title, getRole } from './util'
+import { Title, getLineNumber, getRole } from './util'
 
 const OList = ({ node }: { node: List }) => {
   return (
-    <div className={cn('olist', getRole(node), node.getStyle())}>
+    <div className={cn('olist', getRole(node), node.getStyle())} {...getLineNumber(node)}>
       <Title node={node} />
       <ol
         className={node.getStyle()}

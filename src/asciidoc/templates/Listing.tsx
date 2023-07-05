@@ -1,8 +1,19 @@
 import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 
+// import hljs from 'highlight.js'
 import useGetContent from '../hooks/useGetContent'
-import { CaptionedTitle } from './util'
+import { CaptionedTitle, getLineNumber } from './util'
+
+// <code
+//   className={lang ? `language-${lang}` : ''}
+//   data-lang={lang}
+//   dangerouslySetInnerHTML={{
+//     __html: hljs.getLanguage(lang)
+//       ? hljs.highlight(content, { language: lang }).value
+//       : content,
+//   }}
+// />
 
 const Listing = ({ node }: { node: Block }) => {
   const document = node.getDocument()
@@ -14,7 +25,7 @@ const Listing = ({ node }: { node: Block }) => {
     const lang = attrs.language
 
     return (
-      <div className="listingblock">
+      <div className="listingblock" {...getLineNumber(node)}>
         <CaptionedTitle node={node} />
         <div className="content">
           <pre className={cn('highlight', nowrap ? ' nowrap' : '')}>
@@ -22,7 +33,9 @@ const Listing = ({ node }: { node: Block }) => {
               <code
                 className={lang ? `language-${lang}` : ''}
                 data-lang={lang}
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{
+                  __html: content,
+                }}
               />
             ) : (
               <code dangerouslySetInnerHTML={{ __html: content }} />
@@ -33,7 +46,7 @@ const Listing = ({ node }: { node: Block }) => {
     )
   } else {
     return (
-      <div className="listingblock">
+      <div className="listingblock" {...getLineNumber(node)}>
         <CaptionedTitle node={node} />
         <div className="content">
           <pre className={nowrap ? ' nowrap' : ''}>

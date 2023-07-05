@@ -4,7 +4,7 @@ import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
 import { Content } from '../'
-import { getRole } from './util'
+import { getLineNumber, getRole } from './util'
 
 const DList = ({ node }: { node: List }) => {
   const style = node.getStyle()
@@ -38,7 +38,7 @@ const DList = ({ node }: { node: List }) => {
 
   if (style === 'qanda') {
     return (
-      <div className={cn('qlist qanda', getRole(node))}>
+      <div className={cn('qlist qanda', getRole(node))} {...getLineNumber(node)}>
         {title}
         <ol>
           {node.getItems().map((item: any, index) => {

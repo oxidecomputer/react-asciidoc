@@ -3,6 +3,7 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import useGetContent from '../hooks/useGetContent'
+import { getLineNumber } from './util'
 
 const Table = ({ node }: { node: TableType }) => {
   let classes = [
@@ -51,6 +52,7 @@ const Table = ({ node }: { node: TableType }) => {
     <table
       className={cn('tableblock', ...classes)}
       style={{ width: width ? width : undefined }}
+      {...getLineNumber(node)}
     >
       {node.hasTitle() && <caption className="title">{node.getCaptionedTitle()}</caption>}
 

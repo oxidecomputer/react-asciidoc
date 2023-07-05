@@ -3,11 +3,11 @@ import cn from 'classnames'
 
 import { Content } from '../'
 import { CaptionedTitle } from './util'
-import { getRole } from './util'
+import { getLineNumber, getRole } from './util'
 
 const Example = ({ node }: { node: Block }) => {
   return (
-    <div className={cn('exampleblock', getRole(node))}>
+    <div className={cn('exampleblock', getRole(node))} {...getLineNumber(node)}>
       <CaptionedTitle node={node} />
       <div className="content">
         <Content blocks={node.getBlocks()} />

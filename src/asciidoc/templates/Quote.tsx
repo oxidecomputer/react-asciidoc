@@ -3,7 +3,7 @@ import cn from 'classnames'
 
 import useGetContent from '../hooks/useGetContent'
 import { getRole } from './util'
-import { Title } from './util'
+import { Title, getLineNumber } from './util'
 
 const Quote = ({ node }: { node: Block }) => {
   const attribution = node.getAttribute('attribution')
@@ -11,7 +11,11 @@ const Quote = ({ node }: { node: Block }) => {
   const content = useGetContent(node)
 
   return (
-    <div id={node.getId ? node.getId() : ''} className={cn('quoteblock', getRole(node))}>
+    <div
+      id={node.getId ? node.getId() : ''}
+      className={cn('quoteblock', getRole(node))}
+      {...getLineNumber(node)}
+    >
       <Title node={node} />
       <blockquote dangerouslySetInnerHTML={{ __html: content }} />
       {attribution && (

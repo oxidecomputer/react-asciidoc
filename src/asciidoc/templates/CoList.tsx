@@ -2,11 +2,11 @@ import type { List, ListItem } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { Title } from './util'
+import { Title, getLineNumber } from './util'
 
 const CoList = ({ node }: { node: List }) => {
   return (
-    <div className="colist">
+    <div className="colist" {...getLineNumber(node)}>
       <Title node={node} />
       <table>
         <tbody>

@@ -4,7 +4,7 @@ import parse from 'html-react-parser'
 
 import { Content } from '../'
 import { Title } from './util'
-import { getRole } from './util'
+import { getLineNumber, getRole } from './util'
 
 const UList = ({ node }: { node: List }) => {
   const isChecklist = node.isOption('checklist')
@@ -13,6 +13,7 @@ const UList = ({ node }: { node: List }) => {
     <div
       id={node.getId ? node.getId() : ''}
       className={cn('ulist', node.getStyle(), getRole(node), isChecklist && 'checklist')}
+      {...getLineNumber(node)}
     >
       <Title node={node} />
       <ul className={isChecklist ? 'checklist' : ''}>

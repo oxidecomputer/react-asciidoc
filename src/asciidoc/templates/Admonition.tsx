@@ -3,7 +3,7 @@ import parse from 'html-react-parser'
 
 import { Content } from '../'
 import useGetContent from '../hooks/useGetContent'
-import { Title } from './util'
+import { Title, getLineNumber } from './util'
 
 const Admonition = ({ node }: { node: Block }) => {
   const attrs = node.getAttributes()
@@ -23,7 +23,7 @@ const Admonition = ({ node }: { node: Block }) => {
   const contentModel = node.content_model
 
   return (
-    <div className={`admonitionblock ${attrs.name}`}>
+    <div className={`admonitionblock ${attrs.name}`} {...getLineNumber(node)}>
       <table>
         <tbody>
           <tr>

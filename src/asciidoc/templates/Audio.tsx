@@ -1,6 +1,6 @@
 import type { Block } from '@asciidoctor/core'
 
-import { Title } from './util'
+import { Title, getLineNumber } from './util'
 
 const Audio = ({ node }: { node: Block }) => {
   const startTime = node.getAttribute('start')
@@ -9,7 +9,7 @@ const Audio = ({ node }: { node: Block }) => {
     startTime || endTime ? (`#t=${startTime || ''}` + endTime ? `,${endTime}` : '') : ''
 
   return (
-    <div className="audioblock">
+    <div className="audioblock" {...getLineNumber(node)}>
       <Title node={node} />
       <div className="content">
         <audio

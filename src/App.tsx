@@ -1,5 +1,6 @@
 // @ts-nocheck
 import type { Extensions } from '@asciidoctor/core'
+import hljs from 'highlight.js'
 import { useEffect } from 'react'
 import { Fragment } from 'react'
 
@@ -10,7 +11,6 @@ import './test.css'
 
 const opts: Options = {}
 const attrs = {
-  'source-highlighter': 'highlight.js',
   sectlinks: 'true',
   icons: 'font',
   stem: 'latexmath',
@@ -60,6 +60,16 @@ function App() {
 
   const extensions = [ext]
   extensions.forEach((extension) => ad.Extensions.register(extension))
+
+  ad.SyntaxHighlighter.register('highlight.js-server', {
+    handlesHighlighting: () => true,
+    highlight: (_node, source, lang) => {
+      if (!lang) return source
+      return hljs.getLanguage(lang)
+        ? hljs.highlight(source, { language: lang }).value
+        : source
+    },
+  })
 
   return (
     <div className="App">

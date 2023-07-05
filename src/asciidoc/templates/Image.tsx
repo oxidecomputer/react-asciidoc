@@ -1,6 +1,6 @@
 import type { Block } from '@asciidoctor/core'
 
-import { CaptionedTitle } from './util'
+import { CaptionedTitle, getLineNumber } from './util'
 
 const Image = ({ node }: { node: Block }) => {
   const target = node.getAttribute('target')
@@ -29,6 +29,7 @@ const Image = ({ node }: { node: Block }) => {
       } ${node.hasAttribute('float') ? node.getAttribute('float') : ''} ${
         node.getRole() ? node.getRole() : ''
       }`}
+      {...getLineNumber(node)}
     >
       <div className="content">{img}</div>
       <CaptionedTitle node={node} />

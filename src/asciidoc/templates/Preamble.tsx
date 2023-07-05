@@ -3,6 +3,7 @@ import parse from 'html-react-parser'
 
 import { Content } from '../'
 import Outline from './Outline'
+import { getLineNumber } from './util'
 
 const Preamble = ({ node }: { node: AbstractBlock }) => {
   const document = node.getDocument()
@@ -13,7 +14,7 @@ const Preamble = ({ node }: { node: AbstractBlock }) => {
     document.hasAttribute('toc')
 
   return (
-    <div id="preamble">
+    <div id="preamble" {...getLineNumber(node)}>
       <div className="sectionbody">
         <Content blocks={node.getBlocks()} />
         {hasToc && (

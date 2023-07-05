@@ -11,3 +11,6 @@ export const CaptionedTitle = ({ node }: { node: Block | Block | List }) =>
 
 export const getRole = (node: AbstractBlock | Block | List) =>
   typeof node.getRole() === 'string' ? node.getRole() : undefined
+
+export const getLineNumber = (node: AbstractBlock | Block | List) =>
+  node.getLineNumber() ? { 'data-lineno': node.getLineNumber() } : {}

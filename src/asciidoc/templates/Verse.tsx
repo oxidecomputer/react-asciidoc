@@ -2,7 +2,7 @@ import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 
 import useGetContent from '../hooks/useGetContent'
-import { Title, getRole } from './util'
+import { Title, getLineNumber, getRole } from './util'
 
 const Verse = ({ node }: { node: Block }) => {
   const attribution = node.getAttribute('attribution')
@@ -10,7 +10,11 @@ const Verse = ({ node }: { node: Block }) => {
   const content = useGetContent(node)
 
   return (
-    <div id={node.getId ? node.getId() : ''} className={cn('verseblock', getRole(node))}>
+    <div
+      id={node.getId ? node.getId() : ''}
+      className={cn('verseblock', getRole(node))}
+      {...getLineNumber(node)}
+    >
       <Title node={node} />
       <pre className="content" dangerouslySetInnerHTML={{ __html: content }} />
       {attribution && (
