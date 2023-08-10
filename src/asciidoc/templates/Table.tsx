@@ -125,7 +125,7 @@ const Table = ({ node }: { node: TableType }) => {
                   </th>
                 )
               } else {
-                const cellContent = cell.getContent() as unknown as string[]
+                const cellContent = content as unknown as string[]
                 if (cellContent.length > 0) {
                   return (
                     <td {...cellProps} key={index}>
