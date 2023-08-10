@@ -1,4 +1,14 @@
 const table = `
+// .test
+[cols="1,1"]
+|===
+|*Empty*|Not Empty
+|       |Not Empty
+|       |Not Empty
+|       |Not Empty
+|       |Not Empty
+|===
+
 // .basic
 |===
 | Cell in column 1, row 1 | Cell in column 2, row 1

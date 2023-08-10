@@ -125,18 +125,18 @@ const Table = ({ node }: { node: TableType }) => {
                   </th>
                 )
               } else {
-                const cellContent = content as unknown as string[]
-                if (cellContent.length > 0) {
-                  return (
-                    <td {...cellProps} key={index}>
-                      {parse(
-                        `<p class="tableblock">${cellContent.join(
-                          '</p>\n<p class="tableblock">',
-                        )}</p>`,
-                      )}
-                    </td>
-                  )
-                }
+                let cellContent = content as unknown as string[]
+                return (
+                  <td {...cellProps} key={index}>
+                    {cellContent.length === 0
+                      ? ''
+                      : parse(
+                          `<p class="tableblock">${cellContent.join(
+                            '</p>\n<p class="tableblock">',
+                          )}</p>`,
+                        )}
+                  </td>
+                )
               }
             })}
           </tr>
