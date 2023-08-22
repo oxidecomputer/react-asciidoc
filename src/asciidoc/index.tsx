@@ -37,7 +37,7 @@ import {
   UList,
   Verse,
 } from './templates'
-import { CaptionedTitle, Title, getRole } from './templates/util'
+import { CaptionedTitle, Title, getLineNumber, getRole } from './templates/util'
 
 // Add support for inline blocks
 // Cannot use react but could probably convert
@@ -191,5 +191,14 @@ const Converter = ({ node }: { node: AbstractBlock }) => {
 }
 
 export default Asciidoc
-export { asciidoctor, Content, useGetContent, Title, getRole, CaptionedTitle, AdocTypes }
+export {
+  asciidoctor,
+  Content,
+  useGetContent,
+  Title,
+  getRole,
+  getLineNumber,
+  CaptionedTitle,
+  AdocTypes,
+}
 export * from './templates'
