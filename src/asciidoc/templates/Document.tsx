@@ -1,21 +1,15 @@
 import type { AbstractBlock, Document as DocumentType } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
-import { useMemo, useState } from 'react'
 
 import { Content } from '../'
+import { getText } from '../utils/getContent'
 import Outline from './Outline'
 
 const Document = ({ document }: { document: DocumentType }) => {
   const blocks = document.getBlocks()
 
-  const [footnotes, setFootnotes] = useState<DocumentType.Footnote[]>()
-
-  useMemo(() => {
-    if (blocks || blocks[0]) {
-      setFootnotes(document.getFootnotes())
-    }
-  }, [blocks])
+  const footnotes = document.getFootnotes()
 
   const Header = () => {
     if (!document.getNoheader()) {
@@ -67,7 +61,7 @@ const Document = ({ document }: { document: DocumentType }) => {
               key={footnote.getIndex()}
             >
               <a href={`#_footnoteref_${footnote.getIndex()}`}>{footnote.getIndex()}</a>.{' '}
-              {parse(footnote.getText() || '')}
+              {parse(getText(footnote) || '')}
             </div>
           ))}
         </div>

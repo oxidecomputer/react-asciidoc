@@ -10,7 +10,6 @@ import type * as AdocTypes from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { createContext, useContext } from 'react'
 
-import useGetContent from './hooks/useGetContent'
 import {
   Admonition,
   Audio,
@@ -38,6 +37,7 @@ import {
   Verse,
 } from './templates'
 import { CaptionedTitle, Title, getLineNumber, getRole } from './templates/util'
+import { getContent, getText } from './utils/getContent'
 
 // Add support for inline blocks
 // Cannot use react but could probably convert
@@ -194,11 +194,13 @@ export default Asciidoc
 export {
   asciidoctor,
   Content,
-  useGetContent,
+  getContent,
+  getText,
   Title,
   getRole,
   getLineNumber,
   CaptionedTitle,
   AdocTypes,
+  parse,
 }
 export * from './templates'

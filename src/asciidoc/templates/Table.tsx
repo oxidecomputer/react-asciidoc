@@ -2,7 +2,7 @@ import type { Table as TableType } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 
-import useGetContent from '../hooks/useGetContent'
+import { getContent, getText } from '../utils/getContent'
 import { getLineNumber } from './util'
 
 const Table = ({ node }: { node: TableType }) => {
@@ -48,13 +48,22 @@ const Table = ({ node }: { node: TableType }) => {
     return classAttr
   }
 
+  const title = node.getTitle()
+  const id = node.getId()
+  const slug = id || slugify(title || '')
+
   return (
     <table
       className={cn('tableblock', ...classes)}
       style={{ width: width ? width : undefined }}
       {...getLineNumber(node)}
     >
-      {node.hasTitle() && <caption className="title">{node.getCaptionedTitle()}</caption>}
+      {node.hasTitle() && (
+        <caption className="title">
+          {!id && <a className="anchor" id={slug}></a>}
+          <a href={`#${slug}`}>{node.getCaptionedTitle()}</a>
+        </caption>
+      )}
 
       {rowCount > 0 && (
         <colgroup>
@@ -75,7 +84,7 @@ const Table = ({ node }: { node: TableType }) => {
               <th
                 key={index}
                 className={getCellClass(cell)}
-                dangerouslySetInnerHTML={{ __html: cell.getText() }}
+                dangerouslySetInnerHTML={{ __html: getText(cell) }}
               />
             ))}
           </tr>
@@ -88,7 +97,7 @@ const Table = ({ node }: { node: TableType }) => {
             {row.map((cell, index) => {
               const colSpan = cell.getColumnSpan()
               const rowSpan = cell.getRowSpan()
-              const content = useGetContent(cell)
+              const content = getContent(cell)
 
               const cellProps = {
                 colSpan,
@@ -150,7 +159,7 @@ const Table = ({ node }: { node: TableType }) => {
               <td key={index} className={getCellClass(cell)}>
                 <p
                   className="tableblock"
-                  dangerouslySetInnerHTML={{ __html: cell.getText() }}
+                  dangerouslySetInnerHTML={{ __html: getText(cell) }}
                 />
               </td>
             ))}
@@ -160,4 +169,18 @@ const Table = ({ node }: { node: TableType }) => {
     </table>
   )
 }
+
+const slugify = (text: string) => {
+  return text
+    .toString() // Cast to string (optional)
+    .normalize('NFKD') // The normalize() using NFKD method returns the Unicode Normalization Form of a given string
+    .replace(/[\u0300-\u036f]/g, '') // Removes the normalized accents the accents
+    .toLowerCase() // Convert the string to lowercase letters
+    .trim() // Remove whitespace from both sides of a string (optional)
+    .replace(/\s+/g, '_') // Replace spaces with -
+    .replace(/[^\w-]+/g, '') // Remove all non-word chars
+    .replace(/--+/g, '-') // Replace multiple - with single -
+    .replace(/-$/g, '') // Remove trailing -
+}
+
 export default Table
