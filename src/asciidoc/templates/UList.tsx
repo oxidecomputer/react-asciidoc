@@ -3,6 +3,7 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { getText } from '../utils/getContent'
 import { Title } from './util'
 import { getLineNumber, getRole } from './util'
 
@@ -30,14 +31,14 @@ const UList = ({ node }: { node: List }) => {
                       )}
                     />
                   )}{' '}
-                  {parse(item.getText())}
+                  {parse(getText(item))}
                 </p>
               </li>
             )
           } else {
             return (
               <li key={index} id={item.getId()} className={getRole(node)}>
-                <p dangerouslySetInnerHTML={{ __html: item.getText() }} />
+                <p dangerouslySetInnerHTML={{ __html: getText(item) }} />
                 <Content blocks={item.getBlocks()} />
               </li>
             )

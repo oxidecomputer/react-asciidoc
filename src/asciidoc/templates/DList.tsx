@@ -4,6 +4,7 @@ import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
 import { Content } from '../'
+import { getText } from '../utils/getContent'
 import { getLineNumber, getRole } from './util'
 
 const DList = ({ node }: { node: List }) => {
@@ -27,7 +28,7 @@ const DList = ({ node }: { node: List }) => {
     if (dd) {
       return (
         <dd>
-          {dd.hasText() && <p>{parse(dd.getText())}</p>}
+          {dd.hasText() && <p>{parse(getText(dd))}</p>}
           {dd.hasBlocks() && <Content blocks={dd.getBlocks()} />}
         </dd>
       )
@@ -48,7 +49,7 @@ const DList = ({ node }: { node: List }) => {
               <li key={index}>
                 {terms.map((dt: any, index: number) => (
                   <p key={index}>
-                    <em>{dt.getText()}</em>
+                    <em>{parse(getText(dt))}</em>
                   </p>
                 ))}
                 {renderDd(dd)}
@@ -91,13 +92,13 @@ const DList = ({ node }: { node: List }) => {
                     {terms.map((dt: any, index: number) => (
                       <Fragment key={index}>
                         {index !== 0 && <br />}
-                        {parse(dt.getText())}
+                        {parse(getText(dt))}
                       </Fragment>
                     ))}
                   </td>
                   {dd && (
                     <td className="hdlist2">
-                      {dd.hasText() && <p>{parse(dd.getText())}</p>}
+                      {dd.hasText() && <p>{parse(getText(dd))}</p>}
                       {dd.hasBlocks() && <Content blocks={dd.getBlocks()} />}
                     </td>
                   )}
@@ -120,7 +121,7 @@ const DList = ({ node }: { node: List }) => {
               <Fragment key={index}>
                 {terms.map((dt: any, index: number) => (
                   <dt key={index} className="hdlist1">
-                    {parse(dt.getText())}
+                    {parse(getText(dt))}
                   </dt>
                 ))}
                 {renderDd(dd)}

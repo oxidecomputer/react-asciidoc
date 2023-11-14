@@ -1,10 +1,10 @@
 import type { AbstractBlock } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
-import useGetContent from '../hooks/useGetContent'
+import { getContent } from '../utils/getContent'
 
 const Pass = ({ node }: { node: AbstractBlock }) => {
-  const content = useGetContent(node)
+  const content = getContent(node)
 
   return <>{parse(content)}</>
 }

@@ -2,7 +2,7 @@ import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 
 // import hljs from 'highlight.js'
-import useGetContent from '../hooks/useGetContent'
+import { getContent } from '../utils/getContent'
 import { CaptionedTitle, getLineNumber } from './util'
 
 // <code
@@ -19,7 +19,7 @@ const Listing = ({ node }: { node: Block }) => {
   const document = node.getDocument()
   const attrs = node.getAttributes()
   const nowrap = node.isOption('nowrap') || !document.hasAttribute('prewrap')
-  const content = useGetContent(node)
+  const content = getContent(node)
 
   if (node.getStyle() === 'source') {
     const lang = attrs.language

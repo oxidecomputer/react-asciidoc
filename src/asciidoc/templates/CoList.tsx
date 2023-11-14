@@ -2,6 +2,7 @@ import type { List, ListItem } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { getText } from '../utils/getContent'
 import { Title, getLineNumber } from './util'
 
 const CoList = ({ node }: { node: List }) => {
@@ -17,7 +18,7 @@ const CoList = ({ node }: { node: List }) => {
                 <b>{index + 1}</b>
               </td>
               <td>
-                {parse(item.getText())}
+                {parse(getText(item))}
                 <Content blocks={item.getBlocks()} />
               </td>
             </tr>

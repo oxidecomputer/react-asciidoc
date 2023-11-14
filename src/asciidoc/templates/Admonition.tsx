@@ -2,13 +2,13 @@ import type { Block } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import useGetContent from '../hooks/useGetContent'
+import { getContent } from '../utils/getContent'
 import { Title, getLineNumber } from './util'
 
 const Admonition = ({ node }: { node: Block }) => {
   const attrs = node.getAttributes()
   const document = node.getDocument()
-  const content = useGetContent(node)
+  const content = getContent(node)
 
   const renderIcon = () =>
     document.getAttribute('icons') === 'font' && !attrs.icon ? (
@@ -36,11 +36,7 @@ const Admonition = ({ node }: { node: Block }) => {
             </td>
             <td className="content">
               <Title node={node} />
-              {contentModel === 'simple' ? (
-                parse(content)
-              ) : (
-                <Content blocks={node.getBlocks()} />
-              )}
+              {parse(content)}
             </td>
           </tr>
         </tbody>

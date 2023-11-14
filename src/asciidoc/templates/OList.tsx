@@ -3,6 +3,7 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
+import { getText } from '../utils/getContent'
 import { Title, getLineNumber, getRole } from './util'
 
 const OList = ({ node }: { node: List }) => {
@@ -16,7 +17,7 @@ const OList = ({ node }: { node: List }) => {
       >
         {node.getItems().map((item: ListItem, index) => (
           <li key={index} className={getRole(node) ? getRole(node) : ''}>
-            <p>{parse(item.getText())}</p>
+            <p>{parse(getText(item))}</p>
             <Content blocks={item.getBlocks()} />
           </li>
         ))}
