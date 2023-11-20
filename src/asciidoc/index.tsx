@@ -39,27 +39,6 @@ import {
 import { CaptionedTitle, Title, getLineNumber, getRole } from './templates/util'
 import { getContent, getText } from './utils/getContent'
 
-// Add support for inline blocks
-// Cannot use react but could probably convert
-// jsx syntax to html with some helper functions
-// for the content
-/* class InlineConverter {
-  baseConverter: AdType.Html5Converter
-
-  constructor() {
-    this.baseConverter = new ad.Html5Converter()
-  }
-
-  convert(node: AdType.Block, transform: string) {
-    switch (node.getNodeName()) {
-      default:
-        break
-    }
-
-    return this.baseConverter.convert(node, transform)
-  }
-} */
-
 type Overrides = {
   admonition?: typeof Admonition
   audio?: typeof Audio
