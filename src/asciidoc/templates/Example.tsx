@@ -1,5 +1,6 @@
 import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
+import parse from 'html-react-parser'
 
 import { Content } from '../'
 import { CaptionedTitle } from './util'
@@ -14,7 +15,7 @@ const Example = ({ node }: { node: Block }) => {
     if (isCollapsible) {
       return (
         <details className={getRole(node)} open={isOpen} {...getLineNumber(node)}>
-          <summary className="title">{title}</summary>
+          <summary className="title">{parse(title)}</summary>
           <div className="content">
             <Content blocks={node.getBlocks()} />
           </div>

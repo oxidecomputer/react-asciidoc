@@ -20,6 +20,13 @@ The document header is useful, but not required.
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua.
 ====
+
+.Lorem *ipsum*
+[%collapsible]
+====
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua.
+===
 `
 
 export default example
