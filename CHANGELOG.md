@@ -1,3 +1,15 @@
+# v0.2.6 (Mon Mar 25 2024)
+
+#### 🐛 Bug Fix
+
+- Fix example id floating title [#21](https://github.com/oxidecomputer/react-asciidoc/pull/21) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v0.2.5 (Mon Mar 25 2024)
 
 #### 🐛 Bug Fix
