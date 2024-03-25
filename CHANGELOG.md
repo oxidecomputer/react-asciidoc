@@ -1,12 +1,19 @@
-# v0.2.4 (Mon Mar 25 2024)
+# V0.0.0 - v0.2.4
 
 #### 🐛 Bug Fix
 
-- Add auto and actions [#20](https://github.com/oxidecomputer/react-asciidoc/pull/20) ([@benjaminleonard](https://github.com/benjaminleonard))
-- Fix type error [#16](https://github.com/oxidecomputer/react-asciidoc/pull/16) ([@benjaminleonard](https://github.com/benjaminleonard))
-- Fix unparsed details title [#15](https://github.com/oxidecomputer/react-asciidoc/pull/15) ([@benjaminleonard](https://github.com/benjaminleonard))
-- Cache `getContent`, fix duped footnotes [#14](https://github.com/oxidecomputer/react-asciidoc/pull/14) ([@benjaminleonard](https://github.com/benjaminleonard))
-- Allow passing a Document [#9](https://github.com/oxidecomputer/react-asciidoc/pull/9) ([@ringods](https://github.com/ringods) [@benjaminleonard](https://github.com/benjaminleonard))
+- Add auto and actions [#20](https://github.com/oxidecomputer/react-asciidoc/pull/20)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Fix type error [#16](https://github.com/oxidecomputer/react-asciidoc/pull/16)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Fix unparsed details title [#15](https://github.com/oxidecomputer/react-asciidoc/pull/15)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Cache `getContent`, fix duped footnotes
+  [#14](https://github.com/oxidecomputer/react-asciidoc/pull/14)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Allow passing a Document [#9](https://github.com/oxidecomputer/react-asciidoc/pull/9)
+  ([@ringods](https://github.com/ringods)
+  [@benjaminleonard](https://github.com/benjaminleonard))
 
 #### ⚠️ Pushed to `main`
 
@@ -24,36 +31,51 @@
 - Fix for next ([@benjaminleonard](https://github.com/benjaminleonard))
 - Improve build ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fix import error ([@benjaminleonard](https://github.com/benjaminleonard))
-- Update for new asciidoctor library ([@benjaminleonard](https://github.com/benjaminleonard))
+- Update for new asciidoctor library
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Linter was upset about this ([@benjaminleonard](https://github.com/benjaminleonard))
-- Sourcemap is required to get line numbers ([@benjaminleonard](https://github.com/benjaminleonard))
-- Comment about the inline converter ([@benjaminleonard](https://github.com/benjaminleonard))
+- Sourcemap is required to get line numbers
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Comment about the inline converter
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fix type error ([@benjaminleonard](https://github.com/benjaminleonard))
-- Don't include the examples in dist ([@benjaminleonard](https://github.com/benjaminleonard))
+- Don't include the examples in dist
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Prettier formatting ([@benjaminleonard](https://github.com/benjaminleonard))
 - Add formatting to npm scripts ([@benjaminleonard](https://github.com/benjaminleonard))
 - Use getRole function ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fix table block ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fix asciidoc types ([@benjaminleonard](https://github.com/benjaminleonard))
-- Embed asciidoctor.js file into the repo until there is a importable version on npm ([@benjaminleonard](https://github.com/benjaminleonard))
-- ESM Adoc library and getContent hook ([@benjaminleonard](https://github.com/benjaminleonard))
-- Giving up on mid-document attribute changes; adapting tests to reflect that ([@benjaminleonard](https://github.com/benjaminleonard))
-- Working with some issues of `getContent()` ([@benjaminleonard](https://github.com/benjaminleonard))
+- Embed asciidoctor.js file into the repo until there is a importable version on npm
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- ESM Adoc library and getContent hook
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Giving up on mid-document attribute changes; adapting tests to reflect that
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Working with some issues of `getContent()`
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Update syntax ([@benjaminleonard](https://github.com/benjaminleonard))
 - Remove unused package ([@benjaminleonard](https://github.com/benjaminleonard))
-- Fix for attributes that update midway through a document ([@benjaminleonard](https://github.com/benjaminleonard))
-- Merge branch 'main' of https://github.com/oxidecomputer/react-asciidoc ([@benjaminleonard](https://github.com/benjaminleonard))
+- Fix for attributes that update midway through a document
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Merge branch 'main' of https://github.com/oxidecomputer/react-asciidoc
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Remove unused type file ([@benjaminleonard](https://github.com/benjaminleonard))
 - Update README.md ([@benjaminleonard](https://github.com/benjaminleonard))
-- Use MPL for consistency with other Oxide repos ([@benjaminleonard](https://github.com/benjaminleonard))
+- Use MPL for consistency with other Oxide repos
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fix readme typo ([@benjaminleonard](https://github.com/benjaminleonard))
-- Update license and reference asciidoctor.js ([@benjaminleonard](https://github.com/benjaminleonard))
+- Update license and reference asciidoctor.js
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Create README.md ([@benjaminleonard](https://github.com/benjaminleonard))
 - Table style parity ([@benjaminleonard](https://github.com/benjaminleonard))
-- Improve classnames (removing weird spaces) ([@benjaminleonard](https://github.com/benjaminleonard))
-- Fallback to default converter if component does not exist ([@benjaminleonard](https://github.com/benjaminleonard))
+- Improve classnames (removing weird spaces)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
+- Fallback to default converter if component does not exist
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Better parsing and shared title ([@benjaminleonard](https://github.com/benjaminleonard))
-- General improvements to match writer's guide ([@benjaminleonard](https://github.com/benjaminleonard))
+- General improvements to match writer's guide
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Undo change of example ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fixing differences and snags ([@benjaminleonard](https://github.com/benjaminleonard))
 - UList style parity ([@benjaminleonard](https://github.com/benjaminleonard))
@@ -64,7 +86,8 @@
 - Literal style parity ([@benjaminleonard](https://github.com/benjaminleonard))
 - Floating title block ([@benjaminleonard](https://github.com/benjaminleonard))
 - Example style parity ([@benjaminleonard](https://github.com/benjaminleonard))
-- Section improvements (hitting an asciidoctor bug) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Section improvements (hitting an asciidoctor bug)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Sidebar style parity ([@benjaminleonard](https://github.com/benjaminleonard))
 - Pass style parity ([@benjaminleonard](https://github.com/benjaminleonard))
 - Paragraph style parity ([@benjaminleonard](https://github.com/benjaminleonard))
@@ -76,7 +99,8 @@
 - CoList style parity ([@benjaminleonard](https://github.com/benjaminleonard))
 - Quote style parity ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fix OList styles ([@benjaminleonard](https://github.com/benjaminleonard))
-- Better indication of the current renderer and example ([@benjaminleonard](https://github.com/benjaminleonard))
+- Better indication of the current renderer and example
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 - Compare full page ([@benjaminleonard](https://github.com/benjaminleonard))
 - Fix page wrapper ([@benjaminleonard](https://github.com/benjaminleonard))
 - Improve test runners ([@benjaminleonard](https://github.com/benjaminleonard))
@@ -89,4 +113,3 @@
 - Ringo De Smet ([@ringods](https://github.com/ringods))
 
 ---
-
