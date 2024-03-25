@@ -25,6 +25,7 @@
     "build": "npm run clean && vite build && tsc",
     "test:init": "rm -rf ./tests/renderer.spec.ts-snapshots & npx playwright test -g html",
     "test:run": "npx playwright test -g react",
+    "release": "auto shipit",
     "fmt": "prettier --write --ignore-path ./.gitignore  .",
     "fmt:check": "prettier --check --ignore-path ./.gitignore . ",
     "tsc": "tsc"
@@ -33,6 +34,7 @@
   "license": "MPL 2.0",
   "dependencies": {
     "@asciidoctor/core": "^3.0.2",
+    "auto": "^11.1.2",
     "classnames": "^2.3.2",
     "highlight.js": "^11.6.0",
     "html-react-parser": "^4.2.2",
