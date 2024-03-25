@@ -12,7 +12,7 @@ const UList = ({ node }: { node: List }) => {
 
   return (
     <div
-      id={node.getId ? node.getId() : ''}
+      {...(node.getId() ? { id: node.getId() } : {})}
       className={cn('ulist', node.getStyle(), getRole(node), isChecklist && 'checklist')}
       {...getLineNumber(node)}
     >

@@ -12,7 +12,7 @@ const Quote = ({ node }: { node: Block }) => {
 
   return (
     <div
-      id={node.getId ? node.getId() : ''}
+      {...(node.getId() ? { id: node.getId() } : {})}
       className={cn('quoteblock', getRole(node))}
       {...getLineNumber(node)}
     >

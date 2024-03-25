@@ -9,7 +9,7 @@ const Paragraph = ({ node }: { node: Block }) => {
 
   return (
     <div
-      id={node.getId ? node.getId() : ''}
+      {...(node.getId() ? { id: node.getId() } : {})}
       className={cn('paragraph', getRole(node))}
       {...getLineNumber(node)}
     >
