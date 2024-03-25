@@ -21,12 +21,13 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua.
 ====
 
+[[test_id]]
 .Lorem *ipsum*
 [%collapsible]
 ====
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
 incididunt ut labore et dolore magna aliqua.
-===
+====
 `
 
 export default example

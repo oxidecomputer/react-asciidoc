@@ -14,7 +14,12 @@ const Example = ({ node }: { node: Block }) => {
 
     if (isCollapsible) {
       return (
-        <details className={getRole(node)} open={isOpen} {...getLineNumber(node)}>
+        <details
+          className={getRole(node)}
+          open={isOpen}
+          {...getLineNumber(node)}
+          {...(node.getId() ? { id: node.getId() } : {})}
+        >
           <summary className="title">{parse(title)}</summary>
           <div className="content">
             <Content blocks={node.getBlocks()} />
@@ -25,7 +30,11 @@ const Example = ({ node }: { node: Block }) => {
   }
 
   return (
-    <div className={cn('exampleblock', getRole(node))} {...getLineNumber(node)}>
+    <div
+      className={cn('exampleblock', getRole(node))}
+      {...getLineNumber(node)}
+      {...(node.getId() ? { id: node.getId() } : {})}
+    >
       <CaptionedTitle node={node} />
       <div className="content">
         <Content blocks={node.getBlocks()} />
@@ -33,4 +42,5 @@ const Example = ({ node }: { node: Block }) => {
     </div>
   )
 }
+
 export default Example
