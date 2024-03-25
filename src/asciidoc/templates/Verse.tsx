@@ -11,7 +11,7 @@ const Verse = ({ node }: { node: Block }) => {
 
   return (
     <div
-      id={node.getId ? node.getId() : ''}
+      {...(node.getId() ? { id: node.getId() } : {})}
       className={cn('verseblock', getRole(node))}
       {...getLineNumber(node)}
     >
