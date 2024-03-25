@@ -1,3 +1,15 @@
+# v0.2.7 (Mon Mar 25 2024)
+
+#### 🐛 Bug Fix
+
+- Make auto dev dep [#22](https://github.com/oxidecomputer/react-asciidoc/pull/22) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v0.2.6 (Mon Mar 25 2024)
 
 #### 🐛 Bug Fix
