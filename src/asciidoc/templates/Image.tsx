@@ -30,6 +30,10 @@ const Image = ({ node }: { node: Block }) => {
         node.getRole() ? node.getRole() : ''
       }`}
       {...getLineNumber(node)}
+      style={{
+        maxWidth: node.getAttribute('width'),
+        maxHeight: node.getAttribute('height'),
+      }}
     >
       <div className="content">{img}</div>
       <CaptionedTitle node={node} />

@@ -1705,6 +1705,11 @@ td.hdlist2 {
   margin: 0.25em 0 1.25em 0.625em;
 }
 
+.imageblock.inlineimage {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
 .imageblock > .title {
   margin-bottom: 0;
 }
