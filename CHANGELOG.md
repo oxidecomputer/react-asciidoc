@@ -1,3 +1,15 @@
+# v0.2.8 (Tue May 07 2024)
+
+#### 🐛 Bug Fix
+
+- Apply image size to parent block [#23](https://github.com/oxidecomputer/react-asciidoc/pull/23) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v0.2.7 (Mon Mar 25 2024)
 
 #### 🐛 Bug Fix
