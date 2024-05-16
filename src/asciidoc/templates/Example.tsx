@@ -1,28 +1,27 @@
-import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { CaptionedTitle } from './util'
-import { getLineNumber, getRole } from './util'
+import { Block } from '../utils/prepareDocument'
+import { Title } from './util'
 
 const Example = ({ node }: { node: Block }) => {
-  if (node.isOption('collapsible')) {
-    const isCollapsible = node.isOption('collapsible')
-    const title = node.getTitle() || 'Details'
-    const isOpen = node.isOption('open') ? true : undefined
+  if (node.attributes.collapsible) {
+    const isCollapsible = node.attributes.collapsible
+    const title = node.title || 'Details'
+    const isOpen = node.attributes.open ? true : undefined
 
     if (isCollapsible) {
       return (
         <details
-          className={getRole(node)}
+          className={node.role}
           open={isOpen}
-          {...getLineNumber(node)}
-          {...(node.getId() ? { id: node.getId() } : {})}
+          {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+          {...(node.id ? { id: node.id } : {})}
         >
           <summary className="title">{parse(title)}</summary>
           <div className="content">
-            <Content blocks={node.getBlocks()} />
+            <Content blocks={node.blocks} />
           </div>
         </details>
       )
@@ -31,13 +30,13 @@ const Example = ({ node }: { node: Block }) => {
 
   return (
     <div
-      className={cn('exampleblock', getRole(node))}
-      {...getLineNumber(node)}
-      {...(node.getId() ? { id: node.getId() } : {})}
+      className={cn('exampleblock', node.role)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+      {...(node.id ? { id: node.id } : {})}
     >
-      <CaptionedTitle node={node} />
+      <Title text={node.title} />
       <div className="content">
-        <Content blocks={node.getBlocks()} />
+        <Content blocks={node.blocks} />
       </div>
     </div>
   )

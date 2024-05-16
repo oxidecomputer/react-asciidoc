@@ -1,42 +1,40 @@
-import type { Block } from '@asciidoctor/core'
 import parse from 'html-react-parser'
+import { useContext } from 'react'
 
-import { Content } from '../'
-import { getContent } from '../utils/getContent'
-import { Title, getLineNumber } from './util'
+import { Context } from '..'
+import { AdmonitionBlock } from '../utils/prepareDocument'
+import { Title } from './util'
 
-const Admonition = ({ node }: { node: Block }) => {
-  const attrs = node.getAttributes()
-  const document = node.getDocument()
-  const content = getContent(node)
+const Admonition = ({ node }: { node: AdmonitionBlock }) => {
+  const { document } = useContext(Context)
+  const docAttrs = document.attributes || {}
+  const attrs = node.attributes
 
   const renderIcon = () =>
-    document.getAttribute('icons') === 'font' && !attrs.icon ? (
+    docAttrs.icons === 'font' && !attrs.icon ? (
       <i className={`fa icon-${attrs.name}`} title={attrs.textlabel} />
     ) : (
-      <img src={node.getIconUri(attrs.name)} alt={attrs.textlabel} />
+      <img src={node.iconUri} alt={attrs.textlabel} />
     )
 
-  // Undocumented asciidoc attribute
-  // Use this to check if we should render the content as is, or use a <Content /> block
-  // @ts-ignore
-  const contentModel = node.content_model
-
   return (
-    <div className={`admonitionblock ${attrs.name}`} {...getLineNumber(node)}>
+    <div
+      className={`admonitionblock ${attrs.name}`}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+    >
       <table>
         <tbody>
           <tr>
             <td className="icon">
-              {document.hasAttribute('icons') ? (
+              {docAttrs.icons ? (
                 renderIcon()
               ) : (
-                <div className="title">{node.getAttribute('textlabel')}</div>
+                <div className="title">{attrs.textlabel}</div>
               )}
             </td>
             <td className="content">
-              <Title node={node} />
-              {parse(content)}
+              <Title text={node.title} />
+              {node.content && parse(node.content)}
             </td>
           </tr>
         </tbody>

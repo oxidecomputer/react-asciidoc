@@ -1,45 +1,43 @@
-import type { List, ListItem } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { getText } from '../utils/getContent'
+import { ListBlock, ListItemBlock, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
-import { getLineNumber, getRole } from './util'
 
-const UList = ({ node }: { node: List }) => {
-  const isChecklist = node.isOption('checklist')
+const UList = ({ node }: { node: ListBlock }) => {
+  const isChecklist = isOption(node.attributes, 'checklist')
 
   return (
     <div
-      {...(node.getId() ? { id: node.getId() } : {})}
-      className={cn('ulist', node.getStyle(), getRole(node), isChecklist && 'checklist')}
-      {...getLineNumber(node)}
+      {...(node.id ? { id: node.id } : {})}
+      className={cn('ulist', node.style, node.role, isChecklist && 'checklist')}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
-      <Title node={node} />
+      <Title text={node.title} />
       <ul className={isChecklist ? 'checklist' : ''}>
-        {node.getItems().map((item: ListItem, index) => {
+        {node.items.map((item: ListItemBlock, index) => {
           if (isChecklist) {
             return (
-              <li key={index} id={item.getId()} className={getRole(node)}>
+              <li key={index} id={item.id} className={node.role}>
                 <p>
-                  {isChecklist && item.hasAttribute('checkbox') && (
+                  {isChecklist && item.attributes['checkbox'] && (
                     <i
                       className={cn(
                         'fa',
-                        item.hasAttribute('checked') ? 'fa-check-square-o' : 'fa-square-o',
+                        item.attributes['checked'] ? 'fa-check-square-o' : 'fa-square-o',
                       )}
                     />
                   )}{' '}
-                  {parse(getText(item))}
+                  {parse(item.text || '')}
                 </p>
               </li>
             )
           } else {
             return (
-              <li key={index} id={item.getId()} className={getRole(node)}>
-                <p dangerouslySetInnerHTML={{ __html: getText(item) }} />
-                <Content blocks={item.getBlocks()} />
+              <li key={index} id={item.id} className={node.role}>
+                <p dangerouslySetInnerHTML={{ __html: item.text || '' }} />
+                <Content blocks={item.blocks} />
               </li>
             )
           }

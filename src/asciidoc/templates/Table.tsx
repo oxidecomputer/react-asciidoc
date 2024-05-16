@@ -1,76 +1,84 @@
 import type { Table as TableType } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
+import { useContext } from 'react'
 
-import { getContent, getText } from '../utils/getContent'
-import { getLineNumber } from './util'
+import { Context } from '..'
+import {
+  Cell,
+  TableBlock,
+  getAttribute,
+  hasAttribute,
+  isOption,
+} from '../utils/prepareDocument'
 
-const Table = ({ node }: { node: TableType }) => {
+const Table = ({ node }: { node: TableBlock }) => {
+  const { document } = useContext(Context)
+  const docAttrs = document.attributes || {}
+
   let classes = [
-    'frame-' + node.getAttribute('frame', 'all', 'table-frame'),
-    'grid-' + node.getAttribute('grid', 'all', 'table-grid'),
+    'frame-' + getAttribute(node.attributes, 'frame', 'all', 'table-frame', docAttrs),
+    'grid-' + getAttribute(node.attributes, 'grid', 'all', 'table-grid', docAttrs),
   ]
 
-  let stripes = node.getAttribute('stripes', null, 'table-stripes')
+  let stripes = getAttribute(node.attributes, 'stripes', null, 'table-stripes', docAttrs)
 
   if (stripes) {
     classes.push('stripes-' + stripes)
   }
 
-  let autowidth = node.hasAutowidthOption()
-  let tablewidth = node.getAttribute('tablepcwidth')
+  let autowidth = isOption(node.attributes, 'autowidth')
+  let tablewidth = parseInt(node.attributes['tablepcwidth'])
   let width: string | null = null
 
-  if (autowidth && !node.hasAttribute('width')) {
+  if (autowidth && !hasAttribute(node.attributes, 'width')) {
     classes.push('fit-content')
-  } else if (tablewidth == 100) {
+  } else if (tablewidth === 100) {
     classes.push('stretch')
   } else {
     width = `${tablewidth}%`
   }
 
-  if (node.hasAttribute('float')) classes.push(node.getAttribute('float'))
-  if (node.getRole()) classes.push(node.getRole() || '')
+  if (hasAttribute(node.attributes, 'float')) classes.push(node.attributes['float'])
+  if (node.role) classes.push(node.role || '')
 
-  const rowCount = node.getRowCount()
-  const columns = node.getColumns()
-  const headRows = node.getHeadRows()
-  const bodyRows = node.getBodyRows()
-  const footRows = node.getFootRows()
+  const rowCount = node.rowCount
+  const columns = node.columns
+  const headRows = node.headRows
+  const bodyRows = node.bodyRows
+  const footRows = node.footRows
 
-  const getCellClass = (cell: TableType.Cell): string => {
+  const getCellClass = (cell: Cell): string => {
     const classAttr = cn(
-      'tableblock', // @ts-ignore
-      `halign-${cell.getAttribute('halign')}`, // @ts-ignore
-      `valign-${cell.getAttribute('valign')}`, // Undocumented feature
+      'tableblock',
+      `halign-${cell.attributes['halign']}`,
+      `valign-${cell.attributes['valign']}`,
     )
 
     return classAttr
   }
 
-  const title = node.getTitle()
-  const id = node.getId()
+  const title = node.title
+  const id = node.id
   const slug = id || slugify(title || '')
 
   return (
     <table
       className={cn('tableblock', ...classes)}
       style={{ width: width ? width : undefined }}
-      {...getLineNumber(node)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
-      {node.hasTitle() && (
+      {node.title && (
         <caption className="title">
           {!id && <a className="anchor" id={slug}></a>}
-          <a href={`#${slug}`}>{node.getCaptionedTitle()}</a>
+          <a href={`#${slug}`}>{node.title}</a>
         </caption>
       )}
 
       {rowCount > 0 && (
         <colgroup>
           {columns.map((col, index) => {
-            // @ts-ignore
-            // Undocumented feature
-            const colWidth = col.getAttribute('colpcwidth')
+            const colWidth = col.attributes['colpcwidth']
 
             return <col key={index} style={{ width: `${colWidth}%` }} />
           })}
@@ -84,7 +92,7 @@ const Table = ({ node }: { node: TableType }) => {
               <th
                 key={index}
                 className={getCellClass(cell)}
-                dangerouslySetInnerHTML={{ __html: getText(cell) }}
+                dangerouslySetInnerHTML={{ __html: cell.text }}
               />
             ))}
           </tr>
@@ -95,9 +103,9 @@ const Table = ({ node }: { node: TableType }) => {
         {bodyRows.map((row, bIndex) => (
           <tr key={bIndex}>
             {row.map((cell, index) => {
-              const colSpan = cell.getColumnSpan()
-              const rowSpan = cell.getRowSpan()
-              const content = getContent(cell)
+              const colSpan = cell.columnSpan
+              const rowSpan = cell.rowSpan
+              const content = cell.content
 
               const cellProps = {
                 colSpan,
@@ -105,7 +113,7 @@ const Table = ({ node }: { node: TableType }) => {
                 className: getCellClass(cell),
               }
 
-              const style = cell.getStyle()
+              const style = cell.style
 
               if (style === 'asciidoc') {
                 return (
@@ -157,10 +165,7 @@ const Table = ({ node }: { node: TableType }) => {
           <tr>
             {row.map((cell, index) => (
               <td key={index} className={getCellClass(cell)}>
-                <p
-                  className="tableblock"
-                  dangerouslySetInnerHTML={{ __html: getText(cell) }}
-                />
+                <p className="tableblock" dangerouslySetInnerHTML={{ __html: cell.text }} />
               </td>
             ))}
           </tr>

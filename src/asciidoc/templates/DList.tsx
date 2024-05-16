@@ -1,22 +1,19 @@
-import type { List, ListItem } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
 import { Content } from '../'
-import { getText } from '../utils/getContent'
-import { getLineNumber, getRole } from './util'
+import { ListBlock, ListItemBlock, isOption } from '../utils/prepareDocument'
+import { Title } from './util'
 
-const DList = ({ node }: { node: List }) => {
-  const style = node.getStyle()
-
+const DList = ({ node }: { node: ListBlock }) => {
   const getItem = (item: any) => {
-    const listItem: [ListItem[], ListItem] = item
+    const listItem: [ListItemBlock[], ListItemBlock] = item
     const terms = listItem[0]
-    let dd: ListItem | null = listItem[1]
+    let dd: ListItemBlock | null = listItem[1]
     // If there isn't a description we get a shell of an object
     // this is checking that it is actually a real block
-    if (!dd.getNodeName) dd = null
+    if (!dd.type) dd = null
 
     return {
       terms,
@@ -24,32 +21,37 @@ const DList = ({ node }: { node: List }) => {
     }
   }
 
-  const renderDd = (dd: ListItem | null) => {
+  const renderDd = (dd: ListItemBlock | null) => {
     if (dd) {
       return (
         <dd>
-          {dd.hasText() && <p>{parse(getText(dd))}</p>}
-          {dd.hasBlocks() && <Content blocks={dd.getBlocks()} />}
+          {dd.text && <p>{parse(dd.text)}</p>}
+          <Content blocks={dd.blocks} />
         </dd>
       )
     }
   }
 
-  const title = node.hasTitle() && <div className="title">{node.getCaptionedTitle()}</div>
-
-  if (style === 'qanda') {
+  if (node.style === 'qanda') {
     return (
-      <div className={cn('qlist qanda', getRole(node))} {...getLineNumber(node)}>
-        {title}
+      <div
+        className={cn('qlist qanda', node.role)}
+        {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+      >
+        <Title text={node.title} />
         <ol>
-          {node.getItems().map((item: any, index) => {
+          {node.items.map((item: any, index) => {
             const { terms, dd } = getItem(item)
+
+            if (!terms) {
+              return
+            }
 
             return (
               <li key={index}>
                 {terms.map((dt: any, index: number) => (
                   <p key={index}>
-                    <em>{parse(getText(dt))}</em>
+                    <em>{parse(dt.text)}</em>
                   </p>
                 ))}
                 {renderDd(dd)}
@@ -59,13 +61,13 @@ const DList = ({ node }: { node: List }) => {
         </ol>
       </div>
     )
-  } else if (style === 'horizontal') {
-    const labelWidth = node.getAttribute('labelwidth')
-    const itemWidth = node.getAttribute('itemwidth')
+  } else if (node.style === 'horizontal') {
+    const labelWidth = node.attributes['labelwidth']
+    const itemWidth = node.attributes['itemwidth']
 
     return (
-      <div className={cn('hdlist', getRole(node))}>
-        {title}
+      <div className={cn('hdlist', node.role)}>
+        <Title text={node.title} />
         <table>
           {(labelWidth || itemWidth) && (
             <colgroup>
@@ -83,23 +85,32 @@ const DList = ({ node }: { node: List }) => {
           )}
 
           <tbody>
-            {node.getItems().map((item: any, index) => {
+            {node.items.map((item: any, index) => {
               const { terms, dd } = getItem(item)
+
+              if (!terms) {
+                return
+              }
 
               return (
                 <tr key={index}>
-                  <td className={cn('hdlist1', node.isOption('strong') ? 'strong' : '')}>
+                  <td
+                    className={cn(
+                      'hdlist1',
+                      isOption(node.attributes, 'strong') ? 'strong' : '',
+                    )}
+                  >
                     {terms.map((dt: any, index: number) => (
                       <Fragment key={index}>
                         {index !== 0 && <br />}
-                        {parse(getText(dt))}
+                        {parse(dt.text)}
                       </Fragment>
                     ))}
                   </td>
                   {dd && (
                     <td className="hdlist2">
-                      {dd.hasText() && <p>{parse(getText(dd))}</p>}
-                      {dd.hasBlocks() && <Content blocks={dd.getBlocks()} />}
+                      {dd.text && <p>{parse(dd.text)}</p>}
+                      <Content blocks={dd.blocks} />
                     </td>
                   )}
                 </tr>
@@ -111,17 +122,21 @@ const DList = ({ node }: { node: List }) => {
     )
   } else {
     return (
-      <div className={cn('dlist', node.getStyle(), getRole(node))}>
-        {title}
+      <div className={cn('dlist', node.style, node.role)}>
+        <Title text={node.title} />
         <dl>
-          {node.getItems().map((item: any, index) => {
+          {node.items.map((item: any, index) => {
             const { terms, dd } = getItem(item)
+
+            if (!terms) {
+              return
+            }
 
             return (
               <Fragment key={index}>
                 {terms.map((dt: any, index: number) => (
                   <dt key={index} className="hdlist1">
-                    {parse(getText(dt))}
+                    {parse(dt.text)}
                   </dt>
                 ))}
                 {renderDd(dd)}

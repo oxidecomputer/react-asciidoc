@@ -36,8 +36,21 @@ import {
   UList,
   Verse,
 } from './templates'
-import { CaptionedTitle, Title, getLineNumber, getRole } from './templates/util'
+import { Title, getLineNumber, getRole } from './templates/util'
 import { getContent, getText } from './utils/getContent'
+import {
+  AdmonitionBlock,
+  AudioBlock,
+  CoListBlock,
+  DocumentBlock,
+  DocumentSection,
+  ImageBlock,
+  ListBlock,
+  LiteralBlock,
+  ParagraphBlock,
+  Block as PreparedBlock,
+  SectionBlock,
+} from './utils/prepareDocument'
 
 // Add support for inline blocks
 // Cannot use react but could probably convert
@@ -89,104 +102,116 @@ type Overrides = {
 export type Options = {
   overrides?: Overrides
   customDocument?: typeof Document
+  document: {
+    attributes?: DocumentBlock['attributes']
+    sections?: DocumentSection[]
+  }
 }
 
-const OptionsContext = createContext<Options>({})
+export const Context = createContext<Options>({ document: {} })
 
 const Asciidoc = ({
-  content,
+  document,
   options,
 }: {
-  content: AdocTypes.Document
+  document: DocumentBlock
   options?: Options
 }) => {
   const CustomDocument = options && options.customDocument
 
   return (
-    <OptionsContext.Provider value={options || {}}>
+    <Context.Provider
+      value={
+        {
+          ...options,
+          document: { attributes: document.attributes, sections: document.sections },
+        } || {}
+      }
+    >
       {CustomDocument ? (
-        <CustomDocument document={content} />
+        <CustomDocument document={document} />
       ) : (
-        <Document document={content} />
+        <Document document={document} />
       )}
-    </OptionsContext.Provider>
+    </Context.Provider>
   )
 }
 
-const Content = ({ blocks }: { blocks: AbstractBlock[] }) => {
+const Content = ({ blocks }: { blocks: PreparedBlock[] }) => {
   return (
     <>
-      {blocks.map((block: AbstractBlock, index: number) => (
-        <Converter key={`${index}-${block.getNodeName()}`} node={block} />
+      {blocks.map((block: PreparedBlock, index: number) => (
+        <Converter key={`${index}-${block.type}`} node={block} />
       ))}
     </>
   )
 }
 
-const Converter = ({ node }: { node: AbstractBlock }) => {
-  const opts = useContext(OptionsContext)
+const Converter = ({ node }: { node: PreparedBlock }) => {
+  // const { opts } = useContext(Context)
 
-  const transform = node.getNodeName() as keyof Overrides
+  // const transform = node.getNodeName() as keyof Overrides
+  const transform = node.type
 
-  const document = node.getDocument()
-  const blockAttributes = node.getAttributes()
-  document.playbackAttributes(blockAttributes)
+  // const document = node.getDocument()
+  // const blockAttributes = node.getAttributes()
+  // document.playbackAttributes(blockAttributes)
 
-  const OverrideComponent = opts && opts.overrides && opts.overrides[transform]
+  // const OverrideComponent = opts && opts.overrides && opts.overrides[transform]
 
-  if (OverrideComponent) {
-    return <OverrideComponent node={node as any} />
-  }
+  // if (OverrideComponent) {
+  //   return <OverrideComponent node={node as any} />
+  // }
 
   switch (transform) {
     case 'audio':
-      return <Audio node={node as Block} />
+      return <Audio node={node as AudioBlock} />
     case 'preamble':
       return <Preamble node={node} />
     case 'section':
-      return <Section node={node as SectionType} />
+      return <Section node={node as SectionBlock} />
     case 'paragraph':
-      return <Paragraph node={node as Block} />
+      return <Paragraph node={node as ParagraphBlock} />
     case 'dlist':
-      return <DList node={node as List} />
+      return <DList node={node as ListBlock} />
     case 'ulist':
-      return <UList node={node as List} />
+      return <UList node={node as ListBlock} />
     case 'floating_title':
-      return <FloatingTitle node={node as Block} />
+      return <FloatingTitle node={node as PreparedBlock} />
     case 'admonition':
-      return <Admonition node={node as Block} />
+      return <Admonition node={node as AdmonitionBlock} />
     case 'listing':
-      return <Listing node={node as Block} />
+      return <Listing node={node as LiteralBlock} />
     case 'literal':
-      return <Literal node={node as Block} />
+      return <Literal node={node as LiteralBlock} />
     case 'image':
-      return <Image node={node as Block} />
+      return <Image node={node as ImageBlock} />
     case 'colist':
-      return <CoList node={node as List} />
+      return <CoList node={node as CoListBlock} />
     case 'olist':
-      return <OList node={node as List} />
+      return <OList node={node as ListBlock} />
     case 'table':
       return <Table node={node as TableType} />
     case 'thematic_break':
       return <ThematicBreak />
     case 'open':
-      return <Open node={node as Block} />
+      return <Open node={node as PreparedBlock} />
     case 'pass':
-      return <Pass node={node as Block} />
+      return <Pass node={node as PreparedBlock} />
     case 'page_break':
       return <PageBreak />
     case 'example':
-      return <Example node={node as Block} />
+      return <Example node={node as LiteralBlock} />
     case 'sidebar':
-      return <Sidebar node={node as Block} />
+      return <Sidebar node={node as PreparedBlock} />
     case 'quote':
-      return <Quote node={node as Block} />
+      return <Quote node={node as PreparedBlock} />
     case 'verse':
-      return <Verse node={node as Block} />
+      return <Verse node={node as PreparedBlock} />
     case 'toc':
-      return <TableOfContents node={node as Block} />
+      return <TableOfContents node={node as PreparedBlock} />
     default:
-      return <>{parse(node.convert())}</>
+      return <></>
   }
 }
 
@@ -199,7 +224,6 @@ export {
   Title,
   getRole,
   getLineNumber,
-  CaptionedTitle,
   AdocTypes,
   parse,
 }

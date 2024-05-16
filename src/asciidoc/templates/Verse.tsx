@@ -1,22 +1,22 @@
-import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 
-import { getContent } from '../utils/getContent'
-import { Title, getLineNumber, getRole } from './util'
+import { Block } from '../utils/prepareDocument'
+import { Title } from './util'
 
 const Verse = ({ node }: { node: Block }) => {
-  const attribution = node.getAttribute('attribution')
-  const citetitle = node.getAttribute('citetitle')
-  const content = getContent(node)
+  const attribution = node.attributes['attribution']
+  const citetitle = node.attributes['citetitle']
 
   return (
     <div
-      {...(node.getId() ? { id: node.getId() } : {})}
-      className={cn('verseblock', getRole(node))}
-      {...getLineNumber(node)}
+      {...(node.id ? { id: node.id } : {})}
+      className={cn('verseblock', node.role)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
-      <Title node={node} />
-      <pre className="content" dangerouslySetInnerHTML={{ __html: content }} />
+      <Title text={node.title} />
+      {node.content && (
+        <pre className="content" dangerouslySetInnerHTML={{ __html: node.content }} />
+      )}
       {attribution && (
         <div className="attribution">
           — {attribution}

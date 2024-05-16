@@ -1,69 +1,54 @@
 import type { AbstractBlock } from '@asciidoctor/core'
 import parse from 'html-react-parser'
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
+
+import { Context } from '..'
+import { DocumentSection } from '../utils/prepareDocument'
 
 const Outline = ({
-  node,
+  sections,
   opts,
 }: {
-  node: AbstractBlock
+  sections: DocumentSection[]
   opts?: {
     tocLevels?: number
     sectNumLevels?: number
   }
 }) => {
-  if (!node.hasSections()) return null
+  const { document } = useContext(Context)
 
-  const sections = node.getSections()
-  const document = node.getDocument()
-  const docAttrs = useMemo(() => document.getAttributes(), [node])
+  if (!sections || sections.length === 0) return null
 
-  const sectNumLevelsAttr = useMemo(() => document.getAttribute('sectnumlevels'), [node])
-  const tocLevelsAttr = useMemo(() => document.getAttribute('toclevels'), [node])
+  const docAttrs = document.attributes || {}
+
+  const sectNumLevelsAttr = docAttrs['sectnumlevels']
+  const tocLevelsAttr = docAttrs['toclevels']
 
   const sectNumLevels =
     opts?.sectNumLevels || (sectNumLevelsAttr ? parseInt(sectNumLevelsAttr) : 3)
   const tocLevels = opts?.tocLevels || (tocLevelsAttr ? parseInt(tocLevelsAttr) : 2)
 
   return (
-    <ul className={`sectlevel${sections[0].getLevel()}`}>
+    <ul className={`sectlevel${sections[0].level}`}>
       {sections.map((section) => {
-        // @ts-ignore
-        // Swap with getSectionNumeral() when it is released
-        let sectNum = section.$sectnum()
+        let sectNum = section.num
         sectNum = sectNum === '.' || sectNum === '..' ? '' : sectNum
 
-        const level = section.getLevel()
+        const level = section.level
 
-        let title = ''
-        if (section.getCaption()) {
-          title = section.getCaptionedTitle()
-        } else if (level <= sectNumLevels) {
+        let title = section.title
+
+        if (level <= sectNumLevels) {
           // todo: investigate sectnumlevels overrides not working
-          if (level < 2 && document.getDoctype() == 'book') {
-            const sectionName = section.getSectionName()
-            if (sectionName === 'chapter') {
-              const signifier = docAttrs['chapter-signifier']
-              title = `${signifier || ''} ${sectNum} ${section.getTitle()}`
-            } else if (sectionName === 'part') {
-              const signifier = docAttrs['part-signifier']
-              title = `${signifier || ''} ${sectNum} ${section.getTitle()}`
-            } else {
-              title = `${sectNum} ${section.getTitle()}`
-            }
-          } else {
-            title = `${sectNum} ${section.getTitle()}`
-          }
-        } else {
-          title = section.getTitle() || ''
+          title = `${sectNum} ${section.title}`
         }
 
         return (
-          <li key={section.getId()}>
-            <a href={`#${section.getId()}`}>{parse(title)}</a>
+          <li key={section.id}>
+            <a href={`#${section.id}`}>{parse(title)}</a>
             {level < tocLevels && (
               <Outline
-                node={section as AbstractBlock}
+                sections={section.sections}
                 opts={{
                   tocLevels,
                   sectNumLevels,

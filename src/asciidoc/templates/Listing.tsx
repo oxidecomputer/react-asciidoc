@@ -1,32 +1,24 @@
-import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
+import { useContext } from 'react'
 
-// import hljs from 'highlight.js'
-import { getContent } from '../utils/getContent'
-import { CaptionedTitle, getLineNumber } from './util'
+import { Context } from '..'
+import { LiteralBlock } from '../utils/prepareDocument'
+import { Title } from './util'
 
-// <code
-//   className={lang ? `language-${lang}` : ''}
-//   data-lang={lang}
-//   dangerouslySetInnerHTML={{
-//     __html: hljs.getLanguage(lang)
-//       ? hljs.highlight(content, { language: lang }).value
-//       : content,
-//   }}
-// />
+const Listing = ({ node }: { node: LiteralBlock }) => {
+  const { document } = useContext(Context)
 
-const Listing = ({ node }: { node: Block }) => {
-  const document = node.getDocument()
-  const attrs = node.getAttributes()
-  const nowrap = node.isOption('nowrap') || !document.hasAttribute('prewrap')
-  const content = getContent(node)
+  const nowrap = node.attributes.nowrap || document.attributes!['prewrap']
 
-  if (node.getStyle() === 'source') {
-    const lang = attrs.language
+  if (node.style === 'source') {
+    const lang = node.language
 
     return (
-      <div className="listingblock" {...getLineNumber(node)}>
-        <CaptionedTitle node={node} />
+      <div
+        className="listingblock"
+        {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+      >
+        <Title text={node.title} />
         <div className="content">
           <pre className={cn('highlight', nowrap ? ' nowrap' : '')}>
             {lang ? (
@@ -34,11 +26,11 @@ const Listing = ({ node }: { node: Block }) => {
                 className={lang ? `language-${lang}` : ''}
                 data-lang={lang}
                 dangerouslySetInnerHTML={{
-                  __html: content,
+                  __html: node.content || '',
                 }}
               />
             ) : (
-              <code dangerouslySetInnerHTML={{ __html: content }} />
+              <code dangerouslySetInnerHTML={{ __html: node.content || '' }} />
             )}
           </pre>
         </div>
@@ -46,11 +38,14 @@ const Listing = ({ node }: { node: Block }) => {
     )
   } else {
     return (
-      <div className="listingblock" {...getLineNumber(node)}>
-        <CaptionedTitle node={node} />
+      <div
+        className="listingblock"
+        {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+      >
+        <Title text={node.title} />
         <div className="content">
           <pre className={nowrap ? ' nowrap' : ''}>
-            <code dangerouslySetInnerHTML={{ __html: node.getSource() }} />
+            <code dangerouslySetInnerHTML={{ __html: node.source }} />
           </pre>
         </div>
       </div>

@@ -1,11 +1,12 @@
 // @ts-nocheck
 import type { Extensions } from '@asciidoctor/core'
 import hljs from 'highlight.js'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Fragment } from 'react'
 
 import Asciidoc, { type Options, asciidoctor } from './asciidoc'
 import './asciidoc.css'
+import { prepareDocument } from './asciidoc/utils/prepareDocument'
 import * as content from './examples'
 import './test.css'
 
@@ -33,6 +34,11 @@ const ext = function (this: Extensions.Registry) {
   })
 }
 
+const ad = asciidoctor()
+
+const extensions = [ext]
+extensions.forEach((extension) => ad.Extensions.register(extension))
+
 function App() {
   const queryString = window.location.search
   const urlParams = new URLSearchParams(queryString)
@@ -55,12 +61,6 @@ function App() {
     return input
   }
 
-  getContent()
-  const ad = asciidoctor()
-
-  const extensions = [ext]
-  extensions.forEach((extension) => ad.Extensions.register(extension))
-
   ad.SyntaxHighlighter.register('highlight.js-server', {
     handlesHighlighting: () => true,
     highlight: (_node, source, lang) => {
@@ -75,20 +75,28 @@ function App() {
     <div className="App">
       {renderer === 'react'
         ? getContent().map((content, index) => (
-            <Asciidoc
-              key={index}
-              content={ad.load(content, {
-                standalone: true,
-                attributes: attrs,
-              })}
-              options={opts}
-            />
+            <AsciidocWrapper content={content} key={index} />
           ))
         : getContent().map((content, index) => (
             <Fragment key={index}>{renderHtml5(content)}</Fragment>
           ))}
     </div>
   )
+}
+
+const AsciidocWrapper = ({ content }: { content: string }) => {
+  const doc = useMemo(
+    () =>
+      ad.load(content, {
+        standalone: true,
+        attributes: attrs,
+      }),
+    [content],
+  )
+
+  const preparedDoc = prepareDocument(doc)
+
+  return <Asciidoc document={preparedDoc} options={opts} />
 }
 
 const renderHtml5 = (content: string) => {

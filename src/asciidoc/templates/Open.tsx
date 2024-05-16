@@ -1,19 +1,21 @@
-import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 
 import { Content } from '../'
+import { BaseBlock } from '../utils/prepareDocument'
 import { Title } from './util'
-import { getLineNumber, getRole } from './util'
 
-const Open = ({ node }: { node: Block }) => {
-  const style = node.getStyle()
+const Open = ({ node }: { node: BaseBlock }) => {
+  const style = node.style
 
   if (style === 'abstract') {
     return (
-      <div className={cn('quoteblock abstract', getRole(node))} {...getLineNumber(node)}>
-        <Title node={node} />
+      <div
+        className={cn('quoteblock abstract', node.role)}
+        {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+      >
+        <Title text={node.title} />
         <blockquote className="content">
-          <Content blocks={node.getBlocks()} />
+          <Content blocks={node.blocks} />
         </blockquote>
       </div>
     )
@@ -21,12 +23,12 @@ const Open = ({ node }: { node: Block }) => {
 
   return (
     <div
-      className={cn('openblock', style && style !== 'open' ? style : '', getRole(node))}
-      {...getLineNumber(node)}
+      className={cn('openblock', style && style !== 'open' ? style : '', node.role)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
-      <Title node={node} />
+      <Title text={node.title} />
       <div className="content">
-        <Content blocks={node.getBlocks()} />
+        <Content blocks={node.blocks} />
       </div>
     </div>
   )

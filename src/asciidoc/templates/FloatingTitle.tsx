@@ -3,24 +3,21 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 import { createElement } from 'react'
 
-import { getLineNumber, getRole } from './util'
+import { BaseBlock } from '../utils/prepareDocument'
 
-const FloatingTitle = ({ node }: { node: Block }) => {
-  const level = node.getLevel()
-  return (
-    <>
-      <a
-        className="sectionanchor"
-        {...(node.getId() ? { id: node.getId() } : {})}
-        {...getLineNumber(node)}
-      />
-      {createElement(
-        `h${level + 1}`,
-        { className: cn(getRole(node), node.getStyle()) },
-        parse(node.getTitle() || ''),
-      )}
-    </>
-  )
-}
+const FloatingTitle = ({ node }: { node: BaseBlock }) => (
+  <>
+    <a
+      className="sectionanchor"
+      {...(node.id ? { id: node.id } : {})}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+    />
+    {createElement(
+      `h${node.level + 1}`,
+      { className: cn(node.role, node.style) },
+      parse(node.title || ''),
+    )}
+  </>
+)
 
 export default FloatingTitle

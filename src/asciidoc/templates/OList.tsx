@@ -1,28 +1,29 @@
-import type { List, ListItem } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { getText } from '../utils/getContent'
-import { Title, getLineNumber, getRole } from './util'
+import { ListBlock, ListItemBlock, isOption } from '../utils/prepareDocument'
+import { Title } from './util'
 
-const OList = ({ node }: { node: List }) => {
-  return (
-    <div className={cn('olist', getRole(node), node.getStyle())} {...getLineNumber(node)}>
-      <Title node={node} />
-      <ol
-        className={node.getStyle()}
-        reversed={node.isOption('reversed')}
-        start={node.getAttribute('start')}
-      >
-        {node.getItems().map((item: ListItem, index) => (
-          <li key={index} className={getRole(node) ? getRole(node) : ''}>
-            <p>{parse(getText(item))}</p>
-            <Content blocks={item.getBlocks()} />
-          </li>
-        ))}
-      </ol>
-    </div>
-  )
-}
+const OList = ({ node }: { node: ListBlock }) => (
+  <div
+    className={cn('olist', node.role, node.style)}
+    {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+  >
+    <Title text={node.title} />
+    <ol
+      className={node.style}
+      reversed={isOption(node.attributes, 'reversed')}
+      {...(node.attributes['start'] ? { start: parseInt(node.attributes['start']) } : {})}
+    >
+      {node.items.map((item: ListItemBlock, index) => (
+        <li key={index} className={node.role ? node.role : ''}>
+          <p>{parse(item.text || '')}</p>
+          <Content blocks={item.blocks} />
+        </li>
+      ))}
+    </ol>
+  </div>
+)
+
 export default OList

@@ -1,18 +1,19 @@
-import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 
 import { Content } from '../'
-import { getRole } from './util'
-import { Title, getLineNumber } from './util'
+import { Block } from '../utils/prepareDocument'
+import { Title } from './util'
 
-const Sidebar = ({ node }: { node: Block }) => {
-  return (
-    <div className={cn('sidebarblock', getRole(node))} {...getLineNumber(node)}>
-      <div className="content">
-        <Title node={node} />
-        <Content blocks={node.getBlocks()} />
-      </div>
+const Sidebar = ({ node }: { node: Block }) => (
+  <div
+    className={cn('sidebarblock', node.role)}
+    {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+  >
+    <div className="content">
+      <Title text={node.title} />
+      <Content blocks={node.blocks} />
     </div>
-  )
-}
+  </div>
+)
+
 export default Sidebar

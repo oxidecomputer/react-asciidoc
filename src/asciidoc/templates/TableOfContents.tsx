@@ -1,30 +1,35 @@
-import type { AbstractBlock, Block } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 
+import { Context } from '..'
+import { Block } from '../utils/prepareDocument'
 import Outline from './Outline'
 import { getRole } from './util'
 
 const TableOfContents = ({ node }: { node: Block }) => {
-  let idAttr: string = node.getId() || 'toc'
-  const document = node.getDocument()
-  const title = node.hasTitle() ? node.getTitle() : document.getAttribute('toc-title')
+  const { document } = useContext(Context)
+  const docAttrs = document.attributes || {}
 
-  const tocPlacement = useMemo(() => document.getAttribute('toc-placement'), [node])
-  const hasToc = useMemo(() => document.hasAttribute('toc'), [node])
+  const hasSections = document.sections && document.sections.length > 0
 
-  const levels = node.hasAttribute('levels')
-    ? parseInt(node.getAttribute('levels'))
-    : undefined
+  let idAttr: string = node.id || 'toc'
+  const title = node.title ? node.title : docAttrs['toc-title']
 
-  if (tocPlacement === 'macro' && document.hasSections() && hasToc) {
+  const tocPlacement = docAttrs['toc-placement']
+  const hasToc = docAttrs['toc'] !== undefined
+
+  const levels = node.attributes['levels'] ? parseInt(node.attributes['levels']) : undefined
+
+  if (tocPlacement === 'macro' && hasSections && hasToc) {
     return (
-      <div id={idAttr} className={cn('toc', getRole(node))}>
+      <div id={idAttr} className={cn('toc', node.role)}>
         <div id={`${idAttr}title`} className="title">
           {parse(title || '')}
         </div>
-        <Outline node={node.getDocument() as AbstractBlock} opts={{ tocLevels: levels }} />
+        {document.sections && (
+          <Outline sections={document.sections} opts={{ tocLevels: levels }} />
+        )}
       </div>
     )
   } else {
