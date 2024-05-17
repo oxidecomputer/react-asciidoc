@@ -1,10 +1,8 @@
-import type { List, ListItem } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { getText } from '../utils/getContent'
 import { CoListBlock, ListItemBlock } from '../utils/prepareDocument'
-import { Title, getLineNumber } from './util'
+import { Title } from './util'
 
 const CoList = ({ node }: { node: CoListBlock }) => (
   <div className="colist" {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}>

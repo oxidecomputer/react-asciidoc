@@ -42,6 +42,7 @@ import {
   AdmonitionBlock,
   AudioBlock,
   CoListBlock,
+  DListBlock,
   DocumentBlock,
   DocumentSection,
   ImageBlock,
@@ -50,6 +51,7 @@ import {
   ParagraphBlock,
   Block as PreparedBlock,
   SectionBlock,
+  TableBlock,
 } from './utils/prepareDocument'
 
 // Add support for inline blocks
@@ -167,13 +169,13 @@ const Converter = ({ node }: { node: PreparedBlock }) => {
     case 'audio':
       return <Audio node={node as AudioBlock} />
     case 'preamble':
-      return <Preamble node={node} />
+      return <Preamble node={node as PreparedBlock} />
     case 'section':
       return <Section node={node as SectionBlock} />
     case 'paragraph':
       return <Paragraph node={node as ParagraphBlock} />
     case 'dlist':
-      return <DList node={node as ListBlock} />
+      return <DList node={node as DListBlock} />
     case 'ulist':
       return <UList node={node as ListBlock} />
     case 'floating_title':
@@ -191,7 +193,7 @@ const Converter = ({ node }: { node: PreparedBlock }) => {
     case 'olist':
       return <OList node={node as ListBlock} />
     case 'table':
-      return <Table node={node as TableType} />
+      return <Table node={node as TableBlock} />
     case 'thematic_break':
       return <ThematicBreak />
     case 'open':

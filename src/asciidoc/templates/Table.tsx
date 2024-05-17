@@ -42,12 +42,6 @@ const Table = ({ node }: { node: TableBlock }) => {
   if (hasAttribute(node.attributes, 'float')) classes.push(node.attributes['float'])
   if (node.role) classes.push(node.role || '')
 
-  const rowCount = node.rowCount
-  const columns = node.columns
-  const headRows = node.headRows
-  const bodyRows = node.bodyRows
-  const footRows = node.footRows
-
   const getCellClass = (cell: Cell): string => {
     const classAttr = cn(
       'tableblock',
@@ -74,18 +68,15 @@ const Table = ({ node }: { node: TableBlock }) => {
           <a href={`#${slug}`}>{node.title}</a>
         </caption>
       )}
-
-      {rowCount > 0 && (
+      {node.columns.length > 0 && (
         <colgroup>
-          {columns.map((col, index) => {
+          {node.columns.map((col, index) => {
             const colWidth = col.attributes['colpcwidth']
-
             return <col key={index} style={{ width: `${colWidth}%` }} />
           })}
         </colgroup>
       )}
-
-      {headRows.map((row, hIndex) => (
+      {node.headRows.map((row, hIndex) => (
         <thead key={hIndex}>
           <tr>
             {row.map((cell, index) => (
@@ -98,9 +89,8 @@ const Table = ({ node }: { node: TableBlock }) => {
           </tr>
         </thead>
       ))}
-
       <tbody>
-        {bodyRows.map((row, bIndex) => (
+        {node.bodyRows.map((row, bIndex) => (
           <tr key={bIndex}>
             {row.map((cell, index) => {
               const colSpan = cell.columnSpan
@@ -120,7 +110,7 @@ const Table = ({ node }: { node: TableBlock }) => {
                   <td {...cellProps} key={index}>
                     <div
                       className="content"
-                      dangerouslySetInnerHTML={{ __html: content }}
+                      dangerouslySetInnerHTML={{ __html: content || '' }}
                     />
                   </td>
                 )
@@ -128,7 +118,7 @@ const Table = ({ node }: { node: TableBlock }) => {
                 return (
                   <td {...cellProps} key={index}>
                     <div className="literal">
-                      <pre dangerouslySetInnerHTML={{ __html: content }} />
+                      <pre dangerouslySetInnerHTML={{ __html: content || '' }} />
                     </div>
                   </td>
                 )
@@ -137,7 +127,7 @@ const Table = ({ node }: { node: TableBlock }) => {
                   <th {...cellProps} key={index}>
                     <p
                       className="tableblock"
-                      dangerouslySetInnerHTML={{ __html: content }}
+                      dangerouslySetInnerHTML={{ __html: content || '' }}
                     />
                   </th>
                 )
@@ -159,8 +149,7 @@ const Table = ({ node }: { node: TableBlock }) => {
           </tr>
         ))}
       </tbody>
-
-      {footRows.map((row, fIndex) => (
+      {node.footRows.map((row, fIndex) => (
         <tfoot key={fIndex}>
           <tr>
             {row.map((cell, index) => (

@@ -3,10 +3,10 @@ import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
 import { Content } from '../'
-import { ListBlock, ListItemBlock, isOption } from '../utils/prepareDocument'
+import { type DListBlock, type ListItemBlock, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
-const DList = ({ node }: { node: ListBlock }) => {
+const DList = ({ node }: { node: DListBlock }) => {
   const getItem = (item: any) => {
     const listItem: [ListItemBlock[], ListItemBlock] = item
     const terms = listItem[0]
