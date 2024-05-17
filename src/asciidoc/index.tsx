@@ -28,7 +28,7 @@ import {
   Verse,
 } from './templates'
 import { Title } from './templates/util'
-import { getContent, getText } from './utils/getContent'
+import { prepareDocument } from './utils/prepareDocument'
 import {
   AdmonitionBlock,
   AudioBlock,
@@ -209,5 +209,5 @@ const Converter = ({ node }: { node: PreparedBlock }) => {
 }
 
 export default Asciidoc
-export { Content, getContent, getText, Title, parse }
+export { Content, prepareDocument, Title, parse }
 export * from './templates'

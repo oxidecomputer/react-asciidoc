@@ -1,10 +1,11 @@
 // @ts-nocheck
+import asciidoctor from '@asciidoctor/core'
 import type { Extensions } from '@asciidoctor/core'
 import hljs from 'highlight.js'
 import { useEffect, useMemo } from 'react'
 import { Fragment } from 'react'
 
-import Asciidoc, { type Options, asciidoctor } from './asciidoc'
+import Asciidoc, { type Options } from './asciidoc'
 import './asciidoc.css'
 import { prepareDocument } from './asciidoc/utils/prepareDocument'
 import * as content from './examples'
