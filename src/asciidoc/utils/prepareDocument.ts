@@ -35,6 +35,7 @@ type NodeType =
   | 'sidebar'
   | 'stem'
   | 'table'
+  | 'table_cell'
   | 'thematic_break'
   | 'toc'
   | 'ulist'
@@ -77,6 +78,9 @@ export type DocumentSection = {
 
 export type DocumentBlock = {
   type: 'document'
+  title: string
+  hasHeader: boolean
+  noHeader: boolean
   attributes: Record<string, string>
   blocks: Block[]
   contentModel: ContentModel | undefined
@@ -85,6 +89,7 @@ export type DocumentBlock = {
     index: number | undefined
   }[]
   sections: DocumentSection[]
+  authors: { name: string | undefined; email: string | undefined }[]
 }
 
 export interface ParagraphBlock extends BaseBlock {
@@ -114,11 +119,16 @@ export interface ListItemBlock extends BaseBlock {
 }
 
 export interface ListBlock extends BaseBlock {
-  items: ListItemBlock[] | (ListItemBlock | ListItemBlock[])[][]
+  items: ListItemBlock[]
 }
 
 export interface CoListBlock extends ListBlock {
   type: 'colist'
+}
+
+export interface DListBlock extends BaseBlock {
+  type: 'dlist'
+  items: (ListItemBlock | ListItemBlock[])[][]
 }
 
 export interface LiteralBlock extends BaseBlock {
@@ -138,10 +148,8 @@ export interface SectionBlock extends BaseBlock {
 
 export interface TableBlock extends BaseBlock {
   caption: string
-  columnCount: number
   columns: Column[]
-  rowCount: number
-  rows: Row[]
+  rows: Row
   headRows: Cell[][]
   bodyRows: Cell[][]
   footRows: Cell[][]
@@ -159,13 +167,18 @@ export type Column = {
   style: string | undefined
 }
 
-export type Row = {}
+export type Row = {
+  head: Cell[][]
+  body: Cell[][]
+  foot: Cell[][]
+}
 
-export type Cell = {
+export interface Cell extends BaseBlock {
+  type: NodeType
   attributes: Record<string, string>
   columnSpan: number | undefined
   rowSpan: number | undefined
-  content: string
+  content: string | undefined
   text: string
   source: string
   lines: string[]
@@ -283,10 +296,11 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       }
     }
 
-    // In a description list (dlist), each item is a tuple that consists of a 2-item Array of ListItem terms and a ListItem description (i.e., [[term, term, ...], desc].
+    // In a description list (dlist), each item is a tuple that consists of a 2-item Array of
+    // ListItem terms and a ListItem description (i.e., [[term, term, ...], desc].
     // todo: fix this type disaster
     if (type === 'dlist') {
-      let listBlock = processedBlock as ListBlock
+      let listBlock = processedBlock as DListBlock
       listBlock.items = (
         (block as unknown as AdocTypes.List).getItems() as [
           AdocTypes.ListItem[],
@@ -318,16 +332,73 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     if (type === 'table') {
       let tableBlock = processedBlock as TableBlock
       const adocTable = block as unknown as AdocTypes.Table
+
       tableBlock.columns = adocTable.getColumns().map((col) => ({
         // @ts-ignore
-        attributes: col.attributes,
+        attributes: col.getAttributes(),
         columnNumber: col.getColumnNumber(),
         width: col.getWidth(),
         horizontalAlign: col.getHorizontalAlign(),
         verticalAlign: col.getVerticalAlign(),
-        style: col.getStyle,
+        style: col.getStyle(),
       }))
-      console.log(block)
+
+      const processCellArray = (rows: AdocTypes.Table.Cell[][]) => {
+        return rows.map((cellArray) =>
+          cellArray.map((cell) => processBlock(cell as any)),
+        ) as unknown as Cell[][]
+      }
+
+      const rows = adocTable.getRows()
+      tableBlock.rows = {
+        head: processCellArray(rows.head),
+        body: processCellArray(rows.body),
+        foot: processCellArray(rows.foot),
+      }
+
+      tableBlock = {
+        ...tableBlock,
+        caption: adocTable.getCaption(),
+        hasHeader: adocTable.hasHeaderOption(),
+        hasFooter: adocTable.hasFooterOption(),
+        hasAutowidth: adocTable.hasAutowidthOption(),
+        headRows: processCellArray(adocTable.getHeadRows()),
+        bodyRows: processCellArray(adocTable.getBodyRows()),
+        footRows: processCellArray(adocTable.getFootRows()),
+      }
+
+      // needs reassigning because of the use of spread
+      processedBlock = tableBlock
+    }
+
+    if (type === 'table_cell') {
+      const adocListItem = block as unknown as AdocTypes.Table.Cell
+
+      const col = adocListItem.getColumn()
+
+      let tableCellBlock: Cell = {
+        text: adocListItem.getText(),
+        columnSpan: adocListItem.getColumnSpan(),
+        rowSpan: adocListItem.getRowSpan(),
+        source: adocListItem.getSource(),
+        lines: adocListItem.getLines(),
+        width: adocListItem.getWidth(),
+        columnPercentageWidth: adocListItem.getColumnPercentageWidth(),
+        column: col
+          ? {
+              // @ts-ignore
+              attributes: col.getAttributes(),
+              columnNumber: col.getColumnNumber(),
+              width: col.getWidth(),
+              horizontalAlign: col.getHorizontalAlign(),
+              verticalAlign: col.getVerticalAlign(),
+              style: col.getStyle(),
+            }
+          : undefined,
+        ...processedBlock,
+      }
+
+      processedBlock = tableCellBlock
     }
 
     return processedBlock
@@ -346,8 +417,21 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     }))
   }
 
+  const authors = document.getAuthors().map((author) => {
+    const authorName = author.getName()
+    const authorEmail = author.getEmail()
+
+    return {
+      name: authorName ? document.applySubstitutions(authorName).toString() : undefined,
+      email: authorEmail ? document.applySubstitutions(authorEmail).toString() : undefined,
+    }
+  })
+
   preparedDocument = {
     type: 'document',
+    title: document.getDocumentTitle()?.toString() || '',
+    hasHeader: document.hasHeader(),
+    noHeader: document.getNoheader(),
     contentModel: document.getContentModel(),
     attributes: document.getAttributes(),
     footnotes: document.getFootnotes().map((footnote) => ({
@@ -356,7 +440,15 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     })),
     blocks: document.getBlocks().map((block) => processBlock(block)),
     sections: processSections(document),
+    authors,
   }
+
+  // Needs to happen after the blocks are processed
+  // Since the footnotes are added when they are called with `getContent()`
+  preparedDocument.footnotes = document.getFootnotes().map((footnote) => ({
+    text: footnote.getText(),
+    index: footnote.getIndex(),
+  }))
 
   return preparedDocument
 }
