@@ -1,9 +1,8 @@
-import type { AbstractBlock } from '@asciidoctor/core'
 import parse from 'html-react-parser'
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 
 import { Context } from '..'
-import { DocumentSection } from '../utils/prepareDocument'
+import { type DocumentSection } from '../utils/prepareDocument'
 
 const Outline = ({
   sections,

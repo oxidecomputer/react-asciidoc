@@ -1,7 +1,5 @@
-import type { Block } from '@asciidoctor/core'
-
-import { ImageBlock } from '../utils/prepareDocument'
-import { Title, getLineNumber } from './util'
+import { type ImageBlock } from '../utils/prepareDocument'
+import { Title } from './util'
 
 const Image = ({ node }: { node: ImageBlock }) => {
   let img = (

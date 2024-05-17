@@ -3,7 +3,7 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 import { createElement } from 'react'
 
-import { BaseBlock } from '../utils/prepareDocument'
+import { type BaseBlock } from '../utils/prepareDocument'
 
 const FloatingTitle = ({ node }: { node: BaseBlock }) => (
   <>

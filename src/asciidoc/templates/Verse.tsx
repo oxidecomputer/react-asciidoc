@@ -1,6 +1,6 @@
 import cn from 'classnames'
 
-import { Block } from '../utils/prepareDocument'
+import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Verse = ({ node }: { node: Block }) => {

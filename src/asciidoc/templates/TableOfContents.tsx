@@ -1,11 +1,10 @@
 import cn from 'classnames'
 import parse from 'html-react-parser'
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 
 import { Context } from '..'
 import { Block } from '../utils/prepareDocument'
 import Outline from './Outline'
-import { getRole } from './util'
 
 const TableOfContents = ({ node }: { node: Block }) => {
   const { document } = useContext(Context)

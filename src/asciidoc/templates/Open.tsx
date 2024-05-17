@@ -1,7 +1,7 @@
 import cn from 'classnames'
 
 import { Content } from '../'
-import { BaseBlock } from '../utils/prepareDocument'
+import { type BaseBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Open = ({ node }: { node: BaseBlock }) => {

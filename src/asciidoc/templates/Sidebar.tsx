@@ -1,7 +1,7 @@
 import cn from 'classnames'
 
 import { Content } from '../'
-import { Block } from '../utils/prepareDocument'
+import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Sidebar = ({ node }: { node: Block }) => (

@@ -2,7 +2,7 @@ import cn from 'classnames'
 import { useContext } from 'react'
 
 import { Context } from '..'
-import { LiteralBlock } from '../utils/prepareDocument'
+import { type LiteralBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Listing = ({ node }: { node: LiteralBlock }) => {

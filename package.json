@@ -33,7 +33,6 @@
   "author": "Oxide Computer Company <bots@oxidecomputer.com>",
   "license": "MPL 2.0",
   "dependencies": {
-    "@asciidoctor/core": "^3.0.2",
     "classnames": "^2.3.2",
     "highlight.js": "^11.6.0",
     "html-react-parser": "^4.2.2",
@@ -41,6 +40,7 @@
     "vitest": "^0.24.3"
   },
   "devDependencies": {
+    "@asciidoctor/core": "^3.0.2",
     "@playwright/test": "^1.27.1",
     "@trivago/prettier-plugin-sort-imports": "^3.3.0",
     "@types/node": "^18.15.11",

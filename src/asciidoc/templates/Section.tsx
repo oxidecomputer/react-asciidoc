@@ -2,7 +2,7 @@ import cn from 'classnames'
 import { createElement, useContext } from 'react'
 
 import { Content, Context } from '../'
-import { SectionBlock } from '../utils/prepareDocument'
+import { type SectionBlock } from '../utils/prepareDocument'
 
 const Section = ({ node }: { node: SectionBlock }) => {
   const { document } = useContext(Context)

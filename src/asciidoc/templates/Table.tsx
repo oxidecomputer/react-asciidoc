@@ -1,12 +1,11 @@
-import type { Table as TableType } from '@asciidoctor/core'
 import cn from 'classnames'
 import parse from 'html-react-parser'
 import { useContext } from 'react'
 
 import { Context } from '..'
 import {
-  Cell,
-  TableBlock,
+  type Cell,
+  type TableBlock,
   getAttribute,
   hasAttribute,
   isOption,

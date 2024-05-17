@@ -1,10 +1,8 @@
-import type { AbstractBlock, Document as DocumentType } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
 import { Content } from '../'
-import { getText } from '../utils/getContent'
-import { DocumentBlock, getAttribute, hasAttribute } from '../utils/prepareDocument'
+import { type DocumentBlock, getAttribute, hasAttribute } from '../utils/prepareDocument'
 import Outline from './Outline'
 
 const Document = ({ document }: { document: DocumentBlock }) => {

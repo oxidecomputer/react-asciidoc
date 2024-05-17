@@ -1,7 +1,7 @@
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { CoListBlock, ListItemBlock } from '../utils/prepareDocument'
+import type { CoListBlock, ListItemBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const CoList = ({ node }: { node: CoListBlock }) => (

@@ -1,14 +1,5 @@
-import asciidoctor from '@asciidoctor/core'
-import type {
-  AbstractBlock,
-  Block,
-  List,
-  Section as SectionType,
-  Table as TableType,
-} from '@asciidoctor/core'
-import type * as AdocTypes from '@asciidoctor/core'
 import parse from 'html-react-parser'
-import { createContext, useContext } from 'react'
+import { createContext } from 'react'
 
 import {
   Admonition,
@@ -36,7 +27,7 @@ import {
   UList,
   Verse,
 } from './templates'
-import { Title, getLineNumber, getRole } from './templates/util'
+import { Title } from './templates/util'
 import { getContent, getText } from './utils/getContent'
 import {
   AdmonitionBlock,
@@ -218,15 +209,5 @@ const Converter = ({ node }: { node: PreparedBlock }) => {
 }
 
 export default Asciidoc
-export {
-  asciidoctor,
-  Content,
-  getContent,
-  getText,
-  Title,
-  getRole,
-  getLineNumber,
-  AdocTypes,
-  parse,
-}
+export { Content, getContent, getText, Title, parse }
 export * from './templates'

@@ -1,4 +1,4 @@
-import { AdocTypes } from '..'
+import type * as AdocTypes from '@asciidoctor/core'
 
 type NodeType =
   | 'audio'

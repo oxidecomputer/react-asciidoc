@@ -1,4 +1,4 @@
-import { AudioBlock } from '../utils/prepareDocument'
+import { type AudioBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Audio = ({ node }: { node: AudioBlock }) => {

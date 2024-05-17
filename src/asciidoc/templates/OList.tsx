@@ -2,7 +2,7 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { ListBlock, ListItemBlock, isOption } from '../utils/prepareDocument'
+import { type ListBlock, type ListItemBlock, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const OList = ({ node }: { node: ListBlock }) => (

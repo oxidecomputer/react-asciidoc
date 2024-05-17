@@ -2,7 +2,7 @@ import parse from 'html-react-parser'
 import { useContext } from 'react'
 
 import { Content, Context } from '../'
-import { BaseBlock } from '../utils/prepareDocument'
+import { type BaseBlock } from '../utils/prepareDocument'
 import Outline from './Outline'
 
 const Preamble = ({ node }: { node: BaseBlock }) => {
