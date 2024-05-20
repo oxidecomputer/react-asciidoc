@@ -203,6 +203,14 @@ const Converter = ({ node }: { node: Block }) => {
   }
 }
 
+export const useConverterContext = () => {
+  const context = useContext(Context)
+  if (context === undefined) {
+    throw new Error('useConverterContext must be used within a Provider')
+  }
+  return context
+}
+
 export { Asciidoc, Content, prepareDocument, Title, parse }
 export type {
   AdmonitionBlock,
