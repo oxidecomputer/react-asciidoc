@@ -1,5 +1,5 @@
 import parse from 'html-react-parser'
-import { createContext } from 'react'
+import { createContext, useContext } from 'react'
 
 import {
   Admonition,
@@ -32,6 +32,7 @@ import { prepareDocument } from './utils/prepareDocument'
 import {
   AdmonitionBlock,
   AudioBlock,
+  Block,
   CoListBlock,
   DListBlock,
   DocumentBlock,
@@ -40,7 +41,6 @@ import {
   ListBlock,
   LiteralBlock,
   ParagraphBlock,
-  Block as PreparedBlock,
   SectionBlock,
   TableBlock,
 } from './utils/prepareDocument'
@@ -130,37 +130,32 @@ const Asciidoc = ({
   )
 }
 
-const Content = ({ blocks }: { blocks: PreparedBlock[] }) => {
+const Content = ({ blocks }: { blocks: Block[] }) => {
   return (
     <>
-      {blocks.map((block: PreparedBlock, index: number) => (
+      {blocks.map((block: Block, index: number) => (
         <Converter key={`${index}-${block.type}`} node={block} />
       ))}
     </>
   )
 }
 
-const Converter = ({ node }: { node: PreparedBlock }) => {
-  // const { opts } = useContext(Context)
+const Converter = ({ node }: { node: Block }) => {
+  const { overrides } = useContext(Context)
 
-  // const transform = node.getNodeName() as keyof Overrides
-  const transform = node.type
+  const transform = node.type as keyof Overrides
+  const OverrideComponent =
+    overrides && (overrides[transform] as ({ node }: { node: Block }) => JSX.Element)
 
-  // const document = node.getDocument()
-  // const blockAttributes = node.getAttributes()
-  // document.playbackAttributes(blockAttributes)
-
-  // const OverrideComponent = opts && opts.overrides && opts.overrides[transform]
-
-  // if (OverrideComponent) {
-  //   return <OverrideComponent node={node as any} />
-  // }
+  if (OverrideComponent) {
+    return <OverrideComponent node={node} />
+  }
 
   switch (transform) {
     case 'audio':
       return <Audio node={node as AudioBlock} />
     case 'preamble':
-      return <Preamble node={node as PreparedBlock} />
+      return <Preamble node={node as Block} />
     case 'section':
       return <Section node={node as SectionBlock} />
     case 'paragraph':
@@ -170,7 +165,7 @@ const Converter = ({ node }: { node: PreparedBlock }) => {
     case 'ulist':
       return <UList node={node as ListBlock} />
     case 'floating_title':
-      return <FloatingTitle node={node as PreparedBlock} />
+      return <FloatingTitle node={node as Block} />
     case 'admonition':
       return <Admonition node={node as AdmonitionBlock} />
     case 'listing':
@@ -188,26 +183,25 @@ const Converter = ({ node }: { node: PreparedBlock }) => {
     case 'thematic_break':
       return <ThematicBreak />
     case 'open':
-      return <Open node={node as PreparedBlock} />
+      return <Open node={node as Block} />
     case 'pass':
-      return <Pass node={node as PreparedBlock} />
+      return <Pass node={node as Block} />
     case 'page_break':
       return <PageBreak />
     case 'example':
       return <Example node={node as LiteralBlock} />
     case 'sidebar':
-      return <Sidebar node={node as PreparedBlock} />
+      return <Sidebar node={node as Block} />
     case 'quote':
-      return <Quote node={node as PreparedBlock} />
+      return <Quote node={node as Block} />
     case 'verse':
-      return <Verse node={node as PreparedBlock} />
+      return <Verse node={node as Block} />
     case 'toc':
-      return <TableOfContents node={node as PreparedBlock} />
+      return <TableOfContents node={node as Block} />
     default:
       return <></>
   }
 }
 
-export default Asciidoc
-export { Content, prepareDocument, Title, parse }
+export { Asciidoc, Content, prepareDocument, Title, parse }
 export * from './templates'
