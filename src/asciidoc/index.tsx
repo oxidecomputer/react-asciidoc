@@ -29,9 +29,7 @@ import {
 } from './templates'
 import { Title } from './templates/util'
 import { prepareDocument } from './utils/prepareDocument'
-import {
-  AdmonitionBlock,
-  AudioBlock,
+import type {
   Block,
   CoListBlock,
   DListBlock,
@@ -204,4 +202,17 @@ const Converter = ({ node }: { node: Block }) => {
 }
 
 export { Asciidoc, Content, prepareDocument, Title, parse }
+export type {
+  Block,
+  CoListBlock,
+  DListBlock,
+  DocumentBlock,
+  DocumentSection,
+  ImageBlock,
+  ListBlock,
+  LiteralBlock,
+  ParagraphBlock,
+  SectionBlock,
+  TableBlock,
+}
 export * from './templates'
