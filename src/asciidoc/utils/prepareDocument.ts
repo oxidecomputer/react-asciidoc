@@ -282,6 +282,9 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const listingBlock = processedBlock as LiteralBlock
         listingBlock.source = block.getSource()
         listingBlock.language = block.getAttribute('language')
+        listingBlock.content = listingBlock.content
+          ? decode(listingBlock.content)
+          : undefined
       }
     }
 
