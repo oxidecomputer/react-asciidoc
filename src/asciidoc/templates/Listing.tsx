@@ -1,5 +1,4 @@
 import cn from 'classnames'
-import { decode } from 'html-entities'
 import { useContext } from 'react'
 
 import { Context } from '..'

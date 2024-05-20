@@ -28,7 +28,11 @@ import {
   Verse,
 } from './templates'
 import { Title } from './templates/util'
-import { prepareDocument } from './utils/prepareDocument'
+import {
+  prepareDocument,
+  processDocument,
+  processDocumentSync,
+} from './utils/prepareDocument'
 import type {
   AdmonitionBlock,
   AudioBlock,
@@ -211,7 +215,15 @@ export const useConverterContext = () => {
   return context
 }
 
-export { Asciidoc, Content, prepareDocument, Title, parse }
+export {
+  Asciidoc,
+  Content,
+  prepareDocument,
+  Title,
+  parse,
+  processDocument,
+  processDocumentSync,
+}
 export type {
   AdmonitionBlock,
   AudioBlock,

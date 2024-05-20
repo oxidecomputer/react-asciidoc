@@ -233,12 +233,7 @@ export const hasAttribute = (attrs: Record<string, string>, name: string) => {
   return attrs[name] !== undefined
 }
 
-export const prepareDocument = (
-  document: AdocTypes.Document,
-  options?: {
-    highlighter?: (lang: string, source: string) => string
-  },
-) => {
+export const prepareDocument = (document: AdocTypes.Document) => {
   let preparedDocument: DocumentBlock
 
   function processBlock(
@@ -287,14 +282,6 @@ export const prepareDocument = (
         const listingBlock = processedBlock as LiteralBlock
         listingBlock.source = block.getSource()
         listingBlock.language = block.getAttribute('language')
-        // user can pass a highlighter function
-        // this calls it and sets it back to content
-        if (options && options.highlighter && listingBlock.language) {
-          listingBlock.content = options.highlighter(
-            listingBlock.language,
-            decode(listingBlock.content),
-          )
-        }
       }
     }
 
@@ -465,4 +452,63 @@ export const prepareDocument = (
   }))
 
   return preparedDocument
+}
+
+// used to modify a document after the fact
+// e.g. for a syntax highlighter
+export const processDocument = async (
+  documentBlock: DocumentBlock,
+  processFunction: (block: Block) => Promise<Block>,
+): Promise<DocumentBlock> => {
+  async function processBlocks(blocks: Block[]): Promise<Block[]> {
+    return Promise.all(
+      blocks.map(async (block) => {
+        let processedBlock = await processFunction(block)
+
+        if (processedBlock.blocks && processedBlock.blocks.length > 0) {
+          processedBlock = {
+            ...processedBlock,
+            blocks: await processBlocks(processedBlock.blocks),
+          }
+        }
+
+        return processedBlock
+      }),
+    )
+  }
+
+  const processedBlocks = await processBlocks(documentBlock.blocks)
+
+  return {
+    ...documentBlock,
+    blocks: processedBlocks,
+  }
+}
+
+// same as `processDocument` but works syncronously
+export const processDocumentSync = (
+  documentBlock: DocumentBlock,
+  processFunction: (block: Block) => Block,
+): DocumentBlock => {
+  function processBlocks(blocks: Block[]): Block[] {
+    return blocks.map((block) => {
+      let processedBlock = processFunction(block)
+
+      if (processedBlock.blocks && processedBlock.blocks.length > 0) {
+        processedBlock = {
+          ...processedBlock,
+          blocks: processBlocks(processedBlock.blocks),
+        }
+      }
+
+      return processedBlock
+    })
+  }
+
+  const processedBlocks = processBlocks(documentBlock.blocks)
+
+  return {
+    ...documentBlock,
+    blocks: processedBlocks,
+  }
 }

@@ -84,6 +84,17 @@ function App() {
   )
 }
 
+// const highlightSyntax = (block: Block): Block => {
+//   if (block.type === 'listing') {
+//     const content = 'Hmm'
+//     return {
+//       ...block,
+//       content,
+//     }
+//   }
+//   return block
+// }
+
 const AsciidocWrapper = ({ content }: { content: string }) => {
   const doc = useMemo(
     () =>
@@ -95,8 +106,9 @@ const AsciidocWrapper = ({ content }: { content: string }) => {
   )
 
   const preparedDoc = prepareDocument(doc)
+  // const modifiedDocument = processDocumentSync(preparedDoc, highlightSyntax)
 
-  return <Asciidoc document={preparedDoc} />
+  return <Asciidoc document={modifiedDocument} />
 }
 
 const renderHtml5 = (content: string) => {
