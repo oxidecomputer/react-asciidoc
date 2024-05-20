@@ -30,6 +30,8 @@ import {
 import { Title } from './templates/util'
 import { prepareDocument } from './utils/prepareDocument'
 import type {
+  AdmonitionBlock,
+  AudioBlock,
   Block,
   CoListBlock,
   DListBlock,
