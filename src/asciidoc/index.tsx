@@ -205,6 +205,8 @@ const Converter = ({ node }: { node: Block }) => {
 
 export { Asciidoc, Content, prepareDocument, Title, parse }
 export type {
+  AdmonitionBlock,
+  AudioBlock,
   Block,
   CoListBlock,
   DListBlock,
