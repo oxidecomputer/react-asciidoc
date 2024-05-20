@@ -35,6 +35,7 @@
   "dependencies": {
     "classnames": "^2.3.2",
     "highlight.js": "^11.6.0",
+    "html-entities": "^2.5.2",
     "html-react-parser": "^4.2.2",
     "vite-tsconfig-paths": "^3.5.1",
     "vitest": "^0.24.3"

@@ -5,13 +5,12 @@ import hljs from 'highlight.js'
 import { useEffect, useMemo } from 'react'
 import { Fragment } from 'react'
 
-import Asciidoc, { type Options } from './asciidoc'
+import { Asciidoc, type Options } from './asciidoc'
 import './asciidoc.css'
 import { prepareDocument } from './asciidoc/utils/prepareDocument'
 import * as content from './examples'
 import './test.css'
 
-const opts: Options = {}
 const attrs = {
   sectlinks: 'true',
   icons: 'font',

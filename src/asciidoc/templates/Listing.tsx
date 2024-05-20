@@ -1,4 +1,5 @@
 import cn from 'classnames'
+import { decode } from 'html-entities'
 import { useContext } from 'react'
 
 import { Context } from '..'
@@ -6,12 +7,14 @@ import { type LiteralBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Listing = ({ node }: { node: LiteralBlock }) => {
-  const { document } = useContext(Context)
+  const { document, highlighter } = useContext(Context)
 
   const nowrap = node.attributes.nowrap || document.attributes!['prewrap']
 
   if (node.style === 'source') {
     const lang = node.language
+    const content = node.content || ''
+    const decodedContent = decode(content) || content // unescape the html entities
 
     return (
       <div
@@ -26,11 +29,11 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
                 className={lang ? `language-${lang}` : ''}
                 data-lang={lang}
                 dangerouslySetInnerHTML={{
-                  __html: node.content || '',
+                  __html: highlighter ? highlighter(lang, decodedContent) : decodedContent,
                 }}
               />
             ) : (
-              <code dangerouslySetInnerHTML={{ __html: node.content || '' }} />
+              <code dangerouslySetInnerHTML={{ __html: decodedContent }} />
             )}
           </pre>
         </div>
