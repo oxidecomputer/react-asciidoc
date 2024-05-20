@@ -7,14 +7,12 @@ import { type LiteralBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Listing = ({ node }: { node: LiteralBlock }) => {
-  const { document, highlighter } = useContext(Context)
+  const { document } = useContext(Context)
 
   const nowrap = node.attributes.nowrap || document.attributes!['prewrap']
 
   if (node.style === 'source') {
     const lang = node.language
-    const content = node.content || ''
-    const decodedContent = decode(content) || content // unescape the html entities
 
     return (
       <div
@@ -29,11 +27,11 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
                 className={lang ? `language-${lang}` : ''}
                 data-lang={lang}
                 dangerouslySetInnerHTML={{
-                  __html: highlighter ? highlighter(lang, decodedContent) : decodedContent,
+                  __html: node.content || '',
                 }}
               />
             ) : (
-              <code dangerouslySetInnerHTML={{ __html: decodedContent }} />
+              <code dangerouslySetInnerHTML={{ __html: node.content || '' }} />
             )}
           </pre>
         </div>

@@ -1,4 +1,5 @@
 import type * as AdocTypes from '@asciidoctor/core'
+import { decode } from 'html-entities'
 
 type NodeType =
   | 'audio'
@@ -232,7 +233,12 @@ export const hasAttribute = (attrs: Record<string, string>, name: string) => {
   return attrs[name] !== undefined
 }
 
-export const prepareDocument = (document: AdocTypes.Document) => {
+export const prepareDocument = (
+  document: AdocTypes.Document,
+  options?: {
+    highlighter?: (lang: string, source: string) => string
+  },
+) => {
   let preparedDocument: DocumentBlock
 
   function processBlock(
@@ -281,6 +287,14 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const listingBlock = processedBlock as LiteralBlock
         listingBlock.source = block.getSource()
         listingBlock.language = block.getAttribute('language')
+        // user can pass a highlighter function
+        // this calls it and sets it back to content
+        if (options && options.highlighter && listingBlock.language) {
+          listingBlock.content = options.highlighter(
+            listingBlock.language,
+            decode(listingBlock.content),
+          )
+        }
       }
     }
 

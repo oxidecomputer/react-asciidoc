@@ -96,7 +96,7 @@ const AsciidocWrapper = ({ content }: { content: string }) => {
 
   const preparedDoc = prepareDocument(doc)
 
-  return <Asciidoc document={preparedDoc} options={opts} />
+  return <Asciidoc document={preparedDoc} />
 }
 
 const renderHtml5 = (content: string) => {

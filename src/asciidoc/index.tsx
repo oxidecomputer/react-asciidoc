@@ -99,7 +99,6 @@ export type Options = {
     attributes?: DocumentBlock['attributes']
     sections?: DocumentSection[]
   }
-  highlighter?: (lang: string, source: string) => string
 }
 
 export const Context = createContext<Options>({ document: {} })
