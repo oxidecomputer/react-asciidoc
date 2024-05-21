@@ -1,7 +1,7 @@
 import parse from 'html-react-parser'
 import { useContext } from 'react'
 
-import { Context } from '..'
+import { Content, Context } from '..'
 import { AdmonitionBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -10,11 +10,13 @@ const Admonition = ({ node }: { node: AdmonitionBlock }) => {
   const docAttrs = document.attributes || {}
   const attrs = node.attributes
 
+  console.log(node)
+
   const renderIcon = () =>
     docAttrs.icons === 'font' && !attrs.icon ? (
-      <i className={`fa icon-${attrs.name}`} title={attrs.textlabel} />
+      <i className={`fa icon-${attrs.name}`} title={`${attrs.textlabel}`} />
     ) : (
-      <img src={node.iconUri} alt={attrs.textlabel} />
+      <img src={node.iconUri} alt={`${attrs.textlabel}`} />
     )
 
   return (
@@ -35,6 +37,7 @@ const Admonition = ({ node }: { node: AdmonitionBlock }) => {
             <td className="content">
               <Title text={node.title} />
               {node.content && parse(node.content)}
+              <Content blocks={node.blocks} />
             </td>
           </tr>
         </tbody>

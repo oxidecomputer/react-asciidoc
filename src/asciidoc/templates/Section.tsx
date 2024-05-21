@@ -13,7 +13,9 @@ const Section = ({ node }: { node: SectionBlock }) => {
   let sectNum = node.num
   sectNum = sectNum === '.' ? '' : sectNum
 
-  const sectNumLevels = docAttrs['sectnumlevels'] ? parseInt(docAttrs['sectnumlevels']) : 3
+  const sectNumLevels = docAttrs['sectnumlevels']
+    ? parseInt(`${docAttrs['sectnumlevels']}`)
+    : 3
 
   if (node.numbered && node.level <= sectNumLevels) {
     title = `${sectNum} ${node.title}`

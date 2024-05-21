@@ -18,13 +18,15 @@ const TableOfContents = ({ node }: { node: Block }) => {
   const tocPlacement = docAttrs['toc-placement']
   const hasToc = docAttrs['toc'] !== undefined
 
-  const levels = node.attributes['levels'] ? parseInt(node.attributes['levels']) : undefined
+  const levels = node.attributes['levels']
+    ? parseInt(`${node.attributes['levels']}`)
+    : undefined
 
   if (tocPlacement === 'macro' && hasSections && hasToc) {
     return (
       <div id={idAttr} className={cn('toc', node.role)}>
         <div id={`${idAttr}title`} className="title">
-          {parse(title || '')}
+          {parse(`${title}` || '')}
         </div>
         {document.sections && (
           <Outline sections={document.sections} opts={{ tocLevels: levels }} />

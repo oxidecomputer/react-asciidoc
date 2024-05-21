@@ -24,8 +24,8 @@ const Outline = ({
   const tocLevelsAttr = docAttrs['toclevels']
 
   const sectNumLevels =
-    opts?.sectNumLevels || (sectNumLevelsAttr ? parseInt(sectNumLevelsAttr) : 3)
-  const tocLevels = opts?.tocLevels || (tocLevelsAttr ? parseInt(tocLevelsAttr) : 2)
+    opts?.sectNumLevels || (sectNumLevelsAttr ? parseInt(`${sectNumLevelsAttr}`) : 3)
+  const tocLevels = opts?.tocLevels || (tocLevelsAttr ? parseInt(`${tocLevelsAttr}`) : 2)
 
   return (
     <ul className={`sectlevel${sections[0].level}`}>

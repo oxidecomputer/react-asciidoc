@@ -73,12 +73,12 @@ const DList = ({ node }: { node: DListBlock }) => {
             <colgroup>
               <col
                 style={{
-                  width: labelWidth ? `${labelWidth.replace('%', '')}%` : '', // do this because a width could have a % or no unit
+                  width: labelWidth ? `${labelWidth.toString().replace('%', '')}%` : '', // do this because a width could have a % or no unit
                 }}
               />
               <col
                 style={{
-                  width: itemWidth ? `${itemWidth.replace('%', '')}%` : '',
+                  width: itemWidth ? `${itemWidth.toString().replace('%', '')}%` : '',
                 }}
               />
             </colgroup>

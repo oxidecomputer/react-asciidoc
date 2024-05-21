@@ -14,7 +14,9 @@ const OList = ({ node }: { node: ListBlock }) => (
     <ol
       className={node.style}
       reversed={isOption(node.attributes, 'reversed')}
-      {...(node.attributes['start'] ? { start: parseInt(node.attributes['start']) } : {})}
+      {...(node.attributes['start']
+        ? { start: parseInt(`${node.attributes['start']}`) }
+        : {})}
     >
       {node.items.map((item: ListItemBlock, index) => (
         <li key={index} className={node.role ? node.role : ''}>

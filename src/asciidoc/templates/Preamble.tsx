@@ -22,9 +22,11 @@ const Preamble = ({ node }: { node: BaseBlock }) => {
         {hasToc && (
           <div
             id="toc"
-            className={node.attributes['toc-class'] ? node.attributes['toc-class'] : 'toc'}
+            className={
+              node.attributes['toc-class'] ? `${node.attributes['toc-class']}` : 'toc'
+            }
           >
-            <div id="toctitle">{parse(docAttrs['toc-title'])}</div>
+            <div id="toctitle">{parse(`${docAttrs['toc-title']}`)}</div>
             {document.sections && <Outline sections={document.sections} />}
           </div>
         )}

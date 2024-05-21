@@ -5,7 +5,7 @@ const Image = ({ node }: { node: ImageBlock }) => {
   let img = (
     <img
       src={node.imageUri}
-      alt={node.attributes['alt']}
+      alt={node.attributes['alt'].toString()}
       width={node.attributes['width']}
       height={node.attributes['height']}
     />
@@ -13,7 +13,7 @@ const Image = ({ node }: { node: ImageBlock }) => {
 
   if (node.attributes['link']) {
     img = (
-      <a className="image" href={node.attributes['link']}>
+      <a className="image" href={node.attributes['link'].toString()}>
         {img}
       </a>
     )

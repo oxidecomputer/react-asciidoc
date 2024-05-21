@@ -101,9 +101,11 @@ const Document = ({ document }: { document: DocumentBlock }) => {
           ))}
 
           {hasAttribute(document.attributes, 'revnumber') && (
-            <span id="revnumber">{`${document.attributes['version-label'].toLowerCase()} ${
-              document.attributes['revnumber']
-            }${document.attributes['revdate'] ? ',' : ''}`}</span>
+            <span id="revnumber">{`${document.attributes['version-label']
+              .toString()
+              .toLowerCase()} ${document.attributes['revnumber']}${
+              document.attributes['revdate'] ? ',' : ''
+            }`}</span>
           )}
 
           {hasAttribute(document.attributes, 'revdate') && (

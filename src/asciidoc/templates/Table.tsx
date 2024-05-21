@@ -27,7 +27,7 @@ const Table = ({ node }: { node: TableBlock }) => {
   }
 
   let autowidth = isOption(node.attributes, 'autowidth')
-  let tablewidth = parseInt(node.attributes['tablepcwidth'])
+  let tablewidth = parseInt(`${node.attributes['tablepcwidth']}`)
   let width: string | null = null
 
   if (autowidth && !hasAttribute(node.attributes, 'width')) {
@@ -38,7 +38,7 @@ const Table = ({ node }: { node: TableBlock }) => {
     width = `${tablewidth}%`
   }
 
-  if (hasAttribute(node.attributes, 'float')) classes.push(node.attributes['float'])
+  if (hasAttribute(node.attributes, 'float')) classes.push(`${node.attributes['float']}`)
   if (node.role) classes.push(node.role || '')
 
   const getCellClass = (cell: Cell): string => {

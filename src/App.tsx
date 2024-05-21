@@ -108,7 +108,7 @@ const AsciidocWrapper = ({ content }: { content: string }) => {
   const preparedDoc = prepareDocument(doc)
   // const modifiedDocument = processDocumentSync(preparedDoc, highlightSyntax)
 
-  return <Asciidoc document={modifiedDocument} />
+  return <Asciidoc document={preparedDoc} />
 }
 
 const renderHtml5 = (content: string) => {

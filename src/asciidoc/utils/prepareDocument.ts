@@ -49,12 +49,12 @@ export type BaseBlock = {
   id: string
   type: NodeType
   blocks: Block[]
-  content: string | undefined
-  attributes: Record<string, string>
+  content?: string | undefined
+  attributes: Record<string, string | number>
   contentModel: ContentModel | undefined
-  lineNumber: number | undefined
-  style: string | undefined
-  role: string | undefined
+  lineNumber?: number | undefined
+  style?: string | undefined
+  role?: string | undefined
   title: string | undefined
   level: number
 }
@@ -82,7 +82,7 @@ export type DocumentBlock = {
   title: string
   hasHeader: boolean
   noHeader: boolean
-  attributes: Record<string, string>
+  attributes: Record<string, string | number>
   blocks: Block[]
   contentModel: ContentModel | undefined
   footnotes: {
@@ -148,6 +148,7 @@ export interface SectionBlock extends BaseBlock {
 }
 
 export interface TableBlock extends BaseBlock {
+  type: 'table'
   caption: string
   columns: Column[]
   rows: Row
@@ -175,16 +176,12 @@ export type Row = {
 }
 
 export interface Cell extends BaseBlock {
-  type: NodeType
-  attributes: Record<string, string>
+  type: 'table_cell'
   columnSpan: number | undefined
   rowSpan: number | undefined
-  content: string | undefined
   text: string
   source: string
   lines: string[]
-  lineNumber: number | undefined
-  style: string | undefined
   column: Column | undefined
   width: string | undefined
   columnPercentageWidth: string | undefined
@@ -194,7 +191,7 @@ export interface Cell extends BaseBlock {
  * A convenience method to check if the specified option attribute is enabled on the current node.
  * Check if the option is enabled. This method simply checks to see if the <name>-option attribute is defined on the current node.
  */
-export const isOption = (attrs: Record<string, string>, option: string) => {
+export const isOption = (attrs: Record<string, string | number>, option: string) => {
   return attrs[`${option}-option`] !== undefined
 }
 
@@ -207,11 +204,11 @@ export const isOption = (attrs: Record<string, string>, option: string) => {
  * Otherwise, return the default value (default: undefined).
  */
 export const getAttribute = (
-  attrs: Record<string, string>,
+  attrs: Record<string, string | number>,
   name: string,
   defaultValue: any = undefined,
   fallbackName?: string,
-  documentAttrs?: Record<string, string>,
+  documentAttrs?: Record<string, string | number>,
 ) => {
   if (attrs[name] !== undefined) {
     return attrs[name]
@@ -229,7 +226,7 @@ export const getAttribute = (
   return defaultValue
 }
 
-export const hasAttribute = (attrs: Record<string, string>, name: string) => {
+export const hasAttribute = (attrs: Record<string, string | number>, name: string) => {
   return attrs[name] !== undefined
 }
 
@@ -381,6 +378,8 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       const col = adocListItem.getColumn()
 
       let tableCellBlock: Cell = {
+        ...processedBlock,
+        type: 'table_cell',
         text: adocListItem.getText(),
         columnSpan: adocListItem.getColumnSpan(),
         rowSpan: adocListItem.getRowSpan(),
@@ -399,7 +398,6 @@ export const prepareDocument = (document: AdocTypes.Document) => {
               style: col.getStyle(),
             }
           : undefined,
-        ...processedBlock,
       }
 
       processedBlock = tableCellBlock
@@ -421,38 +419,43 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     }))
   }
 
-  const authors = document.getAuthors().map((author) => {
-    const authorName = author.getName()
-    const authorEmail = author.getEmail()
-
-    return {
-      name: authorName ? document.applySubstitutions(authorName).toString() : undefined,
-      email: authorEmail ? document.applySubstitutions(authorEmail).toString() : undefined,
-    }
-  })
-
   preparedDocument = {
     type: 'document',
     title: document.getDocumentTitle()?.toString() || '',
     hasHeader: document.hasHeader(),
     noHeader: document.getNoheader(),
     contentModel: document.getContentModel(),
+    footnotes: [],
     attributes: document.getAttributes(),
-    footnotes: document.getFootnotes().map((footnote) => ({
-      text: footnote.getText(),
-      index: footnote.getIndex(),
-    })),
     blocks: document.getBlocks().map((block) => processBlock(block)),
     sections: processSections(document),
-    authors,
+    authors: [],
   }
 
   // Needs to happen after the blocks are processed
   // Since the footnotes are added when they are called with `getContent()`
-  preparedDocument.footnotes = document.getFootnotes().map((footnote) => ({
-    text: footnote.getText(),
-    index: footnote.getIndex(),
-  }))
+  const footnotes = document.getFootnotes()
+  if (footnotes) {
+    preparedDocument.footnotes = footnotes.map((footnote) => ({
+      text: footnote.getText(),
+      index: footnote.getIndex(),
+    }))
+  }
+
+  const authors = document.getAuthors()
+  if (authors) {
+    preparedDocument.authors = document.getAuthors().map((author) => {
+      const authorName = author.getName()
+      const authorEmail = author.getEmail()
+
+      return {
+        name: authorName ? document.applySubstitutions(authorName).toString() : undefined,
+        email: authorEmail
+          ? document.applySubstitutions(authorEmail).toString()
+          : undefined,
+      }
+    })
+  }
 
   return preparedDocument
 }
