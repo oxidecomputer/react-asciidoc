@@ -99,13 +99,16 @@ type Overrides = {
 export type Options = {
   overrides?: Overrides
   customDocument?: typeof Document
-  document: {
-    attributes?: DocumentBlock['attributes']
-    sections?: DocumentSection[]
-  }
 }
 
-export const Context = createContext<Options>({ document: {} })
+export const Context = createContext<
+  Options & {
+    document: {
+      attributes?: DocumentBlock['attributes']
+      sections?: DocumentSection[]
+    }
+  }
+>({ document: {} })
 
 const Asciidoc = ({
   document,
