@@ -1,11 +1,9 @@
-import { useContext } from 'react'
-
-import { Context } from '..'
+import { useConverterContext } from '..'
 import { type LiteralBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Literal = ({ node }: { node: LiteralBlock }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
 
   const docAttrs = document.attributes || {}
   const nowrap = node.attributes.nowrap || docAttrs['prewrap'] === undefined

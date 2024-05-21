@@ -1,7 +1,6 @@
 import parse from 'html-react-parser'
-import { useContext } from 'react'
 
-import { Context } from '..'
+import { useConverterContext } from '..'
 import { type DocumentSection } from '../utils/prepareDocument'
 
 const Outline = ({
@@ -14,7 +13,7 @@ const Outline = ({
     sectNumLevels?: number
   }
 }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
 
   if (!sections || sections.length === 0) return null
 

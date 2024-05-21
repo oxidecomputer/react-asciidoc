@@ -1,8 +1,7 @@
 import cn from 'classnames'
 import parse from 'html-react-parser'
-import { useContext } from 'react'
 
-import { Context } from '..'
+import { useConverterContext } from '..'
 import {
   type Cell,
   type TableBlock,
@@ -12,7 +11,7 @@ import {
 } from '../utils/prepareDocument'
 
 const Table = ({ node }: { node: TableBlock }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
 
   let classes = [

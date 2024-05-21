@@ -1,11 +1,11 @@
 import cn from 'classnames'
-import { createElement, useContext } from 'react'
+import { createElement } from 'react'
 
-import { Content, Context } from '../'
+import { Content, useConverterContext } from '../'
 import { type SectionBlock } from '../utils/prepareDocument'
 
 const Section = ({ node }: { node: SectionBlock }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
 
   let title: JSX.Element | string = node.title

@@ -1,12 +1,11 @@
 import parse from 'html-react-parser'
-import { useContext } from 'react'
 
-import { Content, Context } from '../'
+import { Content, useConverterContext } from '../'
 import { type BaseBlock } from '../utils/prepareDocument'
 import Outline from './Outline'
 
 const Preamble = ({ node }: { node: BaseBlock }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
 
   const hasToc =

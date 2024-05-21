@@ -1,12 +1,11 @@
 import parse from 'html-react-parser'
-import { useContext } from 'react'
 
-import { Content, Context } from '..'
+import { Content, useConverterContext } from '..'
 import { AdmonitionBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Admonition = ({ node }: { node: AdmonitionBlock }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
   const attrs = node.attributes
 

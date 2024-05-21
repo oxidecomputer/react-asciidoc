@@ -1,13 +1,12 @@
 import cn from 'classnames'
 import parse from 'html-react-parser'
-import { useContext } from 'react'
 
-import { Context } from '..'
+import { useConverterContext } from '..'
 import { Block } from '../utils/prepareDocument'
 import Outline from './Outline'
 
 const TableOfContents = ({ node }: { node: Block }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
 
   const hasSections = document.sections && document.sections.length > 0

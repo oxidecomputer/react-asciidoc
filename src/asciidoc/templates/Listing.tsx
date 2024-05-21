@@ -1,14 +1,13 @@
 import cn from 'classnames'
-import { useContext } from 'react'
 
-import { Context } from '..'
+import { Title, useConverterContext } from '..'
 import { type LiteralBlock } from '../utils/prepareDocument'
-import { Title } from './util'
 
 const Listing = ({ node }: { node: LiteralBlock }) => {
-  const { document } = useContext(Context)
+  const { document } = useConverterContext()
 
-  const nowrap = node.attributes.nowrap || document.attributes!['prewrap']
+  const docAttrs = document.attributes || {}
+  const nowrap = node.attributes.nowrap || docAttrs['prewrap'] === undefined
 
   if (node.style === 'source') {
     const lang = node.language
