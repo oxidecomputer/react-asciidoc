@@ -9,8 +9,6 @@ const Admonition = ({ node }: { node: AdmonitionBlock }) => {
   const docAttrs = document.attributes || {}
   const attrs = node.attributes
 
-  console.log(node)
-
   const renderIcon = () =>
     docAttrs.icons === 'font' && !attrs.icon ? (
       <i className={`fa icon-${attrs.name}`} title={`${attrs.textlabel}`} />
