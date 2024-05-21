@@ -2,30 +2,28 @@ import cn from 'classnames'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { type Block } from '../utils/prepareDocument'
+import { type Block, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Example = ({ node }: { node: Block }) => {
-  if (node.attributes.collapsible) {
-    const isCollapsible = node.attributes.collapsible
+  const isCollapsible = isOption(node.attributes, 'collapsible')
+  if (isCollapsible) {
     const title = node.title || 'Details'
     const isOpen = node.attributes.open ? true : undefined
 
-    if (isCollapsible) {
-      return (
-        <details
-          className={node.role}
-          open={isOpen}
-          {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-          {...(node.id ? { id: node.id } : {})}
-        >
-          <summary className="title">{parse(title)}</summary>
-          <div className="content">
-            <Content blocks={node.blocks} />
-          </div>
-        </details>
-      )
-    }
+    return (
+      <details
+        className={node.role}
+        open={isOpen}
+        {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+        {...(node.id ? { id: node.id } : {})}
+      >
+        <summary className="title">{parse(title)}</summary>
+        <div className="content">
+          <Content blocks={node.blocks} />
+        </div>
+      </details>
+    )
   }
 
   return (
