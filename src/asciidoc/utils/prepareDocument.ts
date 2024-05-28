@@ -46,7 +46,7 @@ type NodeType =
 type ContentModel = 'compound' | 'simple' | 'verbatim' | 'raw' | 'empty'
 
 export type BaseBlock = {
-  id: string
+  id?: string
   type: NodeType
   blocks: Block[]
   content?: string | undefined
@@ -55,7 +55,7 @@ export type BaseBlock = {
   lineNumber?: number | undefined
   style?: string | undefined
   role?: string | undefined
-  title: string | undefined
+  title?: string | undefined
   level: number
 }
 
