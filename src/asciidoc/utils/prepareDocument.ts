@@ -85,12 +85,12 @@ export type DocumentBlock = {
   attributes: Record<string, string | number>
   blocks: Block[]
   contentModel: ContentModel | undefined
-  footnotes: {
+  footnotes: ({
     text: string | undefined
     index: number | undefined
-  }[]
+  } | null)[]
   sections: DocumentSection[]
-  authors: { name: string | undefined; email: string | undefined }[]
+  authors: ({ name: string | undefined; email: string | undefined } | null)[]
 }
 
 export interface ParagraphBlock extends BaseBlock {
