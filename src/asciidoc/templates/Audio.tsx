@@ -1,22 +1,24 @@
-import type { Block } from '@asciidoctor/core'
+import { type AudioBlock } from '../utils/prepareDocument'
+import { Title } from './util'
 
-import { Title, getLineNumber } from './util'
-
-const Audio = ({ node }: { node: Block }) => {
-  const startTime = node.getAttribute('start')
-  const endTime = node.getAttribute('start')
+const Audio = ({ node }: { node: AudioBlock }) => {
+  const startTime = node.attributes.start
+  const endTime = node.attributes.end
   const timeAnchor =
     startTime || endTime ? (`#t=${startTime || ''}` + endTime ? `,${endTime}` : '') : ''
 
   return (
-    <div className="audioblock" {...getLineNumber(node)}>
-      <Title node={node} />
+    <div
+      className="audioblock"
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+    >
+      <Title text={node.title} />
       <div className="content">
         <audio
-          src={`${node.getMediaUri(node.getAttribute('target'))}${timeAnchor}`}
-          autoPlay={node.isOption('autoplay')}
-          controls={!node.isOption('nocontrols')}
-          loop={node.isOption('loop')}
+          src={`${node.mediaUri}${timeAnchor}`}
+          autoPlay={node.autoplay}
+          controls={!node.noControls}
+          loop={node.loop}
         >
           Your browser does not support the audio tag.
         </audio>

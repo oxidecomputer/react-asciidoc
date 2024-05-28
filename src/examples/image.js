@@ -1,32 +1,32 @@
 const image = `
 // .basic
-image::sunset.jpg[]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[]
 
 // .with-alt-text
-image::sunset.jpg[Shining sun]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[Shining sun]
 
 // .with-align
-image::sunset.jpg[align="center"]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[align="center"]
 
 // .with-float
-image::sunset.jpg[float="right"]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[float="right"]
 
 // .with-dimensions
-image::sunset.jpg[Shining sun, 300, 200]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[Shining sun, 300, 200]
 
 // .with-link
-image::sunset.jpg[link="http://www.flickr.com/photos/javh/5448336655"]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[link="http://www.flickr.com/photos/javh/5448336655"]
 
 // .with-title
 .A mountain sunset
-image::sunset.jpg[]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[]
 
 // .with-id
 [[img-sunset]]
-image::sunset.jpg[]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[]
 
 // .with-roles
-image::sunset.jpg[role="right text-center"]
+image::https://docs.asciidoctor.org/asciidoc/latest/macros/_images/sunset.jpg[role="right text-center"]
 `
 
 export default image

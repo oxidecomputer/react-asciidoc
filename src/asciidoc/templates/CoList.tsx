@@ -1,31 +1,29 @@
-import type { List, ListItem } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 
 import { Content } from '../'
-import { getText } from '../utils/getContent'
-import { Title, getLineNumber } from './util'
+import type { CoListBlock, ListItemBlock } from '../utils/prepareDocument'
+import { Title } from './util'
 
-const CoList = ({ node }: { node: List }) => {
-  return (
-    <div className="colist" {...getLineNumber(node)}>
-      <Title node={node} />
-      <table>
-        <tbody>
-          {node.getItems().map((item: ListItem, index) => (
-            <tr key={index}>
-              <td>
-                <i className="conum" data-value={index + 1} />
-                <b>{index + 1}</b>
-              </td>
-              <td>
-                {parse(getText(item))}
-                <Content blocks={item.getBlocks()} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
+const CoList = ({ node }: { node: CoListBlock }) => (
+  <div className="colist" {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}>
+    <Title text={node.title} />
+    <table>
+      <tbody>
+        {node.items.map((item: ListItemBlock, index) => (
+          <tr key={index}>
+            <td>
+              <i className="conum" data-value={index + 1} />
+              <b>{index + 1}</b>
+            </td>
+            <td>
+              {item.text && parse(item.text)}
+              <Content blocks={item.blocks} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)
+
 export default CoList

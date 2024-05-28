@@ -1,49 +1,37 @@
-import type { Section as SectionType } from '@asciidoctor/core'
 import cn from 'classnames'
 import { createElement } from 'react'
 
-import { Content } from '../'
-import { getLineNumber, getRole } from './util'
+import { Content, useConverterContext } from '../'
+import { type SectionBlock } from '../utils/prepareDocument'
 
-const Section = ({ node }: { node: SectionType }) => {
-  const docAttrs = node.getDocument().getAttributes()
-  const level = node.getLevel()
-  let title: JSX.Element | string = ''
+const Section = ({ node }: { node: SectionBlock }) => {
+  const { document } = useConverterContext()
+  const docAttrs = document.attributes || {}
 
-  let sectNum = node.getSectionNumeral()
+  let title: JSX.Element | string = node.title
+
+  let sectNum = node.num
   sectNum = sectNum === '.' ? '' : sectNum
 
-  const sectNumLevels = docAttrs['sectnumlevels'] ? parseInt(docAttrs['sectnumlevels']) : 3
+  const sectNumLevels = docAttrs['sectnumlevels']
+    ? parseInt(`${docAttrs['sectnumlevels']}`)
+    : 3
 
-  if (node.getCaption()) {
-    title = node.getCaptionedTitle()
-  } else if (node.isNumbered() && level <= sectNumLevels) {
-    // todo: investigate sectnumlevels overrides not working
-    if (level < 2 && node.getDocument().getDoctype() == 'book') {
-      const sectionName = node.getSectionName()
-      if (sectionName === 'chapter') {
-        const signifier = docAttrs['chapter-signifier']
-        title = `${signifier || ''} ${sectNum} ${node.getTitle()}`
-      } else if (sectionName === 'part') {
-        const signifier = docAttrs['part-signifier']
-        title = `${signifier || ''} ${sectNum} ${node.getTitle()}`
-      } else {
-        title = `${sectNum} ${node.getTitle()}`
-      }
-    } else {
-      title = `${sectNum} ${node.getTitle()}`
-    }
-  } else {
-    title = node.getTitle() || ''
+  if (node.numbered && node.level <= sectNumLevels) {
+    title = `${sectNum} ${node.title}`
   }
 
   if (docAttrs.sectlinks) {
     title = (
       <>
-        <a className="anchor" id={node.getId() || ''} {...getLineNumber(node)} />
+        <a
+          className="anchor"
+          id={node.id || ''}
+          {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+        />
         <a
           className="link"
-          href={`#${node.getId()}`}
+          href={`#${node.id}`}
           dangerouslySetInnerHTML={{
             __html: title,
           }}
@@ -52,25 +40,28 @@ const Section = ({ node }: { node: SectionType }) => {
     )
   }
 
-  if (level === 0) {
+  if (node.level === 0) {
     return (
       <>
         <h1
-          className={cn('sect0', getRole(node))}
+          className={cn('sect0', node.role)}
           data-sectnum={sectNum}
-          {...getLineNumber(node)}
+          {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
         >
           {title}
         </h1>
-        <Content blocks={node.getBlocks()} />
+        <Content blocks={node.blocks} />
       </>
     )
   } else {
     return (
-      <div className={cn(`sect${level}`, getRole(node))} {...getLineNumber(node)}>
-        {createElement(`h${level + 1}`, { 'data-sectnum': sectNum }, title)}
+      <div
+        className={cn(`sect${node.level}`, node.role)}
+        {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+      >
+        {createElement(`h${node.level + 1}`, { 'data-sectnum': sectNum }, title)}
         <div className="sectionbody">
-          <Content blocks={node.getBlocks()} />
+          <Content blocks={node.blocks} />
         </div>
       </div>
     )

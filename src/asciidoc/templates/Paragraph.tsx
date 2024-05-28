@@ -1,22 +1,17 @@
-import type { Block } from '@asciidoctor/core'
 import cn from 'classnames'
 
-import { getContent } from '../utils/getContent'
-import { Title, getLineNumber, getRole } from './util'
+import { type ParagraphBlock } from '../utils/prepareDocument'
+import { Title } from './util'
 
-const Paragraph = ({ node }: { node: Block }) => {
-  const content = getContent(node)
-
-  return (
-    <div
-      {...(node.getId() ? { id: node.getId() } : {})}
-      className={cn('paragraph', getRole(node))}
-      {...getLineNumber(node)}
-    >
-      <Title node={node} />
-      <p dangerouslySetInnerHTML={{ __html: content }} />
-    </div>
-  )
-}
+const Paragraph = ({ node }: { node: ParagraphBlock }) => (
+  <div
+    {...(node.id ? { id: node.id } : {})}
+    className={cn('paragraph', node.role)}
+    {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+  >
+    <Title text={node.title} />
+    {node.content && <p dangerouslySetInnerHTML={{ __html: node.content }} />}
+  </div>
+)
 
 export default Paragraph

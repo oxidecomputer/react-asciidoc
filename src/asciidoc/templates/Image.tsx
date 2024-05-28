@@ -1,22 +1,19 @@
-import type { Block } from '@asciidoctor/core'
+import { type ImageBlock } from '../utils/prepareDocument'
+import { Title } from './util'
 
-import { CaptionedTitle, getLineNumber } from './util'
-
-const Image = ({ node }: { node: Block }) => {
-  const target = node.getAttribute('target')
-
+const Image = ({ node }: { node: ImageBlock }) => {
   let img = (
     <img
-      src={node.getImageUri(target)}
-      alt={node.getAttribute('alt')}
-      width={node.getAttribute('width')}
-      height={node.getAttribute('height')}
+      src={node.imageUri}
+      alt={node.attributes['alt'].toString()}
+      width={node.attributes['width']}
+      height={node.attributes['height']}
     />
   )
 
-  if (node.hasAttribute('link')) {
+  if (node.attributes['link']) {
     img = (
-      <a className="image" href={node.getAttribute('link')}>
+      <a className="image" href={node.attributes['link'].toString()}>
         {img}
       </a>
     )
@@ -25,18 +22,18 @@ const Image = ({ node }: { node: Block }) => {
   return (
     <div
       className={`imageblock ${
-        node.hasAttribute('align') ? 'text-' + node.getAttribute('align') : ''
-      } ${node.hasAttribute('float') ? node.getAttribute('float') : ''} ${
-        node.getRole() ? node.getRole() : ''
+        node.attributes['align'] ? 'text-' + node.attributes['align'] : ''
+      } ${node.attributes['float'] ? node.attributes['float'] : ''} ${
+        node.role ? node.role : ''
       }`}
-      {...getLineNumber(node)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
       style={{
-        maxWidth: node.getAttribute('width'),
-        maxHeight: node.getAttribute('height'),
+        maxWidth: node.attributes['width'],
+        maxHeight: node.attributes['height'],
       }}
     >
       <div className="content">{img}</div>
-      <CaptionedTitle node={node} />
+      <Title text={node.title} />
     </div>
   )
 }

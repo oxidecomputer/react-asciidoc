@@ -2,7 +2,9 @@
 
 #### 🐛 Bug Fix
 
-- Apply image size to parent block [#23](https://github.com/oxidecomputer/react-asciidoc/pull/23) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Apply image size to parent block
+  [#23](https://github.com/oxidecomputer/react-asciidoc/pull/23)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -14,7 +16,8 @@
 
 #### 🐛 Bug Fix
 
-- Make auto dev dep [#22](https://github.com/oxidecomputer/react-asciidoc/pull/22) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Make auto dev dep [#22](https://github.com/oxidecomputer/react-asciidoc/pull/22)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -26,7 +29,9 @@
 
 #### 🐛 Bug Fix
 
-- Fix example id floating title [#21](https://github.com/oxidecomputer/react-asciidoc/pull/21) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Fix example id floating title
+  [#21](https://github.com/oxidecomputer/react-asciidoc/pull/21)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
