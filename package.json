@@ -1,6 +1,6 @@
 {
   "name": "@oxide/react-asciidoc",
-  "version": "0.2.8",
+  "version": "1.0.0",
   "files": [
     "dist"
   ],
