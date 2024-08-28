@@ -462,37 +462,32 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
 // used to modify a document after the fact
 // e.g. for a syntax highlighter
-const processBlocks = (
-  blocks: Block[],
-  processFunction: (block: Block) => Block | Promise<Block>,
-): Block[] | Promise<Block[]> => {
-  return Promise.all(
-    blocks.map(async (block) => {
-      let processedBlock = await Promise.resolve(processFunction(block))
-
-      if (processedBlock.blocks && processedBlock.blocks.length > 0) {
-        processedBlock.blocks = await Promise.resolve(
-          processBlocks(processedBlock.blocks, processFunction),
-        )
-      }
-
-      if ((processedBlock as ListBlock).items) {
-        const processedListblock = processedBlock as ListBlock
-        processedListblock.items = (await Promise.resolve(
-          processBlocks(processedListblock.items, processFunction),
-        )) as ListItemBlock[]
-      }
-
-      return processedBlock
-    }),
-  )
-}
-
 export const processDocument = async (
   documentBlock: DocumentBlock,
   processFunction: (block: Block) => Promise<Block>,
 ): Promise<DocumentBlock> => {
-  const processedBlocks = await processBlocks(documentBlock.blocks, processFunction)
+  const processBlocks = async (blocks: Block[]): Promise<Block[]> => {
+    return Promise.all(
+      blocks.map(async (block) => {
+        let processedBlock = await processFunction(block)
+
+        if (processedBlock.blocks && processedBlock.blocks.length > 0) {
+          processedBlock.blocks = await processBlocks(processedBlock.blocks)
+        }
+
+        if ((processedBlock as ListBlock).items) {
+          const processedListblock = processedBlock as ListBlock
+          processedListblock.items = (await processBlocks(
+            processedListblock.items,
+          )) as ListItemBlock[]
+        }
+
+        return processedBlock
+      }),
+    )
+  }
+
+  const processedBlocks = await processBlocks(documentBlock.blocks)
 
   return {
     ...documentBlock,
@@ -500,11 +495,31 @@ export const processDocument = async (
   }
 }
 
+// same as `processDocument` but works syncronously
 export const processDocumentSync = (
   documentBlock: DocumentBlock,
   processFunction: (block: Block) => Block,
 ): DocumentBlock => {
-  const processedBlocks = processBlocks(documentBlock.blocks, processFunction) as Block[]
+  function processBlocks(blocks: Block[]): Block[] {
+    return blocks.map((block) => {
+      let processedBlock = processFunction(block)
+
+      if (processedBlock.blocks && processedBlock.blocks.length > 0) {
+        processedBlock.blocks = processBlocks(processedBlock.blocks)
+      }
+
+      if ((processedBlock as ListBlock).items) {
+        const processedListblock = processedBlock as ListBlock
+        processedListblock.items = processBlocks(
+          processedListblock.items,
+        ) as ListItemBlock[]
+      }
+
+      return processedBlock
+    })
+  }
+
+  const processedBlocks = processBlocks(documentBlock.blocks)
 
   return {
     ...documentBlock,
