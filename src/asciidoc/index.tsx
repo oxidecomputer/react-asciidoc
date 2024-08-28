@@ -1,12 +1,3 @@
-import asciidoctor from '@asciidoctor/core'
-import type {
-  AbstractBlock,
-  Block,
-  List,
-  Section as SectionType,
-  Table as TableType,
-} from '@asciidoctor/core'
-import type * as AdocTypes from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { createContext, useContext } from 'react'
 
@@ -36,8 +27,23 @@ import {
   UList,
   Verse,
 } from './templates'
-import { CaptionedTitle, Title, getLineNumber, getRole } from './templates/util'
-import { getContent, getText } from './utils/getContent'
+import { Title } from './templates/util'
+import { prepareDocument, processDocument } from './utils/prepareDocument'
+import type {
+  AdmonitionBlock,
+  AudioBlock,
+  Block,
+  CoListBlock,
+  DListBlock,
+  DocumentBlock,
+  DocumentSection,
+  ImageBlock,
+  ListBlock,
+  LiteralBlock,
+  ParagraphBlock,
+  SectionBlock,
+  TableBlock,
+} from './utils/prepareDocument'
 
 // Add support for inline blocks
 // Cannot use react but could probably convert
@@ -91,82 +97,92 @@ export type Options = {
   customDocument?: typeof Document
 }
 
-const OptionsContext = createContext<Options>({})
+export const Context = createContext<
+  Options & {
+    document: {
+      attributes?: DocumentBlock['attributes']
+      sections?: DocumentSection[]
+    }
+  }
+>({ document: {} })
 
 const Asciidoc = ({
-  content,
+  document,
   options,
 }: {
-  content: AdocTypes.Document
+  document: DocumentBlock
   options?: Options
 }) => {
   const CustomDocument = options && options.customDocument
 
   return (
-    <OptionsContext.Provider value={options || {}}>
+    <Context.Provider
+      value={
+        {
+          ...options,
+          document: { attributes: document.attributes, sections: document.sections },
+        } || {}
+      }
+    >
       {CustomDocument ? (
-        <CustomDocument document={content} />
+        <CustomDocument document={document} />
       ) : (
-        <Document document={content} />
+        <Document document={document} />
       )}
-    </OptionsContext.Provider>
+    </Context.Provider>
   )
 }
 
-const Content = ({ blocks }: { blocks: AbstractBlock[] }) => {
+const Content = ({ blocks }: { blocks: Block[] }) => {
   return (
     <>
-      {blocks.map((block: AbstractBlock, index: number) => (
-        <Converter key={`${index}-${block.getNodeName()}`} node={block} />
+      {blocks.map((block: Block, index: number) => (
+        <Converter key={`${index}-${block.type}`} node={block} />
       ))}
     </>
   )
 }
 
-const Converter = ({ node }: { node: AbstractBlock }) => {
-  const opts = useContext(OptionsContext)
+const Converter = ({ node }: { node: Block }) => {
+  const { overrides } = useContext(Context)
 
-  const transform = node.getNodeName() as keyof Overrides
-
-  const document = node.getDocument()
-  const blockAttributes = node.getAttributes()
-  document.playbackAttributes(blockAttributes)
-
-  const OverrideComponent = opts && opts.overrides && opts.overrides[transform]
+  const transform = node.type as keyof Overrides
+  const OverrideComponent =
+    overrides && (overrides[transform] as ({ node }: { node: Block }) => JSX.Element)
 
   if (OverrideComponent) {
-    return <OverrideComponent node={node as any} />
+    return <OverrideComponent node={node} />
   }
 
   switch (transform) {
     case 'audio':
-      return <Audio node={node as Block} />
+      return <Audio node={node as AudioBlock} />
     case 'preamble':
-      return <Preamble node={node} />
+      return <Preamble node={node as Block} />
     case 'section':
-      return <Section node={node as SectionType} />
+      return <Section node={node as SectionBlock} />
     case 'paragraph':
-      return <Paragraph node={node as Block} />
+      return <Paragraph node={node as ParagraphBlock} />
     case 'dlist':
-      return <DList node={node as List} />
+      return <DList node={node as DListBlock} />
     case 'ulist':
-      return <UList node={node as List} />
+      return <UList node={node as ListBlock} />
     case 'floating_title':
       return <FloatingTitle node={node as Block} />
     case 'admonition':
-      return <Admonition node={node as Block} />
+      return <Admonition node={node as AdmonitionBlock} />
     case 'listing':
-      return <Listing node={node as Block} />
+      return <Listing node={node as LiteralBlock} />
     case 'literal':
-      return <Literal node={node as Block} />
+      return <Literal node={node as LiteralBlock} />
     case 'image':
-      return <Image node={node as Block} />
+      return <Image node={node as ImageBlock} />
     case 'colist':
-      return <CoList node={node as List} />
+      return <CoList node={node as CoListBlock} />
     case 'olist':
-      return <OList node={node as List} />
+      return <OList node={node as ListBlock} />
     case 'table':
-      return <Table node={node as TableType} />
+      return <Table node={node as TableBlock} />
     case 'thematic_break':
       return <ThematicBreak />
     case 'open':
@@ -176,7 +192,7 @@ const Converter = ({ node }: { node: AbstractBlock }) => {
     case 'page_break':
       return <PageBreak />
     case 'example':
-      return <Example node={node as Block} />
+      return <Example node={node as LiteralBlock} />
     case 'sidebar':
       return <Sidebar node={node as Block} />
     case 'quote':
@@ -186,21 +202,32 @@ const Converter = ({ node }: { node: AbstractBlock }) => {
     case 'toc':
       return <TableOfContents node={node as Block} />
     default:
-      return <>{parse(node.convert())}</>
+      return <></>
   }
 }
 
-export default Asciidoc
-export {
-  asciidoctor,
-  Content,
-  getContent,
-  getText,
-  Title,
-  getRole,
-  getLineNumber,
-  CaptionedTitle,
-  AdocTypes,
-  parse,
+export const useConverterContext = () => {
+  const context = useContext(Context)
+  if (context === undefined) {
+    throw new Error('useConverterContext must be used within a Provider')
+  }
+  return context
+}
+
+export { Asciidoc, Content, prepareDocument, Title, parse, processDocument }
+export type {
+  AdmonitionBlock,
+  AudioBlock,
+  Block,
+  CoListBlock,
+  DListBlock,
+  DocumentBlock,
+  DocumentSection,
+  ImageBlock,
+  ListBlock,
+  LiteralBlock,
+  ParagraphBlock,
+  SectionBlock,
+  TableBlock,
 }
 export * from './templates'

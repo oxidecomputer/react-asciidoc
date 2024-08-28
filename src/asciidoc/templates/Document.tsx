@@ -1,36 +1,35 @@
-import type { AbstractBlock, Document as DocumentType } from '@asciidoctor/core'
 import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
 import { Content } from '../'
-import { getText } from '../utils/getContent'
+import { type DocumentBlock, getAttribute, hasAttribute } from '../utils/prepareDocument'
 import Outline from './Outline'
 
-const Document = ({ document }: { document: DocumentType }) => {
-  const blocks = document.getBlocks()
-
-  const footnotes = document.getFootnotes()
-
+const Document = ({ document }: { document: DocumentBlock }) => {
   const Header = () => {
-    if (!document.getNoheader()) {
+    if (!document.noHeader) {
       return (
         <div id="header">
-          {document.hasHeader() && (
+          {document.hasHeader && (
             <>
               <h1
                 dangerouslySetInnerHTML={{
-                  __html: document.getDocumentTitle()?.toString() || '',
+                  __html: document.title,
                 }}
               />
 
               <Details />
 
-              {document.hasSections() &&
-                document.hasAttribute('toc') &&
-                document.getAttribute('toc-placement') === 'auto' && (
-                  <div id="toc" className={document.getAttribute('toc-class', 'toc')}>
-                    <div id="toctitle">{document.getAttribute('toc-title')}</div>
-                    <Outline node={document as AbstractBlock} />
+              {document.sections &&
+                document.sections.length > 0 &&
+                document.attributes['toc'] !== undefined &&
+                document.attributes['toc-placement'] === 'auto' && (
+                  <div
+                    id="toc"
+                    className={getAttribute(document.attributes, 'toc-class', 'toc')}
+                  >
+                    <div id="toctitle">{document.attributes['toc-title']}</div>
+                    <Outline sections={document.sections} />
                   </div>
                 )}
             </>
@@ -43,25 +42,25 @@ const Document = ({ document }: { document: DocumentType }) => {
   }
 
   const Footnotes = () => {
-    if (!footnotes) return null
+    if (!document.footnotes) return null
 
     if (
-      footnotes.length > 0 &&
-      blocks &&
-      !blocks[0].getDocument().hasAttribute('nofootnotes')
+      document.footnotes.length > 0 &&
+      document.blocks &&
+      !hasAttribute(document.attributes, 'nofootnotes')
     ) {
       return (
         <div id="footnotes">
           <hr />
 
-          {footnotes.map((footnote: DocumentType.Footnote) => (
+          {document.footnotes.map((footnote) => (
             <div
               className="footnote"
-              id={`_footnotedef_${footnote.getIndex()}`}
-              key={footnote.getIndex()}
+              id={`_footnotedef_${footnote.index}`}
+              key={footnote.index}
             >
-              <a href={`#_footnoteref_${footnote.getIndex()}`}>{footnote.getIndex()}</a>.{' '}
-              {parse(getText(footnote) || '')}
+              <a href={`#_footnoteref_${footnote.index}`}>{footnote.index}</a>.{' '}
+              {parse(footnote.text || '')}
             </div>
           ))}
         </div>
@@ -72,29 +71,28 @@ const Document = ({ document }: { document: DocumentType }) => {
   }
 
   const Details = () => {
-    const authors = document.getAuthors()
     if (
-      authors.length > 0 ||
-      document.hasAttribute('revnumber') ||
-      document.hasAttribute('revdate') ||
-      document.hasAttribute('revremark')
+      document.authors.length > 0 ||
+      hasAttribute(document.attributes, 'revnumber') ||
+      hasAttribute(document.attributes, 'revdate') ||
+      hasAttribute(document.attributes, 'revremark')
     ) {
       return (
         <div className="details">
-          {document.getAuthors().map((author, index) => (
+          {document.authors.map((author, index) => (
             <Fragment key={index}>
-              {author.getName() && (
+              {author.name && (
                 <>
                   <span id={`author${index + 1 > 1 ? index + 1 : ''}`} className="author">
-                    {parse(document.applySubstitutions(author.getName() || '').toString())}
+                    {parse(author.name)}
                   </span>
                   <br />
                 </>
               )}
-              {author.getEmail() && (
+              {author.email && (
                 <>
                   <span id={`email${index + 1 > 1 ? index + 1 : ''}`} className="email">
-                    {parse(document.applySubstitutions(author.getEmail() || '').toString())}
+                    {parse(author.email)}
                   </span>
                   <br />
                 </>
@@ -102,22 +100,22 @@ const Document = ({ document }: { document: DocumentType }) => {
             </Fragment>
           ))}
 
-          {document.hasAttribute('revnumber') && (
-            <span id="revnumber">{`${document
-              .getAttribute('version-label')
-              .toLowerCase()} ${document.getAttribute('revnumber')}${
-              document.hasAttribute('revdate') ? ',' : ''
+          {hasAttribute(document.attributes, 'revnumber') && (
+            <span id="revnumber">{`${document.attributes['version-label']
+              .toString()
+              .toLowerCase()} ${document.attributes['revnumber']}${
+              document.attributes['revdate'] ? ',' : ''
             }`}</span>
           )}
 
-          {document.hasAttribute('revdate') && (
-            <span id="revdate">{document.getAttribute('revdate')}</span>
+          {hasAttribute(document.attributes, 'revdate') && (
+            <span id="revdate">{document.attributes['revdate']}</span>
           )}
 
-          {document.hasAttribute('revremark') && (
+          {hasAttribute(document.attributes, 'revremark') && (
             <>
               <br />
-              <span id="revremark">{document.getAttribute('revremark')}</span>
+              <span id="revremark">{document.attributes['revremark']}</span>
             </>
           )}
         </div>
@@ -131,7 +129,7 @@ const Document = ({ document }: { document: DocumentType }) => {
     <>
       <Header />
       <div id="content">
-        <Content blocks={blocks} />
+        <Content blocks={document.blocks} />
       </div>
       <Footnotes />
     </>
