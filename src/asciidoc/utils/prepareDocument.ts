@@ -462,28 +462,37 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
 // used to modify a document after the fact
 // e.g. for a syntax highlighter
+const processBlocks = (
+  blocks: Block[],
+  processFunction: (block: Block) => Block | Promise<Block>,
+): Block[] | Promise<Block[]> => {
+  return Promise.all(
+    blocks.map(async (block) => {
+      let processedBlock = await Promise.resolve(processFunction(block))
+
+      if (processedBlock.blocks && processedBlock.blocks.length > 0) {
+        processedBlock.blocks = await Promise.resolve(
+          processBlocks(processedBlock.blocks, processFunction),
+        )
+      }
+
+      if ((processedBlock as ListBlock).items) {
+        const processedListblock = processedBlock as ListBlock
+        processedListblock.items = (await Promise.resolve(
+          processBlocks(processedListblock.items, processFunction),
+        )) as ListItemBlock[]
+      }
+
+      return processedBlock
+    }),
+  )
+}
+
 export const processDocument = async (
   documentBlock: DocumentBlock,
   processFunction: (block: Block) => Promise<Block>,
 ): Promise<DocumentBlock> => {
-  async function processBlocks(blocks: Block[]): Promise<Block[]> {
-    return Promise.all(
-      blocks.map(async (block) => {
-        let processedBlock = await processFunction(block)
-
-        if (processedBlock.blocks && processedBlock.blocks.length > 0) {
-          processedBlock = {
-            ...processedBlock,
-            blocks: await processBlocks(processedBlock.blocks),
-          }
-        }
-
-        return processedBlock
-      }),
-    )
-  }
-
-  const processedBlocks = await processBlocks(documentBlock.blocks)
+  const processedBlocks = await processBlocks(documentBlock.blocks, processFunction)
 
   return {
     ...documentBlock,
@@ -491,27 +500,11 @@ export const processDocument = async (
   }
 }
 
-// same as `processDocument` but works syncronously
 export const processDocumentSync = (
   documentBlock: DocumentBlock,
   processFunction: (block: Block) => Block,
 ): DocumentBlock => {
-  function processBlocks(blocks: Block[]): Block[] {
-    return blocks.map((block) => {
-      let processedBlock = processFunction(block)
-
-      if (processedBlock.blocks && processedBlock.blocks.length > 0) {
-        processedBlock = {
-          ...processedBlock,
-          blocks: processBlocks(processedBlock.blocks),
-        }
-      }
-
-      return processedBlock
-    })
-  }
-
-  const processedBlocks = processBlocks(documentBlock.blocks)
+  const processedBlocks = processBlocks(documentBlock.blocks, processFunction) as Block[]
 
   return {
     ...documentBlock,
