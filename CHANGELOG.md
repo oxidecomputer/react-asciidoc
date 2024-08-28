@@ -1,3 +1,15 @@
+# v1.0.0 (Wed Aug 28 2024)
+
+#### 💥 Breaking Change
+
+- Prepare document [#24](https://github.com/oxidecomputer/react-asciidoc/pull/24) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v0.2.8 (Tue May 07 2024)
 
 #### 🐛 Bug Fix
