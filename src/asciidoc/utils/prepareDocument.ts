@@ -496,35 +496,3 @@ export const processDocument = async (
     blocks: processedBlocks,
   }
 }
-
-// same as `processDocument` but works syncronously
-export const processDocumentSync = (
-  documentBlock: DocumentBlock,
-  processFunction: (block: Block) => Block,
-): DocumentBlock => {
-  function processBlocks(blocks: Block[]): Block[] {
-    return blocks.map((block) => {
-      let processedBlock = processFunction(block)
-
-      if (processedBlock.blocks && processedBlock.blocks.length > 0) {
-        processedBlock.blocks = processBlocks(processedBlock.blocks)
-      }
-
-      if ((processedBlock as ListBlock).items) {
-        const processedListblock = processedBlock as ListBlock
-        processedListblock.items = processBlocks(
-          processedListblock.items,
-        ) as ListItemBlock[]
-      }
-
-      return processedBlock
-    })
-  }
-
-  const processedBlocks = processBlocks(documentBlock.blocks)
-
-  return {
-    ...documentBlock,
-    blocks: processedBlocks,
-  }
-}
