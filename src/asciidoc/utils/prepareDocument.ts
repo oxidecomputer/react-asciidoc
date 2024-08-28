@@ -85,10 +85,12 @@ export type DocumentBlock = {
   attributes: Record<string, string | number>
   blocks: Block[]
   contentModel: ContentModel | undefined
-  footnotes: {
-    text: string | undefined
-    index: number | undefined
-  }[]
+  footnotes:
+    | {
+        text: string | undefined
+        index: number | undefined
+      }[]
+    | null
   sections: DocumentSection[]
   authors: { name: string | undefined; email: string | undefined }[]
 }
