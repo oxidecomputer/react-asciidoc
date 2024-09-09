@@ -1,3 +1,15 @@
+# v1.0.1 (Mon Sep 09 2024)
+
+#### 🐛 Bug Fix
+
+- chore: roll deps fwd [#28](https://github.com/oxidecomputer/react-asciidoc/pull/28) ([@cdaringe](https://github.com/cdaringe))
+
+#### Authors: 1
+
+- Christopher Dieringer ([@cdaringe](https://github.com/cdaringe))
+
+---
+
 # v1.0.0 (Wed Aug 28 2024)
 
 #### 💥 Breaking Change
