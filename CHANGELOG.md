@@ -2,7 +2,8 @@
 
 #### 💥 Breaking Change
 
-- Prepare document [#24](https://github.com/oxidecomputer/react-asciidoc/pull/24) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Prepare document [#24](https://github.com/oxidecomputer/react-asciidoc/pull/24)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
