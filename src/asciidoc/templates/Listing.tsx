@@ -36,6 +36,7 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
       </div>
     )
   } else {
+    // Regular listing blocks are wrapped only in a `pre` tag
     return (
       <div
         className="listingblock"
@@ -43,9 +44,12 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
       >
         <Title text={node.title} />
         <div className="content">
-          <pre className={nowrap ? ' nowrap' : ''}>
-            <code dangerouslySetInnerHTML={{ __html: node.source }} />
-          </pre>
+          <pre
+            className={cn('highlight !block', nowrap ? 'nowrap' : '')}
+            dangerouslySetInnerHTML={{
+              __html: node.content || '',
+            }}
+          />
         </div>
       </div>
     )
