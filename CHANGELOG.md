@@ -1,3 +1,15 @@
+# v1.0.2 (Tue Nov 12 2024)
+
+#### 🐛 Bug Fix
+
+- Listing: Match HTML5 renderer better [#30](https://github.com/oxidecomputer/react-asciidoc/pull/30) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.0.1 (Mon Sep 09 2024)
 
 #### 🐛 Bug Fix
