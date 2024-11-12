@@ -9,10 +9,11 @@
     "type": "git",
     "url": "https://github.com/oxidecomputer/react-asciidoc.git"
   },
-  "main": "./dist/react-asciidoc.js",
+  "main": "./dist/react-asciidoc.umd.cjs",
   "exports": {
     ".": {
       "import": "./dist/react-asciidoc.js",
+      "require": "./dist/react-asciidoc.umd.cjs",
       "types": "./dist/types/index.d.ts"
     }
   },

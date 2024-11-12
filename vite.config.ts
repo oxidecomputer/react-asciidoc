@@ -10,7 +10,7 @@ export default defineConfig({
       entry: path.resolve(__dirname, 'src/asciidoc/index.tsx'),
       name: 'ReactAsciiDoc',
       fileName: 'react-asciidoc',
-      formats: ['es'],
+      formats: ['es', 'umd'],
     },
     rollupOptions: {
       external: ['react', '@asciidoctor/core', 'react-dom', 'html-react-parser'],
