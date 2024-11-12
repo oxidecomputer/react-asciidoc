@@ -1,7 +1,6 @@
 // @ts-nocheck
 import asciidoctor from '@asciidoctor/core'
 import type { Extensions } from '@asciidoctor/core'
-import hljs from 'highlight.js'
 import { useEffect, useMemo } from 'react'
 import { Fragment } from 'react'
 
@@ -60,16 +59,6 @@ function App() {
 
     return input
   }
-
-  ad.SyntaxHighlighter.register('highlight.js-server', {
-    handlesHighlighting: () => true,
-    highlight: (_node, source, lang) => {
-      if (!lang) return source
-      return hljs.getLanguage(lang)
-        ? hljs.highlight(source, { language: lang }).value
-        : source
-    },
-  })
 
   return (
     <div className="App">
