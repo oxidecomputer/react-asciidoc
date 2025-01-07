@@ -1,7 +1,7 @@
 import cn from 'classnames'
 import parse from 'html-react-parser'
 
-import { useConverterContext } from '..'
+import { Title, useConverterContext } from '..'
 import {
   type Cell,
   type TableBlock,
@@ -63,7 +63,9 @@ const Table = ({ node }: { node: TableBlock }) => {
       {node.title && (
         <caption className="title">
           {!id && <a className="anchor" id={slug}></a>}
-          <a href={`#${slug}`}>{node.title}</a>
+          <a href={`#${slug}`}>
+            <Title text={node.title} />
+          </a>
         </caption>
       )}
       {node.columns.length > 0 && (
