@@ -1,3 +1,15 @@
+# v1.0.3 (Tue Jan 07 2025)
+
+#### 🐛 Bug Fix
+
+- Parse table title [#31](https://github.com/oxidecomputer/react-asciidoc/pull/31) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.0.2 (Tue Nov 12 2024)
 
 #### 🐛 Bug Fix
