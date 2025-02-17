@@ -1,3 +1,15 @@
+# v1.0.4 (Mon Feb 17 2025)
+
+#### 🐛 Bug Fix
+
+- Allow React 19 in peer deps [#32](https://github.com/oxidecomputer/react-asciidoc/pull/32) ([@david-crespo](https://github.com/david-crespo))
+
+#### Authors: 1
+
+- David Crespo ([@david-crespo](https://github.com/david-crespo))
+
+---
+
 # v1.0.3 (Tue Jan 07 2025)
 
 #### 🐛 Bug Fix
