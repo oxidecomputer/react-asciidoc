@@ -1,3 +1,15 @@
+# v1.1.0 (Thu Feb 20 2025)
+
+#### 🚀 Enhancement
+
+- Add video block [#34](https://github.com/oxidecomputer/react-asciidoc/pull/34) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.0.4 (Mon Feb 17 2025)
 
 #### 🐛 Bug Fix
