@@ -234,5 +234,6 @@ export type {
   ParagraphBlock,
   SectionBlock,
   TableBlock,
+  VideoBlock,
 }
 export * from './templates'
