@@ -1,4 +1,5 @@
 import cn from 'classnames'
+import parse from 'html-react-parser'
 
 import { Content } from '..'
 import { type Block } from '../utils/prepareDocument'
@@ -19,7 +20,7 @@ const Quote = ({ node }: { node: Block }) => {
       <Content blocks={node.blocks} />
       {attribution && (
         <div className="attribution">
-          — {attribution}
+          — {parse(attribution.toString())}
           {citetitle && <cite>{citetitle}</cite>}
         </div>
       )}
