@@ -68,6 +68,8 @@ export type Block =
   | LiteralBlock
   | SectionBlock
   | TableBlock
+  | AudioBlock
+  | VideoBlock
 
 export type DocumentSection = {
   id: string
@@ -104,6 +106,14 @@ export interface AdmonitionBlock extends BaseBlock {
 
 export interface AudioBlock extends BaseBlock {
   type: 'audio'
+  mediaUri: string
+  autoplay: boolean
+  noControls: boolean
+  loop: boolean
+}
+
+export interface VideoBlock extends BaseBlock {
+  type: 'video'
   mediaUri: string
   autoplay: boolean
   noControls: boolean
@@ -267,6 +277,15 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       audioBlock.noControls = !block.isOption('nocontrols')
       audioBlock.loop = block.isOption('loop')
       processedBlock = audioBlock
+    }
+
+    if (type === 'video') {
+      let videoBlock = processedBlock as VideoBlock
+      videoBlock.mediaUri = block.getMediaUri(block.getAttribute('target'))
+      videoBlock.autoplay = block.isOption('autoplay')
+      videoBlock.noControls = !block.isOption('nocontrols')
+      videoBlock.loop = block.isOption('loop')
+      processedBlock = videoBlock
     }
 
     if (type === 'image') {

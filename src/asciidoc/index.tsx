@@ -26,6 +26,7 @@ import {
   ThematicBreak,
   UList,
   Verse,
+  Video,
 } from './templates'
 import { Title } from './templates/util'
 import { prepareDocument, processDocument } from './utils/prepareDocument'
@@ -43,6 +44,7 @@ import type {
   ParagraphBlock,
   SectionBlock,
   TableBlock,
+  VideoBlock,
 } from './utils/prepareDocument'
 
 // Add support for inline blocks
@@ -90,6 +92,7 @@ type Overrides = {
   thematic_break?: typeof ThematicBreak
   ulist?: typeof UList
   verse?: typeof Verse
+  video?: typeof Video
 }
 
 export type Options = {
@@ -199,6 +202,8 @@ const Converter = ({ node }: { node: Block }) => {
       return <Quote node={node as Block} />
     case 'verse':
       return <Verse node={node as Block} />
+    case 'video':
+      return <Video node={node as VideoBlock} />
     case 'toc':
       return <TableOfContents node={node as Block} />
     default:
