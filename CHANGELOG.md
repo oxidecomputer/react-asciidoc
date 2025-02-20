@@ -1,3 +1,15 @@
+# v1.1.1 (Thu Feb 20 2025)
+
+#### 🐛 Bug Fix
+
+- Export video block type [#37](https://github.com/oxidecomputer/react-asciidoc/pull/37) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.1.0 (Thu Feb 20 2025)
 
 #### 🚀 Enhancement
