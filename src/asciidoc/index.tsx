@@ -29,7 +29,7 @@ import {
   Video,
 } from './templates'
 import { Title } from './templates/util'
-import { prepareDocument, processDocument } from './utils/prepareDocument'
+import { isOption, prepareDocument, processDocument } from './utils/prepareDocument'
 import type {
   AdmonitionBlock,
   AudioBlock,
@@ -219,7 +219,7 @@ export const useConverterContext = () => {
   return context
 }
 
-export { Asciidoc, Content, prepareDocument, Title, parse, processDocument }
+export { Asciidoc, Content, prepareDocument, Title, parse, processDocument, isOption }
 export type {
   AdmonitionBlock,
   AudioBlock,
