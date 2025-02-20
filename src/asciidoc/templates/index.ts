@@ -23,6 +23,7 @@ import TableOfContents from './TableOfContents'
 import ThematicBreak from './ThematicBreak'
 import UList from './UList'
 import Verse from './Verse'
+import Video from './Video'
 
 export {
   Audio,
@@ -50,4 +51,5 @@ export {
   Quote,
   Verse,
   TableOfContents,
+  Video,
 }
