@@ -1,3 +1,15 @@
+# v1.1.2 (Thu Feb 20 2025)
+
+#### 🐛 Bug Fix
+
+- Fix raw quote attribution [#33](https://github.com/oxidecomputer/react-asciidoc/pull/33) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.1.1 (Thu Feb 20 2025)
 
 #### 🐛 Bug Fix
