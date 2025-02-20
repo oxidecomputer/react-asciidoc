@@ -118,6 +118,7 @@ export interface VideoBlock extends BaseBlock {
   autoplay: boolean
   noControls: boolean
   loop: boolean
+  onHover: boolean
 }
 
 export interface ImageBlock extends BaseBlock {
@@ -285,6 +286,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       videoBlock.autoplay = block.isOption('autoplay')
       videoBlock.noControls = !block.isOption('nocontrols')
       videoBlock.loop = block.isOption('loop')
+      videoBlock.onHover = block.isOption('onhover')
       processedBlock = videoBlock
     }
 
