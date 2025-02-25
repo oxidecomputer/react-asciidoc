@@ -33,7 +33,7 @@
   "author": "Oxide Computer Company <bots@oxidecomputer.com>",
   "license": "MPL 2.0",
   "dependencies": {
-    "html-react-parser": "^5.1.15"
+    "html-react-parser": "^5.2.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.27.1",
