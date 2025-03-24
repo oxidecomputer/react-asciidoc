@@ -241,6 +241,35 @@ export const hasAttribute = (attrs: Record<string, string | number>, name: strin
   return attrs[name] !== undefined
 }
 
+const contentCache: { [key: string]: string } = {}
+type Node = AdocTypes.Block | AdocTypes.AbstractBlock | AdocTypes.Table.Cell
+
+const getContent = (node: Node) => {
+  const cacheKey = (node as Node & { $$id: string }).$$id
+
+  if (contentCache[cacheKey]) {
+    return contentCache[cacheKey]
+  }
+
+  const newContent = (node.getContent && node.getContent()) || ''
+  contentCache[cacheKey] = newContent
+  return newContent
+}
+
+const getText = (
+  node: AdocTypes.ListItem | AdocTypes.Document.Footnote | AdocTypes.Table.Cell,
+) => {
+  const cacheKey = (node as Node & { $$id: string }).$$id
+
+  if (contentCache[cacheKey]) {
+    return contentCache[cacheKey]
+  }
+
+  const newContent = (node.getText && node.getText()) || ''
+  contentCache[cacheKey] = newContent
+  return newContent
+}
+
 export const prepareDocument = (document: AdocTypes.Document) => {
   let preparedDocument: DocumentBlock
 
@@ -256,7 +285,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       id: block.getId && block.getId(),
       type,
       blocks,
-      content: blocks.length > 0 ? undefined : block.getContent && block.getContent(),
+      content: blocks.length > 0 ? undefined : getContent(block),
       attributes: block.getAttributes && block.getAttributes(),
       contentModel,
       lineNumber: block.getLineNumber && block.getLineNumber(),
@@ -348,7 +377,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     if (type === 'list_item') {
       let listItemBlock = processedBlock as ListItemBlock
       const adocListItem = block as unknown as AdocTypes.ListItem
-      listItemBlock.text = adocListItem.hasText() ? adocListItem.getText() : undefined
+      listItemBlock.text = adocListItem.hasText() ? getText(adocListItem) : undefined
     }
 
     if (type === 'table') {
@@ -401,7 +430,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       let tableCellBlock: Cell = {
         ...processedBlock,
         type: 'table_cell',
-        text: adocListItem.getText(),
+        text: getText(adocListItem),
         columnSpan: adocListItem.getColumnSpan(),
         rowSpan: adocListItem.getRowSpan(),
         source: adocListItem.getSource(),
