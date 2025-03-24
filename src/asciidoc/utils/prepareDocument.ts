@@ -249,23 +249,14 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   ): Block {
     const type = block.getNodeName && (block.getNodeName() as NodeType)
     const contentModel = block.getContentModel && block.getContentModel()
-
-    const isList =
-      type === 'colist' || type === 'olist' || type === 'ulist' || type == 'dlist'
-
     const blocks =
-      type && !isList && block.hasBlocks()
-        ? block.getBlocks().map((block) => processBlock(block))
-        : []
+      type && block.hasBlocks() ? block.getBlocks().map((block) => processBlock(block)) : []
 
     let processedBlock: Block = {
       id: block.getId && block.getId(),
       type,
       blocks,
-      content:
-        blocks.length > 0 || isList || type === 'list_item'
-          ? undefined
-          : block.getContent && block.getContent(),
+      content: blocks.length > 0 ? undefined : block.getContent && block.getContent(),
       attributes: block.getAttributes && block.getAttributes(),
       contentModel,
       lineNumber: block.getLineNumber && block.getLineNumber(),

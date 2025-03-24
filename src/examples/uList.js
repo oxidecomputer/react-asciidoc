@@ -42,10 +42,6 @@ list continuation:: a plus sign (\`{plus}\`) on a line by itself
 - [x] also checked
 - [ ] not checked
 -     normal list item
-
-// .footnotes
-The footnote in the following list should be [1] instead of [2]:
-
-* Hello today we are here to add one (1) footnote. footnote:[this is the first and only footnote in the document.]`
+`
 
 export default uList
