@@ -1,3 +1,15 @@
+# v1.1.3 (Mon Mar 24 2025)
+
+#### 🐛 Bug Fix
+
+- Return of the cache (getContent) [#41](https://github.com/oxidecomputer/react-asciidoc/pull/41) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.1.2 (Thu Feb 20 2025)
 
 #### 🐛 Bug Fix
