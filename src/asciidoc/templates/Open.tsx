@@ -1,4 +1,5 @@
 import cn from 'classnames'
+import parse from 'html-react-parser'
 
 import { Content } from '../'
 import { type BaseBlock } from '../utils/prepareDocument'
@@ -15,6 +16,7 @@ const Open = ({ node }: { node: BaseBlock }) => {
       >
         <Title text={node.title} />
         <blockquote className="content">
+          {node.content && parse(node.content)}
           <Content blocks={node.blocks} />
         </blockquote>
       </div>
@@ -28,6 +30,7 @@ const Open = ({ node }: { node: BaseBlock }) => {
     >
       <Title text={node.title} />
       <div className="content">
+        {node.content && parse(node.content)}
         <Content blocks={node.blocks} />
       </div>
     </div>
