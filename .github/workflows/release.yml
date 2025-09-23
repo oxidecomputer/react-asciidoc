@@ -32,29 +32,8 @@ jobs:
       - run: npm install
       - run: npm run tsc
 
-  build:
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22.x
-      - run: npm install
-      - run: npm run build
-      - name: Cache build output
-        uses: actions/cache@v4
-        with:
-          path: |
-            dist
-            build
-          key: build-${{ github.sha }}
-          restore-keys: |
-            build-
-
   validate-labels:
     runs-on: ubuntu-latest
-    needs: build
     if:
       "!contains(github.event.head_commit.message, 'ci skip') &&
       !contains(github.event.head_commit.message, 'skip ci')"
@@ -74,7 +53,6 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: build
     environment: production
     if:
       "!contains(github.event.head_commit.message, 'ci skip') &&
@@ -86,17 +64,8 @@ jobs:
         with:
           node-version: 22.x
       - run: npm install
-      - name: Restore build cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            dist
-            build
-          key: build-${{ github.sha }}
-          restore-keys: |
-            build-
       - name: Create Release
-        run: npm run release
+        run: npm run build && npm run release
         env:
           # auto expects GH_TOKEN in the environment
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
