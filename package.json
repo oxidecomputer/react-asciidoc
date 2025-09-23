@@ -25,7 +25,7 @@
     "build": "npm run clean && vite build && tsc",
     "test:init": "rm -rf ./tests/renderer.spec.ts-snapshots & npx playwright test -g html",
     "test:run": "npx playwright test -g react",
-    "release": "auto shipit",
+    "release": "auto shipit -vv",
     "fmt": "prettier --write --ignore-path ./.gitignore  .",
     "fmt:check": "prettier --check --ignore-path ./.gitignore . ",
     "tsc": "tsc"
