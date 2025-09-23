@@ -1,3 +1,15 @@
+# v1.1.4 (Tue Sep 23 2025)
+
+#### 🐛 Bug Fix
+
+- Release / npm / repo hardening [#48](https://github.com/oxidecomputer/react-asciidoc/pull/48) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.1.3 (Mon Mar 24 2025)
 
 #### 🐛 Bug Fix
