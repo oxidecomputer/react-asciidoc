@@ -42,6 +42,15 @@ jobs:
           node-version: 22.x
       - run: npm install
       - run: npm run build
+      - name: Cache build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist
+            build
+          key: build-${{ github.sha }}
+          restore-keys: |
+            build-
 
   validate-labels:
     runs-on: ubuntu-latest
@@ -77,5 +86,16 @@ jobs:
         with:
           node-version: 22.x
       - run: npm install
+      - name: Restore build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist
+            build
+          key: build-${{ github.sha }}
+          restore-keys: |
+            build-
+      - name: Build (if not cached)
+        run: npm run build
       - name: Create Release
         run: npm run release
