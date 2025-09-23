@@ -1,3 +1,15 @@
+# v1.2.0 (Tue Sep 23 2025)
+
+#### 🚀 Enhancement
+
+- Update deps [#49](https://github.com/oxidecomputer/react-asciidoc/pull/49) ([@benjaminleonard](https://github.com/benjaminleonard))
+
+#### Authors: 1
+
+- Benjamin Leonard ([@benjaminleonard](https://github.com/benjaminleonard))
+
+---
+
 # v1.1.4 (Tue Sep 23 2025)
 
 #### 🐛 Bug Fix
