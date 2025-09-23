@@ -95,8 +95,6 @@ jobs:
           key: build-${{ github.sha }}
           restore-keys: |
             build-
-      - name: Build (if not cached)
-        run: npm run build
       - name: Create Release
         run: npm run release
         env:
