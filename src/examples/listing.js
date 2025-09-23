@@ -67,6 +67,11 @@ public class ApplicationConfigurationProvider extends HttpConfigurationProvider 
    }
 }
 ----
+
+// html tags
+----
+MPN1:<MFG>:<PN>:<REV>:<SERIAL>
+----
 `
 
 export default listing

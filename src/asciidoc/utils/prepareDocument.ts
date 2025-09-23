@@ -147,6 +147,8 @@ export interface LiteralBlock extends BaseBlock {
   type: 'listing'
   source: string
   language: string | undefined
+  decodedContent: string
+  noWrap: boolean
 }
 
 export interface SectionBlock extends BaseBlock {
@@ -325,14 +327,13 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     }
 
     if (type === 'listing' || type === 'literal') {
+      const listingBlock = processedBlock as LiteralBlock
       if ('getSource' in block) {
-        const listingBlock = processedBlock as LiteralBlock
         listingBlock.source = block.getSource()
-        listingBlock.language = block.getAttribute('language')
-        listingBlock.content = listingBlock.content
-          ? decode(listingBlock.content)
-          : undefined
       }
+      listingBlock.noWrap = block.isOption('nowrap')
+      listingBlock.language = block.getAttribute('language')
+      listingBlock.decodedContent = decode(listingBlock.content)
     }
 
     if (type === 'section') {

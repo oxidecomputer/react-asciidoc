@@ -7,7 +7,6 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
   const { document } = useConverterContext()
 
   const docAttrs = document.attributes || {}
-  const nowrap = node.attributes.nowrap || docAttrs['prewrap'] === undefined
 
   if (node.style === 'source') {
     const lang = node.language
@@ -19,7 +18,7 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
       >
         <Title text={node.title} />
         <div className="content">
-          <pre className={cn('highlight', nowrap ? ' nowrap' : '')}>
+          <pre className={cn('highlight', node.noWrap ? ' nowrap' : '')}>
             {lang ? (
               <code
                 className={lang ? `language-${lang}` : ''}
@@ -45,10 +44,8 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
         <Title text={node.title} />
         <div className="content">
           <pre
-            className={cn('highlight !block', nowrap ? 'nowrap' : '')}
-            dangerouslySetInnerHTML={{
-              __html: node.content || '',
-            }}
+            className={cn('highlight !block', node.noWrap ? 'nowrap' : '')}
+            dangerouslySetInnerHTML={{ __html: node.content || '' }}
           />
         </div>
       </div>
