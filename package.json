@@ -62,7 +62,12 @@
   },
   "auto": {
     "plugins": [
-      "npm",
+      [
+        "npm",
+        {
+          "setRcToken": false
+        }
+      ],
       "released"
     ]
   },
