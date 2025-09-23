@@ -20,6 +20,7 @@ const Example = ({ node }: { node: Block }) => {
       >
         <summary className="title">{parse(title)}</summary>
         <div className="content">
+          {node.content && parse(node.content)}
           <Content blocks={node.blocks} />
         </div>
       </details>
@@ -34,6 +35,7 @@ const Example = ({ node }: { node: Block }) => {
     >
       <Title text={node.title} />
       <div className="content">
+        {node.content && parse(node.content)}
         <Content blocks={node.blocks} />
       </div>
     </div>
