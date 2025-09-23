@@ -95,17 +95,11 @@ type Overrides = {
   video?: typeof Video
 }
 
-export type Options = {
-  overrides?: Overrides
-  customDocument?: typeof Document
-}
+export type Options = { overrides?: Overrides; customDocument?: typeof Document }
 
 export const Context = createContext<
   Options & {
-    document: {
-      attributes?: DocumentBlock['attributes']
-      sections?: DocumentSection[]
-    }
+    document: { attributes?: DocumentBlock['attributes']; sections?: DocumentSection[] }
   }
 >({ document: {} })
 
@@ -120,12 +114,10 @@ const Asciidoc = ({
 
   return (
     <Context.Provider
-      value={
-        {
-          ...options,
-          document: { attributes: document.attributes, sections: document.sections },
-        } || {}
-      }
+      value={{
+        ...options,
+        document: { attributes: document.attributes, sections: document.sections },
+      }}
     >
       {CustomDocument ? (
         <CustomDocument document={document} />

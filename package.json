@@ -7,7 +7,7 @@
   "description": "React renderer for AsciiDoc",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oxidecomputer/react-asciidoc.git"
+    "url": "git+https://github.com/oxidecomputer/react-asciidoc.git"
   },
   "main": "./dist/react-asciidoc.umd.cjs",
   "exports": {
@@ -62,7 +62,12 @@
   },
   "auto": {
     "plugins": [
-      "npm",
+      [
+        "npm",
+        {
+          "setRcToken": false
+        }
+      ],
       "released"
     ]
   },
