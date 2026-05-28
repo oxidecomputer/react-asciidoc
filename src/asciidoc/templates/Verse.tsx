@@ -7,9 +7,19 @@ const Verse = ({ node }: { node: Block }) => {
   const attribution = node.attributes['attribution']
   const citetitle = node.attributes['citetitle']
 
+  let attribHtml = ''
+  if (attribution || citetitle) {
+    if (attribution) {
+      attribHtml = `&#8212; ${attribution}`
+      if (citetitle) attribHtml += `<br>\n<cite>${citetitle}</cite>`
+    } else if (citetitle) {
+      attribHtml = `<cite>${citetitle}</cite>`
+    }
+  }
+
   return (
     <div
-      {...(node.id ? { id: node.id } : {})}
+      id={node.id || undefined}
       className={cn('verseblock', node.role)}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
@@ -17,11 +27,11 @@ const Verse = ({ node }: { node: Block }) => {
       {node.content && (
         <pre className="content" dangerouslySetInnerHTML={{ __html: node.content }} />
       )}
-      {attribution && (
-        <div className="attribution">
-          — {attribution}
-          {citetitle && <cite>{citetitle}</cite>}
-        </div>
+      {attribHtml && (
+        <div
+          className="attribution"
+          dangerouslySetInnerHTML={{ __html: attribHtml }}
+        />
       )}
     </div>
   )

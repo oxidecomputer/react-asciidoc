@@ -1,71 +1,84 @@
 import cn from 'classnames'
 import { createElement } from 'react'
 
-import { Content, useConverterContext } from '../'
+import { Content, inlineHtml, useConverterContext } from '../'
 import { type SectionBlock } from '../utils/prepareDocument'
 
 const Section = ({ node }: { node: SectionBlock }) => {
   const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
 
-  let title: JSX.Element | string = node.title
-
-  let sectNum = node.num
-  sectNum = sectNum === '.' ? '' : sectNum
-
   const sectNumLevels = docAttrs['sectnumlevels']
     ? parseInt(`${docAttrs['sectnumlevels']}`)
     : 3
 
-  if (node.numbered && node.level <= sectNumLevels) {
-    title = `${sectNum} ${node.title}`
+  const numbered =
+    node.numbered && node.num && node.num !== '.' && node.level <= sectNumLevels
+  const titlePrefix = numbered ? `${node.num} ` : ''
+  const titleHtml = titlePrefix + inlineHtml(node.titleInlines).__html
+
+  const hasAnchor = docAttrs['sectanchors'] !== undefined
+  const hasLink = docAttrs['sectlinks'] !== undefined
+
+  // We pre-build the heading inner HTML so the entity choices made by our
+  // inline renderer (e.g. &#8217;) survive — passing them through React
+  // children would decode them to the corresponding Unicode characters.
+  let headingHtml: string
+  if (node.id && (hasAnchor || hasLink)) {
+    const anchor = hasAnchor ? `<a class="anchor" href="#${node.id}"></a>` : ''
+    const titleNode = hasLink
+      ? `<a class="link" href="#${node.id}">${titleHtml}</a>`
+      : titleHtml
+    headingHtml = `${anchor}${titleNode}`
+  } else {
+    headingHtml = titleHtml
   }
 
-  if (docAttrs.sectlinks) {
-    title = (
-      <>
-        <a
-          className="anchor"
-          id={node.id || ''}
-          {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-        />
-        <a
-          className="link"
-          href={`#${node.id}`}
-          dangerouslySetInnerHTML={{
-            __html: title,
-          }}
-        />
-      </>
-    )
-  }
+  const heading = createElement(`h${node.level + 1}`, {
+    id: node.id || undefined,
+    ...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {}),
+    dangerouslySetInnerHTML: { __html: headingHtml },
+  })
 
   if (node.level === 0) {
     return (
       <>
-        <h1
-          className={cn('sect0', node.role)}
-          data-sectnum={sectNum}
-          {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-        >
-          {title}
-        </h1>
+        {createElement('h1', {
+          id: node.id || undefined,
+          className: cn('sect0', node.role),
+          ...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {}),
+          dangerouslySetInnerHTML: { __html: headingHtml },
+        })}
         <Content blocks={node.blocks} />
       </>
     )
-  } else {
+  }
+
+  // sect1 wraps children in `<div class="sectionbody">`; sect2+ render
+  // children directly.
+  if (node.level === 1) {
     return (
       <div
         className={cn(`sect${node.level}`, node.role)}
         {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
       >
-        {createElement(`h${node.level + 1}`, { 'data-sectnum': sectNum }, title)}
+        {heading}
         <div className="sectionbody">
           <Content blocks={node.blocks} />
         </div>
       </div>
     )
   }
+
+  return (
+    <div
+      className={cn(`sect${node.level}`, node.role)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+    >
+      {heading}
+      <Content blocks={node.blocks} />
+    </div>
+  )
 }
 
 export default Section

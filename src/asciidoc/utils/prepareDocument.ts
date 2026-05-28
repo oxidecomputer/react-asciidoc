@@ -1,5 +1,7 @@
 import type * as AdocTypes from '@asciidoctor/core'
-import { decode } from 'html-entities'
+
+import { parseInline, type ParseState } from '../inline'
+import type { InlineNode } from '../inline'
 
 type NodeType =
   | 'audio'
@@ -50,6 +52,12 @@ export type BaseBlock = {
   type: NodeType
   blocks: Block[]
   content?: string | undefined
+  /** Inline AST parsed from this block's source (only set for simple-content
+   *  leaves). Templates may render this directly to compose React inline
+   *  components, or fall back to `content` (HTML). */
+  inlines?: InlineNode[] | undefined
+  /** Inline AST for the block's title, if present. */
+  titleInlines?: InlineNode[] | undefined
   attributes: Record<string, string | number>
   contentModel: ContentModel | undefined
   lineNumber?: number | undefined
@@ -128,6 +136,7 @@ export interface ImageBlock extends BaseBlock {
 
 export interface ListItemBlock extends BaseBlock {
   text: string | undefined
+  textInlines?: InlineNode[] | undefined
 }
 
 export interface ListBlock extends BaseBlock {
@@ -191,6 +200,7 @@ export interface Cell extends BaseBlock {
   columnSpan: number | undefined
   rowSpan: number | undefined
   text: string
+  textInlines?: InlineNode[] | undefined
   source: string
   lines: string[]
   column: Column | undefined
@@ -270,28 +280,125 @@ const getText = (
   return newContent
 }
 
+/** Asciidoctor stores raw (pre-substitution) title text in the `title`
+ *  instance var; `getTitle()` returns inline-substituted HTML. We want the
+ *  raw text to feed into our own inline parser. */
+const getRawTitle = (block: { title?: string }): string | undefined =>
+  typeof block.title === 'string' ? block.title : undefined
+
+const sourceFromBlock = (block: AdocTypes.AbstractBlock): string => {
+  if (typeof (block as AdocTypes.Block).getSourceLines === 'function') {
+    return (block as AdocTypes.Block).getSourceLines().join('\n')
+  }
+  return ''
+}
+
 export const prepareDocument = (document: AdocTypes.Document) => {
   let preparedDocument: DocumentBlock
+
+  const docAttrs = document.getAttributes() as Record<string, string | number>
+  const inlineAttrs: Record<string, string> = {}
+  for (const [k, v] of Object.entries(docAttrs)) {
+    if (v != null) inlineAttrs[k] = String(v)
+  }
+  const inlineState: ParseState = {
+    footnoteIndex: 0,
+    footnotesById: new Map(),
+  }
+
+  // Build an id → title map so we can resolve `<<id>>` xrefs that have no
+  // explicit reftext to the target section's title (matches asciidoctor's
+  // behavior). Our inline parser doesn't have document context, so we
+  // walk its output and rewrite bracketed-id text into the real title.
+  const sectionTitles = new Map<string, string>()
+  const collectTitles = (parent: AdocTypes.AbstractBlock | AdocTypes.Document) => {
+    for (const s of parent.getSections()) {
+      const id = s.getId()
+      const title = (s.getCaption() ? s.getCaptionedTitle() : s.getTitle()) || ''
+      if (id) sectionTitles.set(id, title)
+      collectTitles(s)
+    }
+  }
+  collectTitles(document)
+
+  const resolveXrefs = (nodes: InlineNode[] | undefined): InlineNode[] | undefined => {
+    if (!nodes) return nodes
+    for (const n of nodes) {
+      if (n.type === 'anchor' && n.subtype === 'xref') {
+        const fallback = `[${n.target}]`
+        const text = n.text
+        const isBracketed =
+          text.length === 1 && text[0].type === 'text' && text[0].text === fallback
+        if (isBracketed) {
+          const resolved = sectionTitles.get(n.target)
+          if (resolved) n.text = [{ type: 'text', text: resolved }]
+        }
+      }
+      if ('text' in n && Array.isArray((n as { text?: InlineNode[] }).text)) {
+        resolveXrefs((n as { text: InlineNode[] }).text)
+      }
+    }
+    return nodes
+  }
+
+  const parseTitleInlines = (raw: string | undefined): InlineNode[] | undefined => {
+    if (!raw) return undefined
+    // Titles use a throwaway state so footnotes in them don't bump the
+    // document-wide counter (asciidoctor also doesn't number title
+    // footnotes).
+    return parseInline(raw, {
+      attributes: inlineAttrs,
+      state: { footnoteIndex: 0, footnotesById: new Map() },
+    })
+  }
 
   function processBlock(
     block: AdocTypes.Block | AdocTypes.ListItem | AdocTypes.Section,
   ): Block {
     const type = block.getNodeName && (block.getNodeName() as NodeType)
     const contentModel = block.getContentModel && block.getContentModel()
+    // For list-like blocks, `getBlocks()` returns the same list items that
+    // `getItems()` returns later. Walking both would parse each item's
+    // inlines twice — bumping the document-wide footnote counter once per
+    // duplicate visit. Skip `blocks` here; the item path below populates
+    // `items` from `getItems()` instead.
+    const isListContainer =
+      type === 'olist' || type === 'ulist' || type === 'colist' || type === 'dlist'
     const blocks =
-      type && block.hasBlocks() ? block.getBlocks().map((block) => processBlock(block)) : []
+      type && !isListContainer && block.hasBlocks()
+        ? block.getBlocks().map((block) => processBlock(block))
+        : []
+
+    const rawTitle = getRawTitle(block as unknown as { title?: string })
 
     let processedBlock: Block = {
       id: block.getId && block.getId(),
       type,
       blocks,
       content: blocks.length > 0 ? undefined : getContent(block),
+      inlines:
+        blocks.length === 0 && contentModel === 'simple'
+          ? resolveXrefs(
+              parseInline(sourceFromBlock(block as AdocTypes.AbstractBlock), {
+                attributes: inlineAttrs,
+                state: inlineState,
+              }),
+            )
+          : undefined,
+      titleInlines:
+        block.hasTitle && block.hasTitle() ? parseTitleInlines(rawTitle) : undefined,
       attributes: block.getAttributes && block.getAttributes(),
       contentModel,
       lineNumber: block.getLineNumber && block.getLineNumber(),
       style: block.getStyle && block.getStyle(),
       role: block.getRole && block.getRole(),
-      title: block.hasTitle && block.hasTitle() ? block.getTitle() : undefined,
+      title:
+        block.hasTitle && block.hasTitle()
+          ? (block as AdocTypes.AbstractBlock).getCaption &&
+            (block as AdocTypes.AbstractBlock).getCaption()
+            ? (block as AdocTypes.AbstractBlock).getCaptionedTitle()
+            : block.getTitle()
+          : undefined,
       level: block.getLevel && block.getLevel(),
     }
 
@@ -304,7 +411,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       let audioBlock = processedBlock as AudioBlock
       audioBlock.mediaUri = block.getMediaUri(block.getAttribute('target'))
       audioBlock.autoplay = block.isOption('autoplay')
-      audioBlock.noControls = !block.isOption('nocontrols')
+      audioBlock.noControls = block.isOption('nocontrols')
       audioBlock.loop = block.isOption('loop')
       processedBlock = audioBlock
     }
@@ -313,7 +420,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       let videoBlock = processedBlock as VideoBlock
       videoBlock.mediaUri = block.getMediaUri(block.getAttribute('target'))
       videoBlock.autoplay = block.isOption('autoplay')
-      videoBlock.noControls = !block.isOption('nocontrols')
+      videoBlock.noControls = block.isOption('nocontrols')
       videoBlock.loop = block.isOption('loop')
       videoBlock.onHover = block.isOption('onhover')
       processedBlock = videoBlock
@@ -329,9 +436,9 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const listingBlock = processedBlock as LiteralBlock
         listingBlock.source = block.getSource()
         listingBlock.language = block.getAttribute('language')
-        listingBlock.content = listingBlock.content
-          ? decode(listingBlock.content)
-          : undefined
+        // content from getContent() is already specialchars-escaped — keep
+        // it that way so the <pre> renders verbatim source rather than
+        // interpreting `<tag>` literals as HTML.
       }
     }
 
@@ -340,6 +447,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       sectionBlock.title = block.getCaption()
         ? block.getCaptionedTitle()
         : block.getTitle() || ''
+      sectionBlock.titleInlines = parseTitleInlines(rawTitle)
       if ('getSectionNumeral' in block) {
         sectionBlock.name = block.getSectionName()
         sectionBlock.numbered = block.isNumbered()
@@ -377,7 +485,20 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     if (type === 'list_item') {
       let listItemBlock = processedBlock as ListItemBlock
       const adocListItem = block as unknown as AdocTypes.ListItem
+      const rawListItemText =
+        typeof (adocListItem as unknown as { text?: string }).text === 'string'
+          ? (adocListItem as unknown as { text: string }).text
+          : undefined
       listItemBlock.text = adocListItem.hasText() ? getText(adocListItem) : undefined
+      listItemBlock.textInlines =
+        adocListItem.hasText() && rawListItemText !== undefined
+          ? resolveXrefs(
+              parseInline(rawListItemText, {
+                attributes: inlineAttrs,
+                state: inlineState,
+              }),
+            )
+          : undefined
     }
 
     if (type === 'table') {
@@ -427,10 +548,23 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
       const col = adocListItem.getColumn()
 
+      const rawCellText =
+        typeof (adocListItem as unknown as { text?: string }).text === 'string'
+          ? (adocListItem as unknown as { text: string }).text
+          : adocListItem.getSource()
+
       let tableCellBlock: Cell = {
         ...processedBlock,
         type: 'table_cell',
         text: getText(adocListItem),
+        textInlines: rawCellText
+          ? resolveXrefs(
+              parseInline(rawCellText, {
+                attributes: inlineAttrs,
+                state: inlineState,
+              }),
+            )
+          : undefined,
         columnSpan: adocListItem.getColumnSpan(),
         rowSpan: adocListItem.getRowSpan(),
         source: adocListItem.getSource(),

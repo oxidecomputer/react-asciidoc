@@ -21,20 +21,19 @@ const TableOfContents = ({ node }: { node: Block }) => {
     ? parseInt(`${node.attributes['levels']}`)
     : undefined
 
-  if (tocPlacement === 'macro' && hasSections && hasToc) {
-    return (
-      <div id={idAttr} className={cn('toc', node.role)}>
-        <div id={`${idAttr}title`} className="title">
-          {parse(`${title}` || '')}
-        </div>
-        {document.sections && (
-          <Outline sections={document.sections} opts={{ tocLevels: levels }} />
-        )}
-      </div>
-    )
-  } else {
+  if (!hasToc || tocPlacement !== 'macro' || !hasSections) {
     return null
   }
+  return (
+    <div id={idAttr} className={node.role || 'toc'}>
+      <div id={`${idAttr}title`} className="title">
+        {parse(`${title}` || '')}
+      </div>
+      {document.sections && (
+        <Outline sections={document.sections} opts={{ tocLevels: levels }} />
+      )}
+    </div>
+  )
 }
 
 export default TableOfContents

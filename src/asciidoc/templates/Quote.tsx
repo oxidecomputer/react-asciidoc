@@ -1,7 +1,6 @@
 import cn from 'classnames'
-import parse from 'html-react-parser'
 
-import { Content } from '..'
+import { Content, inlineHtml } from '..'
 import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -9,20 +8,33 @@ const Quote = ({ node }: { node: Block }) => {
   const attribution = node.attributes['attribution']
   const citetitle = node.attributes['citetitle']
 
+  let attribHtml = ''
+  if (attribution) {
+    attribHtml = `&#8212; ${attribution}`
+    if (citetitle) attribHtml += `<br>\n<cite>${citetitle}</cite>`
+  } else if (citetitle) {
+    attribHtml = `<cite>${citetitle}</cite>`
+  }
+
   return (
     <div
-      {...(node.id ? { id: node.id } : {})}
+      id={node.id || undefined}
       className={cn('quoteblock', node.role)}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <Title text={node.title} />
-      {node.content && <blockquote dangerouslySetInnerHTML={{ __html: node.content }} />}
-      <Content blocks={node.blocks} />
-      {attribution && (
-        <div className="attribution">
-          — {parse(attribution.toString())}
-          {citetitle && <cite>{citetitle}</cite>}
-        </div>
+      {node.content ? (
+        <blockquote dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+      ) : (
+        <blockquote>
+          <Content blocks={node.blocks} />
+        </blockquote>
+      )}
+      {attribHtml && (
+        <div
+          className="attribution"
+          dangerouslySetInnerHTML={{ __html: attribHtml }}
+        />
       )}
     </div>
   )

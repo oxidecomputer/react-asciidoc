@@ -1,19 +1,28 @@
+import cn from 'classnames'
+
 import { type ImageBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Image = ({ node }: { node: ImageBlock }) => {
+  const alt = node.attributes['alt']?.toString() ?? ''
+  const width = node.attributes['width']
+  const height = node.attributes['height']
+  const link = node.attributes['link']
+  const align = node.attributes['align']
+  const float = node.attributes['float']
+
   let img = (
     <img
       src={node.imageUri}
-      alt={node.attributes['alt'].toString()}
-      width={node.attributes['width']}
-      height={node.attributes['height']}
+      alt={alt}
+      width={width || undefined}
+      height={height || undefined}
     />
   )
 
-  if (node.attributes['link']) {
+  if (link) {
     img = (
-      <a className="image" href={node.attributes['link'].toString()}>
+      <a className="image" href={link.toString()}>
         {img}
       </a>
     )
@@ -21,16 +30,14 @@ const Image = ({ node }: { node: ImageBlock }) => {
 
   return (
     <div
-      className={`imageblock ${
-        node.attributes['align'] ? 'text-' + node.attributes['align'] : ''
-      } ${node.attributes['float'] ? node.attributes['float'] : ''} ${
-        node.role ? node.role : ''
-      }`}
+      id={node.id || undefined}
+      className={cn(
+        'imageblock',
+        align ? 'text-' + align : undefined,
+        float || undefined,
+        node.role,
+      )}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-      style={{
-        maxWidth: node.attributes['width'],
-        maxHeight: node.attributes['height'],
-      }}
     >
       <div className="content">{img}</div>
       <Title text={node.title} />

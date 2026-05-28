@@ -1,7 +1,6 @@
 import cn from 'classnames'
-import parse from 'html-react-parser'
 
-import { Content } from '../'
+import { Content, inlineHtml } from '../'
 import { type BaseBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -11,13 +10,19 @@ const Open = ({ node }: { node: BaseBlock }) => {
   if (style === 'abstract') {
     return (
       <div
+        id={node.id || undefined}
         className={cn('quoteblock abstract', node.role)}
         {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
       >
         <Title text={node.title} />
-        <blockquote className="content">
-          {node.content && parse(node.content)}
-          <Content blocks={node.blocks} />
+        <blockquote>
+          {node.blocks.length > 0 ? (
+            <Content blocks={node.blocks} />
+          ) : (
+            node.content && (
+              <span dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+            )
+          )}
         </blockquote>
       </div>
     )
@@ -25,13 +30,19 @@ const Open = ({ node }: { node: BaseBlock }) => {
 
   return (
     <div
-      className={cn('openblock', style && style !== 'open' ? style : '', node.role)}
+      id={node.id || undefined}
+      className={cn('openblock', style && style !== 'open' ? style : null, node.role)}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <Title text={node.title} />
       <div className="content">
-        {node.content && parse(node.content)}
-        <Content blocks={node.blocks} />
+        {node.blocks.length > 0 ? (
+          <Content blocks={node.blocks} />
+        ) : (
+          node.content && (
+            <span dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+          )
+        )}
       </div>
     </div>
   )

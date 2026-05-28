@@ -1,6 +1,6 @@
-import parse from 'html-react-parser'
+import cn from 'classnames'
 
-import { Content, useConverterContext } from '..'
+import { Content, inlineHtml, useConverterContext } from '..'
 import { AdmonitionBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -18,26 +18,35 @@ const Admonition = ({ node }: { node: AdmonitionBlock }) => {
 
   return (
     <div
-      className={`admonitionblock ${attrs.name}`}
+      id={node.id || undefined}
+      className={cn('admonitionblock', `${attrs.name}`, node.role)}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <table>
-        <tbody>
-          <tr>
-            <td className="icon">
-              {docAttrs.icons ? (
-                renderIcon()
-              ) : (
-                <div className="title">{attrs.textlabel}</div>
-              )}
-            </td>
+        <tr>
+          <td className="icon">
+            {docAttrs.icons ? (
+              renderIcon()
+            ) : (
+              <div className="title">{`${attrs.textlabel}`}</div>
+            )}
+          </td>
+          {node.blocks.length > 0 ? (
             <td className="content">
               <Title text={node.title} />
-              {node.content && parse(node.content)}
               <Content blocks={node.blocks} />
             </td>
-          </tr>
-        </tbody>
+          ) : (
+            <td
+              className="content"
+              dangerouslySetInnerHTML={{
+                __html:
+                  (node.title ? `<div class="title">${node.title}</div>` : '') +
+                  inlineHtml(node.inlines).__html,
+              }}
+            />
+          )}
+        </tr>
       </table>
     </div>
   )

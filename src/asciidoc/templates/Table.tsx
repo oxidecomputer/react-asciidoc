@@ -50,29 +50,26 @@ const Table = ({ node }: { node: TableBlock }) => {
     return classAttr
   }
 
-  const title = node.title
-  const id = node.id
-  const slug = id || slugify(title || '')
-
   return (
     <table
+      id={node.id || undefined}
       className={cn('tableblock', ...classes)}
       style={{ width: width ? width : undefined }}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       {node.title && (
-        <caption className="title">
-          {!id && <a className="anchor" id={slug}></a>}
-          <a href={`#${slug}`}>
-            <Title text={node.title} />
-          </a>
-        </caption>
+        <caption className="title" dangerouslySetInnerHTML={{ __html: node.title }} />
       )}
       {node.columns.length > 0 && (
         <colgroup>
           {node.columns.map((col, index) => {
             const colWidth = col.attributes['colpcwidth']
-            return <col key={index} style={{ width: `${colWidth}%` }} />
+            return (
+              <col
+                key={index}
+                style={autowidth ? undefined : { width: `${colWidth}%` }}
+              />
+            )
           })}
         </colgroup>
       )}
@@ -93,58 +90,41 @@ const Table = ({ node }: { node: TableBlock }) => {
         {node.bodyRows.map((row, bIndex) => (
           <tr key={bIndex}>
             {row.map((cell, index) => {
+              const style = cell.style
+              const className = getCellClass(cell)
               const colSpan = cell.columnSpan
               const rowSpan = cell.rowSpan
-              const content = cell.content
+              const Tag = style === 'header' ? 'th' : 'td'
+              const content = cell.content as unknown as string | string[]
 
-              const cellProps = {
-                colSpan,
-                rowSpan,
-                className: getCellClass(cell),
-              }
-
-              const style = cell.style
-
+              const arr = Array.isArray(content)
+                ? content
+                : typeof content === 'string'
+                  ? [content]
+                  : []
+              let html = ''
               if (style === 'asciidoc') {
-                return (
-                  <td {...cellProps} key={index}>
-                    <div
-                      className="content"
-                      dangerouslySetInnerHTML={{ __html: content || '' }}
-                    />
-                  </td>
-                )
+                html = `<div class="content">${arr.join('')}</div>`
               } else if (style === 'literal') {
-                return (
-                  <td {...cellProps} key={index}>
-                    <div className="literal">
-                      <pre dangerouslySetInnerHTML={{ __html: content || '' }} />
-                    </div>
-                  </td>
-                )
+                html = `<div class="literal"><pre>${arr.join('')}</pre></div>`
               } else if (style === 'header') {
-                return (
-                  <th {...cellProps} key={index}>
-                    <p
-                      className="tableblock"
-                      dangerouslySetInnerHTML={{ __html: content || '' }}
-                    />
-                  </th>
-                )
-              } else {
-                let cellContent = content as unknown as string[]
-                return (
-                  <td {...cellProps} key={index}>
-                    {cellContent.length === 0
-                      ? ''
-                      : parse(
-                          `<p class="tableblock">${cellContent.join(
-                            '</p>\n<p class="tableblock">',
-                          )}</p>`,
-                        )}
-                  </td>
-                )
+                html =
+                  arr.length > 0
+                    ? `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                    : ''
+              } else if (arr.length > 0) {
+                html = `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
               }
+
+              return (
+                <Tag
+                  key={index}
+                  className={className}
+                  colSpan={colSpan}
+                  rowSpan={rowSpan}
+                  dangerouslySetInnerHTML={html ? { __html: html } : undefined}
+                />
+              )
             })}
           </tr>
         ))}

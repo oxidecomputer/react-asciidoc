@@ -1,5 +1,3 @@
-import parse from 'html-react-parser'
-
 import { useConverterContext } from '..'
 import { type DocumentSection } from '../utils/prepareDocument'
 
@@ -29,28 +27,23 @@ const Outline = ({
   return (
     <ul className={`sectlevel${sections[0].level}`}>
       {sections.map((section) => {
-        let sectNum = section.num
-        sectNum = sectNum === '.' || sectNum === '..' ? '' : sectNum
-
-        const level = section.level
-
-        let title = section.title
-
-        if (level <= sectNumLevels) {
-          // todo: investigate sectnumlevels overrides not working
-          title = `${sectNum} ${section.title}`
-        }
+        const numeric =
+          section.num && section.num !== '.' && section.num !== '..' && !section.num.startsWith('.')
+        const title =
+          numeric && section.level <= sectNumLevels
+            ? `${section.num} ${section.title}`
+            : section.title
 
         return (
           <li key={section.id}>
-            <a href={`#${section.id}`}>{parse(title)}</a>
-            {level < tocLevels && (
+            <a
+              href={`#${section.id}`}
+              dangerouslySetInnerHTML={{ __html: title }}
+            />
+            {section.level < tocLevels && section.sections.length > 0 && (
               <Outline
                 sections={section.sections}
-                opts={{
-                  tocLevels,
-                  sectNumLevels,
-                }}
+                opts={{ tocLevels, sectNumLevels }}
               />
             )}
           </li>
