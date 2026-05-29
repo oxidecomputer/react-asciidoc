@@ -1,7 +1,7 @@
 import cn from 'classnames'
 
-import { Content } from '../'
-import RenderInline from '../RenderInline'
+import { Content } from '..'
+import { inlineHtml } from '../RenderInline'
 import { type BaseBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -16,16 +16,12 @@ const Open = ({ node }: { node: BaseBlock }) => {
         {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
       >
         <Title text={node.title} />
-        <blockquote>
-          {node.blocks.length > 0 ? (
-            <Content blocks={node.blocks} />
-          ) : (
-            node.content && (
-              <span>
-              <RenderInline nodes={node.inlines} />
-            </span>
-            )
-          )}
+        <blockquote
+          {...(node.inlines && node.blocks.length === 0
+            ? { dangerouslySetInnerHTML: inlineHtml(node.inlines) }
+            : {})}
+        >
+          {node.blocks.length > 0 ? <Content blocks={node.blocks} /> : null}
         </blockquote>
       </div>
     )
@@ -38,16 +34,13 @@ const Open = ({ node }: { node: BaseBlock }) => {
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <Title text={node.title} />
-      <div className="content">
-        {node.blocks.length > 0 ? (
-          <Content blocks={node.blocks} />
-        ) : (
-          node.content && (
-            <span>
-              <RenderInline nodes={node.inlines} />
-            </span>
-          )
-        )}
+      <div
+        className="content"
+        {...(node.inlines && node.blocks.length === 0
+          ? { dangerouslySetInnerHTML: inlineHtml(node.inlines) }
+          : {})}
+      >
+        {node.blocks.length > 0 ? <Content blocks={node.blocks} /> : null}
       </div>
     </div>
   )

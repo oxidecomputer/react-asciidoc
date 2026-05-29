@@ -13,17 +13,14 @@ export const QUOTE_SUBS: {
     {
       type: 'strong',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?\\*\\*(${ccAny}+?)\\*\\*`,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?\\*\\*(${ccAny}+?)\\*\\*`, 'm'),
     },
     {
       type: 'strong',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?\\*(\\S|\\S${ccAny}*?\\S)\\*(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
@@ -31,7 +28,7 @@ export const QUOTE_SUBS: {
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?"\`(\\S|\\S${ccAny}*?\\S)\`"(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
@@ -39,55 +36,46 @@ export const QUOTE_SUBS: {
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:\`}])(?:${QuoteAttributeListRxt})?'\`(\\S|\\S${ccAny}*?\\S)\`'(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
       type: 'monospaced',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?\`\`(${ccAny}+?)\`\``,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?\`\`(${ccAny}+?)\`\``, 'm'),
     },
     {
       type: 'monospaced',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:"'\`}])(?:${QuoteAttributeListRxt})?\`(\\S|\\S${ccAny}*?\\S)\`(?!["'\`${cgWord}])`,
-        'm'
+        'm',
       ),
     },
     {
       type: 'emphasis',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?__(${ccAny}+?)__`,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?__(${ccAny}+?)__`, 'm'),
     },
     {
       type: 'emphasis',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?_(\\S|\\S${ccAny}*?\\S)_(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
       type: 'mark',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?##(${ccAny}+?)##`,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?##(${ccAny}+?)##`, 'm'),
     },
     {
       type: 'mark',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord}&;:}])(?:${QuoteAttributeListRxt})?#(\\S|\\S${ccAny}*?\\S)#(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
@@ -106,17 +94,14 @@ export const QUOTE_SUBS: {
     {
       type: 'strong',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?\\*\\*(${ccAny}+?)\\*\\*`,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?\\*\\*(${ccAny}+?)\\*\\*`, 'm'),
     },
     {
       type: 'strong',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?\\*(\\S|\\S${ccAny}*?\\S)\\*(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
@@ -124,7 +109,7 @@ export const QUOTE_SUBS: {
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?\`\`(\\S|\\S${ccAny}*?\\S)''(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
@@ -132,23 +117,20 @@ export const QUOTE_SUBS: {
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?'(\\S|\\S${ccAny}*?\\S)'(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
       type: 'monospaced',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?\\+\\+(${ccAny}+?)\\+\\+`,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?\\+\\+(${ccAny}+?)\\+\\+`, 'm'),
     },
     {
       type: 'monospaced',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?\\+(\\S|\\S${ccAny}*?\\S)\\+(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
@@ -156,39 +138,33 @@ export const QUOTE_SUBS: {
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?\`(\\S|\\S${ccAny}*?\\S)'(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
       type: 'emphasis',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?__(${ccAny}+?)__`,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?__(${ccAny}+?)__`, 'm'),
     },
     {
       type: 'emphasis',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord};:}])(?:${QuoteAttributeListRxt})?_(\\S|\\S${ccAny}*?\\S)_(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {
       type: 'mark',
       scope: 'unconstrained',
-      rx: new RegExp(
-        `\\\\?(?:${QuoteAttributeListRxt})?##(${ccAny}+?)##`,
-        'm'
-      ),
+      rx: new RegExp(`\\\\?(?:${QuoteAttributeListRxt})?##(${ccAny}+?)##`, 'm'),
     },
     {
       type: 'mark',
       scope: 'constrained',
       rx: new RegExp(
         `(^|[^${cgWord}&;:}])(?:${QuoteAttributeListRxt})?#(\\S|\\S${ccAny}*?\\S)#(?!${ccWord})`,
-        'm'
+        'm',
       ),
     },
     {

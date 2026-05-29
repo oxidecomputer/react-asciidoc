@@ -15,7 +15,11 @@ const Section = ({ node }: { node: SectionBlock }) => {
     : 3
 
   const numbered =
-    node.numbered && node.num && node.num !== '.' && node.level <= sectNumLevels && !node.hasCaption
+    node.numbered &&
+    node.num &&
+    node.num !== '.' &&
+    node.level <= sectNumLevels &&
+    !node.hasCaption
   const titlePrefix = numbered ? `${node.num} ` : ''
 
   // Captioned titles are asciidoctor HTML strings (the caption prefix is

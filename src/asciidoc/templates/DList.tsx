@@ -21,9 +21,11 @@ const DList = ({ node }: { node: DListBlock }) => {
     if (!dd) return null
     return (
       <dd>
-        {dd.text && <p>
-                      <RenderInline nodes={dd.textInlines} />
-                    </p>}
+        {dd.textInlines && (
+          <p>
+            <RenderInline nodes={dd.textInlines} />
+          </p>
+        )}
         <Content blocks={dd.blocks} />
       </dd>
     )
@@ -52,10 +54,10 @@ const DList = ({ node }: { node: DListBlock }) => {
                 ))}
                 {dd && (
                   <>
-                    {dd.text && (
+                    {dd.textInlines && (
                       <p>
-                      <RenderInline nodes={dd.textInlines} />
-                    </p>
+                        <RenderInline nodes={dd.textInlines} />
+                      </p>
                     )}
                     <Content blocks={dd.blocks} />
                   </>
@@ -94,10 +96,7 @@ const DList = ({ node }: { node: DListBlock }) => {
             return (
               <tr key={index}>
                 <td
-                  className={cn(
-                    'hdlist1',
-                    isOption(node.attributes, 'strong') && 'strong',
-                  )}
+                  className={cn('hdlist1', isOption(node.attributes, 'strong') && 'strong')}
                 >
                   {terms.map((dt, i) => (
                     <Fragment key={i}>
@@ -108,10 +107,10 @@ const DList = ({ node }: { node: DListBlock }) => {
                 </td>
                 {dd && (
                   <td className="hdlist2">
-                    {dd.text && (
+                    {dd.textInlines && (
                       <p>
-                      <RenderInline nodes={dd.textInlines} />
-                    </p>
+                        <RenderInline nodes={dd.textInlines} />
+                      </p>
                     )}
                     <Content blocks={dd.blocks} />
                   </td>
@@ -138,10 +137,7 @@ const DList = ({ node }: { node: DListBlock }) => {
           return (
             <Fragment key={index}>
               {terms.map((dt, i) => (
-                <dt
-                  key={i}
-                  className={node.style === 'glossary' ? undefined : 'hdlist1'}
-                >
+                <dt key={i} className={node.style === 'glossary' ? undefined : 'hdlist1'}>
                   <RenderInline nodes={dt.textInlines} />
                 </dt>
               ))}

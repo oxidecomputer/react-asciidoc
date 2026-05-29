@@ -1,6 +1,6 @@
 import cn from 'classnames'
 
-import { Title, useConverterContext } from '..'
+import { Content, useConverterContext } from '..'
 import {
   type Cell,
   type TableBlock,
@@ -64,10 +64,7 @@ const Table = ({ node }: { node: TableBlock }) => {
           {node.columns.map((col, index) => {
             const colWidth = col.attributes['colpcwidth']
             return (
-              <col
-                key={index}
-                style={autowidth ? undefined : { width: `${colWidth}%` }}
-              />
+              <col key={index} style={autowidth ? undefined : { width: `${colWidth}%` }} />
             )
           })}
         </colgroup>
@@ -82,7 +79,7 @@ const Table = ({ node }: { node: TableBlock }) => {
                   className={getCellClass(cell)}
                   colSpan={cell.columnSpan}
                   rowSpan={cell.rowSpan}
-                  dangerouslySetInnerHTML={{ __html: cell.text }}
+                  dangerouslySetInnerHTML={{ __html: cell.text || '' }}
                 />
               ))}
             </tr>
@@ -98,25 +95,28 @@ const Table = ({ node }: { node: TableBlock }) => {
                 const colSpan = cell.columnSpan
                 const rowSpan = cell.rowSpan
                 const Tag = style === 'header' ? 'th' : 'td'
-                const content = cell.content as unknown as string | string[]
 
-                const arr = Array.isArray(content)
-                  ? content
-                  : typeof content === 'string'
-                    ? [content]
-                    : []
                 let html = ''
                 if (style === 'asciidoc') {
-                  html = `<div class="content">${arr.join('')}</div>`
-                } else if (style === 'literal') {
-                  html = `<div class="literal"><pre>${arr.join('')}</pre></div>`
-                } else if (style === 'header') {
-                  html =
-                    arr.length > 0
-                      ? `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
-                      : ''
-                } else if (arr.length > 0) {
-                  html = `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                  // Asciidoc cells render via <Content> (React templates),
+                  // not dangerouslySetInnerHTML
+                } else {
+                  const content = cell.content as unknown as string | string[]
+                  const arr = Array.isArray(content)
+                    ? content
+                    : typeof content === 'string'
+                      ? [content]
+                      : []
+                  if (style === 'literal') {
+                    html = `<div class="literal"><pre>${arr.join('')}</pre></div>`
+                  } else if (style === 'header') {
+                    html =
+                      arr.length > 0
+                        ? `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                        : ''
+                  } else if (arr.length > 0) {
+                    html = `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                  }
                 }
 
                 return (
@@ -125,8 +125,16 @@ const Table = ({ node }: { node: TableBlock }) => {
                     className={className}
                     colSpan={colSpan}
                     rowSpan={rowSpan}
-                    dangerouslySetInnerHTML={html ? { __html: html } : undefined}
-                  />
+                    dangerouslySetInnerHTML={
+                      style === 'asciidoc' ? undefined : html ? { __html: html } : undefined
+                    }
+                  >
+                    {style === 'asciidoc' ? (
+                      <div className="content">
+                        <Content blocks={cell.blocks} />
+                      </div>
+                    ) : null}
+                  </Tag>
                 )
               })}
             </tr>
@@ -138,7 +146,10 @@ const Table = ({ node }: { node: TableBlock }) => {
           <tr>
             {row.map((cell, index) => (
               <td key={index} className={getCellClass(cell)}>
-                <p className="tableblock" dangerouslySetInnerHTML={{ __html: cell.text }} />
+                <p
+                  className="tableblock"
+                  dangerouslySetInnerHTML={{ __html: cell.text || '' }}
+                />
               </td>
             ))}
           </tr>
@@ -146,19 +157,6 @@ const Table = ({ node }: { node: TableBlock }) => {
       ))}
     </table>
   )
-}
-
-const slugify = (text: string) => {
-  return text
-    .toString() // Cast to string (optional)
-    .normalize('NFKD') // The normalize() using NFKD method returns the Unicode Normalization Form of a given string
-    .replace(/[\u0300-\u036f]/g, '') // Removes the normalized accents the accents
-    .toLowerCase() // Convert the string to lowercase letters
-    .trim() // Remove whitespace from both sides of a string (optional)
-    .replace(/\s+/g, '_') // Replace spaces with -
-    .replace(/[^\w-]+/g, '') // Remove all non-word chars
-    .replace(/--+/g, '-') // Replace multiple - with single -
-    .replace(/-$/g, '') // Remove trailing -
 }
 
 export default Table

@@ -1,7 +1,7 @@
 import parse from 'html-react-parser'
 import { createContext, useContext } from 'react'
 
-import RenderInline, { inlineHtml, type InlineOverrides } from './RenderInline'
+import RenderInline, { type InlineOverrides, inlineHtml } from './RenderInline'
 import * as Inline from './inline'
 import {
   Admonition,

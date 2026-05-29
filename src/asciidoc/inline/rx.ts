@@ -10,81 +10,76 @@ const ccAny = '[^\\n]'
 const ccAll = '[\\s\\S]'
 
 export const InlineAnchorRx = re(
-  `(\\\\)?(?:\\[\\[([${cgAlpha}_:][${cgWord}\\-:.]*)(?:, *(${ccAny}+?))?\\]\\]|anchor:([${cgAlpha}_:][${cgWord}\\-:.]*)\\[(?:\\]|(${ccAny}*?[^\\\\])\\]))`
+  `(\\\\)?(?:\\[\\[([${cgAlpha}_:][${cgWord}\\-:.]*)(?:, *(${ccAny}+?))?\\]\\]|anchor:([${cgAlpha}_:][${cgWord}\\-:.]*)\\[(?:\\]|(${ccAny}*?[^\\\\])\\]))`,
 )
 
 export const InlineBiblioAnchorRx = re(
-  `^\\[\\[\\[([${cgAlpha}_:][${cgWord}\\-:.]*)(?:, *(${ccAny}+?))?\\]\\]\\]`
+  `^\\[\\[\\[([${cgAlpha}_:][${cgWord}\\-:.]*)(?:, *(${ccAny}+?))?\\]\\]\\]`,
 )
 
 export const InlineEmailRx = re(
-  `([\\\\>:/])?[${cgWord}](?:&amp;|[${cgWord}\\-.%+])*@[${cgAlnum}][${cgAlnum}_\\-.]*\\.[a-zA-Z]{2,5}\\b`
+  `([\\\\>:/])?[${cgWord}](?:&amp;|[${cgWord}\\-.%+])*@[${cgAlnum}][${cgAlnum}_\\-.]*\\.[a-zA-Z]{2,5}\\b`,
 )
 
 export const InlineFootnoteMacroRx = re(
   `\\\\?footnote(?:(ref):|:([${cgWord}-]+)?)\\[(?:|(${ccAll}*?[^\\\\]))\\](?!</a>)`,
-  'm'
+  'm',
 )
 
 export const InlineImageMacroRx = re(
   `\\\\?i(?:mage|con):([^:\\s\\[](?:[^\\n\\[]*[^\\s\\[])?)\\[(|${ccAll}*?[^\\\\])\\]`,
-  'm'
+  'm',
 )
 
 export const InlineIndextermMacroRx = re(
   `\\\\?(?:(indexterm2?):\\[(${ccAll}*?[^\\\\])\\]|\\(\\((${ccAll}+?)\\)\\)(?!\\)))`,
-  'm'
+  'm',
 )
 
-export const InlineKbdBtnMacroRx = re(
-  `(\\\\)?(kbd|btn):\\[(${ccAll}*?[^\\\\])\\]`,
-  'm'
-)
+export const InlineKbdBtnMacroRx = re(`(\\\\)?(kbd|btn):\\[(${ccAll}*?[^\\\\])\\]`, 'm')
 
 export const InlineLinkRx = re(
   `(^|link:|${cgBlank}|&lt;|[>\\(\\)\\[\\];"'])(\\\\?(?:https?|file|ftp|irc)://)(?:([^\\s\\[\\]]+)\\[(|${ccAll}*?[^\\\\])\\]|([^\\s\\[\\]<]*([^\\s,.?!\\[\\]<\\)])))`,
-  'm'
+  'm',
 )
 
 export const InlineLinkMacroRx = re(
   `\\\\?(?:link|(mailto)):(|[^:\\s\\[][^\\s\\[]*)\\[(|${ccAll}*?[^\\\\])\\]`,
-  'm'
+  'm',
 )
 
 export const InlineMenuMacroRx = re(
   `\\\\?menu:([${cgWord}]|[${cgWord}&][^\\n\\[]*[^\\s\\[])\\[ *(?:|(${ccAll}*?[^\\\\]))\\]`,
-  'm'
+  'm',
 )
 
-export const InlineMenuRx = re(
-  `\\\\?"([${cgWord}&][^"]*?[ \\n]+&gt;[ \\n]+[^"]*)"`
-)
+export const InlineMenuRx = re(`\\\\?"([${cgWord}&][^"]*?[ \\n]+&gt;[ \\n]+[^"]*)"`)
 
 const CG_WORD_FOR_REGEX = `[${cgWord}]`
 
 export const InlinePassRxNonCompat = re(
   `((?:^|[^${cgWord};:\\\\])(?=(\\[)|\\+)|\\\\(?=\\[)|(?=\\\\\\+))(?:\\2(x-|[^\\]]+ x-)\\]|(?:\\[([^\\]]+)\\])?(?=(\\\\)?\\+))(\\5?(\\+|\`)(\\S|\\S${ccAll}*?\\S)\\7)(?!${CG_WORD_FOR_REGEX})`,
-  'm'
+  'm',
 )
 
 export const InlinePassRxCompat = re(
   `(^|[^\`${cgWord}])(?:(\\Z)()|\\[([^\\]]+)\\](?=(\\\\))?)?(\\5?(\`)([^\`\\s]|[^\`\\s]${ccAll}*?\\S)\\7)(?![\`${cgWord}])`,
-  'm'
+  'm',
 )
 
 export const InlinePassMacroRx = re(
   `(?:(?:(\\\\?)\\[([^\\]]+)\\])?(\\\\{0,2})(\\+\\+\\+?|\\$\\$)(${ccAll}*?)\\4|(\\\\?)pass:([a-z]+(?:,[a-z-]+)*)?\\[(|${ccAll}*?[^\\\\])\\])`,
-  'm'
+  'm',
 )
 
 export const InlineStemMacroRx = re(
   `\\\\?(stem|(?:latex|ascii)math):([a-z]+(?:,[a-z-]+)*)?\\[(${ccAll}*?[^\\\\])\\]`,
-  'm'
+  'm',
 )
 
 export const InlineXrefMacroRx = re(
   `\\\\?(?:&lt;&lt;([${cgWord}#/.:{]${ccAll}*?)&gt;&gt;|xref:([${cgWord}#/.:{]${ccAll}*?)\\[(?:\\]|(${ccAll}*?[^\\\\])\\]))`,
-  'm'
+  'm',
 )
 
 export const HardLineBreakRx = /^([\s\S]*) \+$/m
@@ -95,7 +90,7 @@ export const CalloutSourceRx =
 export const SpecialCharsRx = /[<&>]/g
 
 export const AttributeReferenceRx = re(
-  `(\\\\)?\\{([${cgWord}][${cgWord}\\-]*|(set|counter2?):${ccAny}+?)(\\\\)?\\}`
+  `(\\\\)?\\{([${cgWord}][${cgWord}\\-]*|(set|counter2?):${ccAny}+?)(\\\\)?\\}`,
 )
 
 export const QuotedTextSniffRx: Record<string, RegExp> = {

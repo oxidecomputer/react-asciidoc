@@ -1,5 +1,6 @@
 import cn from 'classnames'
 
+import { inlineHtml } from '../RenderInline'
 import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -24,14 +25,11 @@ const Verse = ({ node }: { node: Block }) => {
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <Title text={node.title} />
-      {node.content && (
-        <pre className="content" dangerouslySetInnerHTML={{ __html: node.content }} />
+      {node.inlines && (
+        <pre className="content" dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
       )}
       {attribHtml && (
-        <div
-          className="attribution"
-          dangerouslySetInnerHTML={{ __html: attribHtml }}
-        />
+        <div className="attribution" dangerouslySetInnerHTML={{ __html: attribHtml }} />
       )}
     </div>
   )

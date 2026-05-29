@@ -7,8 +7,7 @@ import { Title } from './util'
 const Literal = ({ node }: { node: LiteralBlock }) => {
   const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
-  const nowrap =
-    isOption(node.attributes, 'nowrap') || docAttrs['prewrap'] === undefined
+  const nowrap = isOption(node.attributes, 'nowrap') || docAttrs['prewrap'] === undefined
 
   return (
     <div

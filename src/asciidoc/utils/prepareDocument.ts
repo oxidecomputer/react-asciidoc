@@ -1,7 +1,13 @@
 import type * as AdocTypes from '@asciidoctor/core'
 
-import { type ParseState, parseInline } from '../inline'
-import type { InlineNode } from '../inline'
+import {
+  type ParseState,
+  parseInline,
+  renderInlineAsString,
+  subCallouts,
+  subSpecialchars,
+} from '../inline'
+import type { FootnoteNode, InlineNode } from '../inline'
 
 type NodeType =
   | 'audio'
@@ -51,7 +57,7 @@ export type BaseBlock = {
   id?: string
   type: NodeType
   blocks: Block[]
-  content?: string | undefined
+  content?: string | string[] | undefined
   /** Inline AST parsed from this block's source (only set for simple-content
    *  leaves). Templates may render this directly to compose React inline
    *  components, or fall back to `content` (HTML). */
@@ -103,6 +109,7 @@ export type DocumentBlock = {
   footnotes: {
     text: string | undefined
     index: number | undefined
+    textInlines?: InlineNode[]
   }[]
   sections: DocumentSection[]
   authors: { name: string | undefined; email: string | undefined }[]
@@ -209,8 +216,11 @@ export interface Cell extends BaseBlock {
   type: 'table_cell'
   columnSpan: number | undefined
   rowSpan: number | undefined
-  text: string
+  text: string | undefined
   textInlines?: InlineNode[] | undefined
+  /** Content for cell rendering: a string for asciidoc/literal cells,
+   *  or an array of per-paragraph HTML strings for other styles. */
+  content: string | string[] | undefined
   source: string
   lines: string[]
   column: Column | undefined
@@ -261,35 +271,6 @@ export const hasAttribute = (attrs: Record<string, string | number>, name: strin
   return attrs[name] !== undefined
 }
 
-const contentCache: { [key: string]: string } = {}
-type Node = AdocTypes.Block | AdocTypes.AbstractBlock | AdocTypes.Table.Cell
-
-const getContent = (node: Node) => {
-  const cacheKey = (node as Node & { $$id: string }).$$id
-
-  if (contentCache[cacheKey]) {
-    return contentCache[cacheKey]
-  }
-
-  const newContent = (node.getContent && node.getContent()) || ''
-  contentCache[cacheKey] = newContent
-  return newContent
-}
-
-const getText = (
-  node: AdocTypes.ListItem | AdocTypes.Document.Footnote | AdocTypes.Table.Cell,
-) => {
-  const cacheKey = (node as Node & { $$id: string }).$$id
-
-  if (contentCache[cacheKey]) {
-    return contentCache[cacheKey]
-  }
-
-  const newContent = (node.getText && node.getText()) || ''
-  contentCache[cacheKey] = newContent
-  return newContent
-}
-
 /** Asciidoctor stores raw (pre-substitution) title text in the `title`
  *  instance var; `getTitle()` returns inline-substituted HTML. We want the
  *  raw text to feed into our own inline parser. */
@@ -298,9 +279,32 @@ const getRawTitle = (block: { title?: string }): string | undefined =>
 
 const sourceFromBlock = (block: AdocTypes.AbstractBlock): string => {
   if (typeof (block as AdocTypes.Block).getSourceLines === 'function') {
-    return (block as AdocTypes.Block).getSourceLines().join('\n')
+    const lines = (block as AdocTypes.Block).getSourceLines()
+    // Asciidoctor's getContent() strips leading and trailing empty lines
+    let start = 0
+    while (start < lines.length && lines[start] === '') start++
+    let end = lines.length
+    while (end > start && lines[end - 1] === '') end--
+    return lines.slice(start, end).join('\n')
   }
   return ''
+}
+
+/** Collect footnote definitions (with text) from a resolved inline AST. */
+const collectFootnoteDefs = (nodes: InlineNode[]): FootnoteNode[] => {
+  const defs: FootnoteNode[] = []
+  const walk = (ns: InlineNode[]) => {
+    for (const n of ns) {
+      if (n.type === 'footnote' && n.text && n.text.length > 0) {
+        defs.push(n)
+      }
+      if ('text' in n && Array.isArray(n.text)) {
+        walk(n.text)
+      }
+    }
+  }
+  walk(nodes)
+  return defs
 }
 
 export const prepareDocument = (document: AdocTypes.Document) => {
@@ -319,6 +323,11 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   // uses per name in source order and record, for each name, the use-indices
   // immediately preceded by a reset. The parser replays those resets.
   const counterResets = new Map<string, Set<number>>()
+  // Counter seeds: when `:name: N` appears in the body with a numeric value,
+  // and the counter `name` hasn't been used yet, the next `{counter:name}`
+  // should start from N+1 instead of 1. We record the use-index at which each
+  // seed applies so we can look it up during inline parsing.
+  const counterSeeds = new Map<string, Map<number, number>>()
   // Body-defined attributes (`:name: value` after the header) are applied by
   // asciidoctor only during conversion, so they never reach `getAttributes()`
   // and our inline parser can't resolve `{name}` references to them. Collect
@@ -328,8 +337,8 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   {
     const useCount = new Map<string, number>()
     const srcLines: string[] =
-      typeof (document as unknown as { getSourceLines?: () => string[] })
-        .getSourceLines === 'function'
+      typeof (document as unknown as { getSourceLines?: () => string[] }).getSourceLines ===
+      'function'
         ? (document as unknown as { getSourceLines: () => string[] }).getSourceLines()
         : []
     const unsetRe = /^:(?:!([\w-]+)|([\w-]+)!):\s*$/
@@ -359,7 +368,16 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       }
       const set = setRe.exec(ln)
       if (set) {
-        bodyAttrs.set(set[1], set[2] ?? '')
+        const attrName = set[1]
+        const attrValue = set[2] ?? ''
+        bodyAttrs.set(attrName, attrValue)
+        // If this sets a numeric value for a counter name, record the seed
+        // at the current use-index so the next `{counter:name}` uses it.
+        if (/^-?\d+$/.test(attrValue)) {
+          const useIdx = useCount.get(attrName) ?? 0
+          if (!counterSeeds.has(attrName)) counterSeeds.set(attrName, new Map())
+          counterSeeds.get(attrName)!.set(useIdx, parseInt(attrValue, 10))
+        }
         continue
       }
       let m: RegExpExecArray | null
@@ -378,9 +396,11 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   const inlineState: ParseState = {
     footnoteIndex: 0,
     footnotesById: new Map(),
+    footnoteDefs: [],
     counters: new Map(),
     counterResets,
     counterUses: new Map(),
+    counterSeeds,
   }
 
   // Block-scoped inline attributes: a block can carry options that affect
@@ -464,7 +484,10 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     reftext: string | undefined
   }
   const sectionInfos = new Map<string, SectionInfo>()
-  const blockRefs = new Map<string, { $xreftext?: (style: string | null) => string | undefined }>()
+  const blockRefs = new Map<
+    string,
+    { $xreftext?: (style: string | null) => string | undefined }
+  >()
 
   const collectTitles = (parent: AdocTypes.AbstractBlock | AdocTypes.Document) => {
     for (const s of parent.getSections()) {
@@ -536,8 +559,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
             if (info) v = sectionXreftext(info, n.xrefstyle)
             else {
               const r = blockRefs.get(id)
-              if (r && typeof r.$xreftext === 'function')
-                v = r.$xreftext(n.xrefstyle) ?? v
+              if (r && typeof r.$xreftext === 'function') v = r.$xreftext(n.xrefstyle) ?? v
             }
           }
           if (isBracketed && typeof v === 'string') {
@@ -640,7 +662,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       id: block.getId && block.getId(),
       type,
       blocks,
-      content: blocks.length > 0 ? undefined : getContent(block),
+      content: undefined,
       inlines:
         blocks.length === 0 && contentModel === 'simple'
           ? resolveXrefs(
@@ -705,9 +727,41 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const listingBlock = processedBlock as LiteralBlock
         listingBlock.source = block.getSource()
         listingBlock.language = block.getAttribute('language')
-        // content from getContent() is already specialchars-escaped — keep
-        // it that way so the <pre> renders verbatim source rather than
-        // interpreting `<tag>` literals as HTML.
+        const iconsFont = docAttrs['icons'] === 'font'
+        const lineComment = block.getAttribute('line-comment') as string | undefined
+        const verbatimSource = sourceFromBlock(block as AdocTypes.AbstractBlock)
+        const subs: string[] =
+          block.getSubstitutions && typeof block.getSubstitutions === 'function'
+            ? (block.getSubstitutions() as string[])
+            : ['specialcharacters', 'callouts']
+        const hasInlineSubs = subs.some((s) =>
+          ['quotes', 'attributes', 'replacements', 'macros', 'post_replacements'].includes(
+            s,
+          ),
+        )
+        if (hasInlineSubs) {
+          // When inline subs (quotes, macros, etc.) are present alongside
+          // the normal verbatim ones, render the inline AST to HTML and
+          // then apply callouts on top (callout markers survive the inline
+          // parser as escaped &lt;N&gt; text which subCallouts recognises).
+          const inlines = resolveXrefs(
+            parseInline(verbatimSource, {
+              attributes: inlineAttrsFor(block),
+              state: inlineState,
+            }),
+          )
+          let content = renderInlineAsString(inlines ?? [])
+          if (subs.includes('callouts')) {
+            content = subCallouts(content, iconsFont, lineComment)
+          }
+          processedBlock.content = content
+        } else {
+          let content = subSpecialchars(verbatimSource)
+          if (subs.includes('callouts')) {
+            content = subCallouts(content, iconsFont, lineComment)
+          }
+          processedBlock.content = content
+        }
       }
     }
 
@@ -722,6 +776,43 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         sectionBlock.name = block.getSectionName()
         sectionBlock.numbered = block.isNumbered()
         sectionBlock.num = block.getSectionNumeral()
+      }
+    }
+
+    if (type === 'verse') {
+      // Verse has contentModel 'verbatim' but applies normal subs (quotes,
+      // attributes, replacements, macros, etc.), so we parse inline content
+      // here — the general block logic skips inline parsing for verbatim.
+      processedBlock.inlines = resolveXrefs(
+        parseInline(sourceFromBlock(block as AdocTypes.AbstractBlock), {
+          attributes: inlineAttrsFor(block),
+          state: inlineState,
+        }),
+      )
+    }
+
+    if (type === 'stem') {
+      const stemSource = sourceFromBlock(block as AdocTypes.AbstractBlock)
+      processedBlock.content = subSpecialchars(stemSource)
+    }
+
+    if (type === 'pass') {
+      const passSubs: string[] =
+        block.getSubstitutions && typeof block.getSubstitutions === 'function'
+          ? (block.getSubstitutions() as string[])
+          : []
+      if (passSubs.length > 0) {
+        // Passthrough with explicit subs — process inline content.
+        // Render to HTML string for the template's parse() call.
+        const inlines = resolveXrefs(
+          parseInline(sourceFromBlock(block as AdocTypes.AbstractBlock), {
+            attributes: inlineAttrsFor(block),
+            state: inlineState,
+          }),
+        )
+        processedBlock.content = renderInlineAsString(inlines ?? [])
+      } else {
+        processedBlock.content = sourceFromBlock(block as AdocTypes.AbstractBlock)
       }
     }
 
@@ -759,7 +850,6 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         typeof (adocListItem as unknown as { text?: string }).text === 'string'
           ? (adocListItem as unknown as { text: string }).text
           : undefined
-      listItemBlock.text = adocListItem.hasText() ? getText(adocListItem) : undefined
       listItemBlock.textInlines =
         adocListItem.hasText() && rawListItemText !== undefined
           ? resolveXrefs(
@@ -816,33 +906,92 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     }
 
     if (type === 'table_cell') {
-      const adocListItem = block as unknown as AdocTypes.Table.Cell
+      const adocCell = block as unknown as AdocTypes.Table.Cell
 
-      const col = adocListItem.getColumn()
+      const col = adocCell.getColumn()
 
       const rawCellText =
-        typeof (adocListItem as unknown as { text?: string }).text === 'string'
-          ? (adocListItem as unknown as { text: string }).text
-          : adocListItem.getSource()
+        typeof (adocCell as unknown as { text?: string }).text === 'string'
+          ? (adocCell as unknown as { text: string }).text
+          : adocCell.getSource()
+
+      const cellStyle = adocCell.getStyle()
+
+      // Asciidoc cells have an inner document whose blocks we render through
+      // our own React templates (no dangerouslySetInnerHTML), so populate them
+      // via getInnerDocument(). All other cell styles compute content from
+      // textInlines + column-style wrapping instead of calling getContent().
+      let asciidocCellBlocks: Block[] | undefined
+      if (cellStyle === 'asciidoc') {
+        const innerDoc = (adocCell as any).getInnerDocument?.()
+        asciidocCellBlocks = innerDoc
+          ? innerDoc.getBlocks().map((b: any) => processBlock(b))
+          : []
+      }
+
+      // Build textInlines from raw cell text (shared across all styles)
+      const cellInlines = rawCellText
+        ? resolveXrefs(
+            parseInline(rawCellText, {
+              attributes: inlineAttrs,
+              state: inlineState,
+            }),
+          )
+        : undefined
+
+      // Build cell.content: an array of per-paragraph styled HTML strings.
+      // This mirrors asciidoctor's getContent() format for table cells:
+      //   - asciidoc: string of block HTML (handled via <Content>)
+      //   - literal:  specialchars-escaped source in a single string
+      //   - emphasis/strong/monospaced: each paragraph wrapped in
+      //     <em>/<strong>/<code>
+      //   - header: plain text paragraphs (no <p> wrapper)
+      //   - default: plain text paragraphs wrapped in <p class="tableblock">
+      let cellContent: string | string[] | undefined
+      if (cellStyle === 'asciidoc') {
+        cellContent = '' // rendered via <Content>, not dangerouslySetInnerHTML
+      } else if (cellStyle === 'literal') {
+        cellContent = subSpecialchars(adocCell.getSource())
+      } else if (rawCellText) {
+        // Derive cellContent from the already-parsed cellInlines instead
+        // of re-parsing, to avoid double-counting footnotes.
+        const fullHtml = cellInlines ? renderInlineAsString(cellInlines) : ''
+        const paragraphs = fullHtml ? fullHtml.split(/\n\n+/) : []
+        // Column-style wrapping tags
+        const open =
+          cellStyle === 'emphasis'
+            ? '<em>'
+            : cellStyle === 'strong'
+              ? '<strong>'
+              : cellStyle === 'monospaced'
+                ? '<code>'
+                : ''
+        const close =
+          cellStyle === 'emphasis'
+            ? '</em>'
+            : cellStyle === 'strong'
+              ? '</strong>'
+              : cellStyle === 'monospaced'
+                ? '</code>'
+                : ''
+        cellContent = paragraphs.length > 0 ? paragraphs.map((p) => open + p + close) : []
+      } else {
+        cellContent = []
+      }
 
       let tableCellBlock: Cell = {
         ...processedBlock,
+        blocks: asciidocCellBlocks ?? processedBlock.blocks,
         type: 'table_cell',
-        text: getText(adocListItem),
-        textInlines: rawCellText
-          ? resolveXrefs(
-              parseInline(rawCellText, {
-                attributes: inlineAttrs,
-                state: inlineState,
-              }),
-            )
-          : undefined,
-        columnSpan: adocListItem.getColumnSpan(),
-        rowSpan: adocListItem.getRowSpan(),
-        source: adocListItem.getSource(),
-        lines: adocListItem.getLines(),
-        width: adocListItem.getWidth(),
-        columnPercentageWidth: adocListItem.getColumnPercentageWidth(),
+        content: cellContent,
+        text: cellStyle === 'asciidoc' ? '' : renderInlineAsString(cellInlines || []),
+        textInlines: cellInlines,
+        columnSpan: adocCell.getColumnSpan(),
+        rowSpan: adocCell.getRowSpan(),
+        source: adocCell.getSource(),
+        lines: adocCell.getLines(),
+        width: adocCell.getWidth(),
+        columnPercentageWidth: adocCell.getColumnPercentageWidth(),
         column: col
           ? {
               // @ts-ignore
@@ -891,14 +1040,84 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     authors: [],
   }
 
-  // Needs to happen after the blocks are processed
-  // Since the footnotes are added when they are called with `getContent()`
-  const footnotes = document.getFootnotes()
-  if (footnotes) {
-    preparedDocument.footnotes = footnotes.map((footnote) => ({
-      text: footnote.getText(),
-      index: footnote.getIndex(),
-    }))
+  // Collect footnote definitions from the fully-resolved inline AST
+  // (not from `inlineState.footnoteDefs`, which contains sentinel-laden
+  // text that hasn't been through rebuildAllPlaceholders).
+  const resolvedFootnotes: FootnoteNode[] = []
+  const walkBlocksForFootnotes = (blocks: Block[]) => {
+    for (const b of blocks) {
+      if (b.inlines) {
+        const defs = collectFootnoteDefs(b.inlines)
+        resolvedFootnotes.push(...defs)
+      }
+      if (b.blocks) walkBlocksForFootnotes(b.blocks)
+      // Handle list items
+      if ('items' in b && Array.isArray(b.items)) {
+        for (const item of b.items) {
+          if ('textInlines' in item && item.textInlines) {
+            const d = collectFootnoteDefs(item.textInlines)
+            resolvedFootnotes.push(...d)
+          }
+          if ('blocks' in item && item.blocks) walkBlocksForFootnotes(item.blocks)
+        }
+      }
+      // Handle dlist items (tuples of terms and description)
+      if ('items' in b && Array.isArray(b.items)) {
+        for (const item of b.items) {
+          if (Array.isArray(item)) {
+            for (const term of item) {
+              if (
+                term &&
+                typeof term === 'object' &&
+                'textInlines' in term &&
+                term.textInlines
+              ) {
+                const d = collectFootnoteDefs(term.textInlines)
+                resolvedFootnotes.push(...d)
+              }
+            }
+          }
+        }
+      }
+      // Handle table cells
+      if ('rows' in b && b.rows) {
+        const row = b.rows as Row
+        for (const cellGroup of [row.head, row.body, row.foot]) {
+          for (const rowCells of cellGroup) {
+            for (const cell of rowCells) {
+              if (cell.textInlines) {
+                const d = collectFootnoteDefs(cell.textInlines)
+                resolvedFootnotes.push(...d)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  walkBlocksForFootnotes(preparedDocument.blocks)
+  // Document title doesn't carry footnotes in the current model
+  // (title inlines are parsed separately with a throwaway state).
+
+  if (resolvedFootnotes.length > 0) {
+    // Deduplicate by index (references to the same definition appear
+    // multiple times; keep only the one with text content).
+    const seen = new Map<number, FootnoteNode>()
+    for (const fn of resolvedFootnotes) {
+      if (fn.index !== undefined) {
+        const existing = seen.get(fn.index)
+        if (!existing || (fn.text && fn.text.length > 0)) {
+          seen.set(fn.index, fn)
+        }
+      }
+    }
+    preparedDocument.footnotes = [...seen.values()]
+      .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+      .map((fn) => ({
+        text: undefined,
+        index: fn.index!,
+        textInlines: fn.text,
+      }))
   }
 
   const authors = document.getAuthors()
@@ -908,9 +1127,25 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       const authorEmail = author.getEmail()
 
       return {
-        name: authorName ? document.applySubstitutions(authorName).toString() : undefined,
+        name: authorName
+          ? renderInlineAsString(
+              resolveXrefs(
+                parseInline(authorName, {
+                  attributes: inlineAttrs,
+                  state: { footnoteIndex: 0, footnotesById: new Map() },
+                }),
+              ) || [],
+            )
+          : undefined,
         email: authorEmail
-          ? document.applySubstitutions(authorEmail).toString()
+          ? renderInlineAsString(
+              resolveXrefs(
+                parseInline(authorEmail, {
+                  attributes: inlineAttrs,
+                  state: { footnoteIndex: 0, footnotesById: new Map() },
+                }),
+              ) || [],
+            )
           : undefined,
       }
     })

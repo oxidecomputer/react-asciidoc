@@ -42,3 +42,4 @@ tsconfig.tsbuildinfo
 /dist
 
 /tests/corpus/rfds
+/tests/corpus/asciidoctor-extracted

@@ -34,6 +34,7 @@ const renderBibliographyInlines = (nodes: InlineNode[] | undefined): string => {
 
 const UList = ({ node }: { node: ListBlock }) => {
   const isChecklist = isOption(node.attributes, 'checklist')
+  const isInteractive = isChecklist && isOption(node.attributes, 'interactive')
   const isBibliography = node.style === 'bibliography'
 
   return (
@@ -45,7 +46,11 @@ const UList = ({ node }: { node: ListBlock }) => {
       <Title text={node.title} />
       <ul
         className={
-          isChecklist ? 'checklist' : isBibliography ? 'bibliography' : node.style || undefined
+          isChecklist
+            ? 'checklist'
+            : isBibliography
+              ? 'bibliography'
+              : node.style || undefined
         }
       >
         {node.items.map((item: ListItemBlock, index) => {
@@ -63,10 +68,19 @@ const UList = ({ node }: { node: ListBlock }) => {
                 />
               ) : (
                 <p>
-                  {checkbox && (
+                  {checkbox && !isInteractive && (
                     <>
-                      <i className={`fa ${checked ? 'fa-check-square-o' : 'fa-square-o'}`} />{' '}
+                      <i
+                        className={`fa ${checked ? 'fa-check-square-o' : 'fa-square-o'}`}
+                      />{' '}
                     </>
+                  )}
+                  {checkbox && isInteractive && (
+                    <input
+                      type="checkbox"
+                      data-item-complete={checked ? '1' : '0'}
+                      {...(checked ? { checked: true } : {})}
+                    />
                   )}
                   <RenderInline nodes={item.textInlines} />
                 </p>

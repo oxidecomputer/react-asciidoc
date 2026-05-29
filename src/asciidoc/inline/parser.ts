@@ -1,5 +1,5 @@
 import { QUOTE_SUBS } from './quotes'
-import { QuotedTextSniffRx, SpecialCharsRx, SpecialCharsTr } from './rx'
+import { CalloutSourceRx, QuotedTextSniffRx, SpecialCharsRx, SpecialCharsTr } from './rx'
 import { InlineNode } from './types'
 
 export interface ParseOptions {
@@ -21,6 +21,11 @@ export interface ParseOptions {
 export interface ParseState {
   footnoteIndex: number
   footnotesById: Map<string, number>
+  /** Collected footnote definitions (in source order) so that the document
+   *  template can render a footnote section without calling
+   *  asciidoctor's `getFootnotes()`. Each entry carries the 1-based
+   *  index and the parsed-inline `text` array. */
+  footnoteDefs?: InlineNode[][]
   /** Document-wide counters for `{counter:name}` / `{counter2:name}`. Shared
    *  across the whole document (including titles) so values increment in
    *  source order, matching asciidoctor. */
@@ -33,10 +38,14 @@ export interface ParseState {
    *  reset. `counterUses` tracks how many times each counter has been used. */
   counterResets?: Map<string, Set<number>>
   counterUses?: Map<string, number>
+  /** Attribute-set counter seeds: when `:name: N` appears in the document
+   *  body with a numeric value, the next `{counter:name}` after that point
+   *  should start from N+1 instead of 1. Maps counter name → (use-index → seed value). */
+  counterSeeds?: Map<string, Map<number, number>>
 }
 
 function createParseState(): ParseState {
-  return { footnoteIndex: 0, footnotesById: new Map() }
+  return { footnoteIndex: 0, footnotesById: new Map(), footnoteDefs: [] }
 }
 
 /** Increment (or initialise) a document counter and return its new value.
@@ -323,8 +332,68 @@ function parseAttributeList(attrStr: string): Record<string, string> {
   return attrs
 }
 
-function subSpecialchars(text: string): string {
+export function subSpecialchars(text: string): string {
   return text.replace(SpecialCharsRx, (ch) => SpecialCharsTr[ch] || ch)
+}
+
+/** Replace callout markers in specialchars-escaped text.
+ *  `iconsFont=true` uses `<i>` / `<b>` (font-icons mode, the default in
+ *  tests). Otherwise asciidoctor emits bare `&lt;N&gt;` text.
+ *
+ *  In listing/literal/verse source, callout markers look like `<1>`, `<.>`
+ *  (auto-numbered), and can be preceded by a comment prefix (`//`, `#`,
+ *  `--`, or `;;`). When icons=font (the default test mode), the prefix is
+ *  stripped and the marker is replaced with an icon+badge. When icons is
+ *  not font-mode, the marker is preserved as `&lt;N&gt;`.
+ *
+ *  Callouts can also appear inside HTML comment guards: `<!--1-->`. After
+ *  subSpecialchars these become `&lt;!--1--&gt;`. When icons=font the
+ *  guard is stripped and the callout is rendered as an icon; otherwise the
+ *  guard is preserved around `&lt;N&gt;`. */
+export function subCallouts(text: string, iconsFont = false, lineComment?: string): string {
+  let autonum = 0
+  // HTML comment callout guards: <!--1--> or <!--.--> (auto-numbered)
+  // After subSpecialchars these appear as &lt;!--1--&gt;
+  const commentGuardRx =
+    /&lt;!--(!?)(\d+|\.)\1--&gt;(?=(?: ?&lt;!--!?\1(?:\d+|\.)\1--&gt;)*$)/gm
+  text = text.replace(commentGuardRx, (_match, _badge, num) => {
+    if (num === '.') num = String(++autonum)
+    if (iconsFont) {
+      return `<i class="conum" data-value="${num}"></i><b>(${num})</b>`
+    }
+    return `&lt;${num}&gt;`
+  })
+  autonum = 0
+  // Match: optional comment prefix + escaped callout marker
+  // The prefix is either the block-specified line-comment chars (e.g.
+  // `%`, `-#`, //) or the built-in set (`//`, `#`, `--`, `;;`).
+  // When line-comment is explicitly set to empty string, no prefix
+  // is recognised (only bare `<N>` callouts).
+  let prefixPattern: string
+  if (lineComment === '') {
+    // Empty line-comment means: no comment prefix recognised at all.
+    // Use a pattern that never matches any real prefix.
+    prefixPattern = '(?!\\d)\\b\\b'
+  } else if (lineComment) {
+    const escaped = lineComment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    prefixPattern = `(?:${escaped}|\\/\\/|#|--|;;)`
+  } else {
+    prefixPattern = `(?:\\/\\/|#|--|;;)`
+  }
+  const calloutLineRx = new RegExp(
+    `(${prefixPattern} ?)?(\\\\)?&lt;(!?)(\\d+|\\.)\\3&gt;(?=(?: ?\\\\?&lt;!?\\3(?:\\d+|\\.)\\3&gt;)*$)`,
+    'gm',
+  )
+  return text.replace(calloutLineRx, (_match, prefix, escaped, _badge, num) => {
+    if (escaped) return (prefix || '') + '&lt;' + _badge + num + '&gt;'
+    if (num === '.') num = String(++autonum)
+    if (iconsFont) {
+      // Drop the comment prefix when rendering icon callouts
+      return `<i class="conum" data-value="${num}"></i><b>(${num})</b>`
+    }
+    // Non-icon mode: keep prefix, preserve marker as `&lt;N&gt;`
+    return `${prefix || ''}&lt;${num}&gt;`
+  })
 }
 
 function subAttributes(
@@ -346,6 +415,26 @@ function subAttributes(
         const useIdx = state.counterUses?.get(name) ?? 0
         if (state.counterResets?.get(name)?.has(useIdx)) counters.delete(name)
         if (state.counterUses) state.counterUses.set(name, useIdx + 1)
+        // When `:name: N` sets a numeric attribute value in the body before
+        // this counter use (but after any prior counter use for the same
+        // name), seed the counter from N+1 instead of 1. The seed overrides
+        // any prior counter value.
+        const seedMap = state.counterSeeds?.get(name)
+        const attributeSeed = seedMap
+          ? (() => {
+              // Find the latest seed at or before the current use-index.
+              let best: number | undefined
+              for (const [idx, val] of seedMap) {
+                if (idx <= useIdx) best = val
+              }
+              return best
+            })()
+          : undefined
+        // If an attribute entry seeded this counter, overwrite the stored
+        // value so nextCounterValue increments from the seed.
+        if (attributeSeed !== undefined) {
+          counters.set(name, attributeSeed)
+        }
         const value = nextCounterValue(counters, name, seed)
         // Keep the doc-attribute view in sync so plain `{name}` reflects it.
         attributes[name] = String(value)
@@ -367,6 +456,33 @@ function subAttributes(
     }
     return match
   })
+}
+
+/** Walk the inline AST and resolve unresolved {attribute} references in
+ *  text nodes. This catches references that were inside quoted/linked spans
+ *  and were hidden behind placeholders when subAttributes ran on the source
+ *  string. */
+function resolveNodeAttributes(
+  nodes: InlineNode[],
+  attributes: Record<string, string>,
+  state: ParseState,
+): InlineNode[] {
+  const walk = (ns: InlineNode[]): InlineNode[] => {
+    for (let i = 0; i < ns.length; i++) {
+      const n = ns[i]
+      if (n.type === 'text' && typeof n.text === 'string' && n.text.indexOf('{') !== -1) {
+        const resolved = subAttributes(n.text, attributes, state)
+        if (resolved !== n.text) {
+          ns[i] = { ...n, text: resolved }
+        }
+      }
+      if ('text' in n && Array.isArray(n.text)) {
+        n.text = walk(n.text as InlineNode[])
+      }
+    }
+    return ns
+  }
+  return walk(nodes)
 }
 
 // Subset of asciidoctor's INTRINSIC_ATTRIBUTES, covering the inline-relevant
@@ -571,6 +687,10 @@ export function parseInline(text: string, opts: ParseOptions = {}): InlineNode[]
   let nodes = rebuildAllPlaceholders(source, placeholders)
   nodes = subPostReplacements(nodes, attributes)
   nodes = restorePassthroughs(nodes, passthroughs, compatMode, state)
+  // Attribute references inside quoted/linked text were hidden behind
+  // placeholders when subAttributes ran on the source string. Walk the
+  // AST now and resolve any remaining {attr} in text nodes.
+  nodes = resolveNodeAttributes(nodes, attributes, state)
 
   return nodes
 }
@@ -1259,9 +1379,11 @@ function subMacrosOnString(
           state.footnoteIndex++
           const index = state.footnoteIndex
           if (refId) state.footnotesById.set(refId, index)
+          const text = processInlineText(content)
+          if (state.footnoteDefs) state.footnoteDefs.push(text)
           return {
             type: 'footnote' as const,
-            text: processInlineText(content),
+            text,
             ...(refId ? { id: refId } : {}),
             index,
           }

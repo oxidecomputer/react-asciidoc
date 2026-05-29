@@ -7,8 +7,7 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
   const { document } = useConverterContext()
 
   const docAttrs = document.attributes || {}
-  const nowrap =
-    isOption(node.attributes, 'nowrap') || docAttrs['prewrap'] === undefined
+  const nowrap = isOption(node.attributes, 'nowrap') || docAttrs['prewrap'] === undefined
   const wrapperClass = cn('listingblock', node.role)
 
   if (node.style === 'source') {

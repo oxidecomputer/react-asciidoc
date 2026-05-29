@@ -2,7 +2,9 @@
 
 #### 🚀 Enhancement
 
-- Add node content to sidebar with alt syntax [#46](https://github.com/oxidecomputer/react-asciidoc/pull/46) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Add node content to sidebar with alt syntax
+  [#46](https://github.com/oxidecomputer/react-asciidoc/pull/46)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -14,7 +16,8 @@
 
 #### 🚀 Enhancement
 
-- Update deps [#49](https://github.com/oxidecomputer/react-asciidoc/pull/49) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Update deps [#49](https://github.com/oxidecomputer/react-asciidoc/pull/49)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -26,7 +29,9 @@
 
 #### 🐛 Bug Fix
 
-- Release / npm / repo hardening [#48](https://github.com/oxidecomputer/react-asciidoc/pull/48) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Release / npm / repo hardening
+  [#48](https://github.com/oxidecomputer/react-asciidoc/pull/48)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -38,7 +43,9 @@
 
 #### 🐛 Bug Fix
 
-- Return of the cache (getContent) [#41](https://github.com/oxidecomputer/react-asciidoc/pull/41) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Return of the cache (getContent)
+  [#41](https://github.com/oxidecomputer/react-asciidoc/pull/41)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -50,7 +57,8 @@
 
 #### 🐛 Bug Fix
 
-- Fix raw quote attribution [#33](https://github.com/oxidecomputer/react-asciidoc/pull/33) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Fix raw quote attribution [#33](https://github.com/oxidecomputer/react-asciidoc/pull/33)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -62,7 +70,8 @@
 
 #### 🐛 Bug Fix
 
-- Export video block type [#37](https://github.com/oxidecomputer/react-asciidoc/pull/37) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Export video block type [#37](https://github.com/oxidecomputer/react-asciidoc/pull/37)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -74,7 +83,8 @@
 
 #### 🚀 Enhancement
 
-- Add video block [#34](https://github.com/oxidecomputer/react-asciidoc/pull/34) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Add video block [#34](https://github.com/oxidecomputer/react-asciidoc/pull/34)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -86,7 +96,8 @@
 
 #### 🐛 Bug Fix
 
-- Allow React 19 in peer deps [#32](https://github.com/oxidecomputer/react-asciidoc/pull/32) ([@david-crespo](https://github.com/david-crespo))
+- Allow React 19 in peer deps [#32](https://github.com/oxidecomputer/react-asciidoc/pull/32)
+  ([@david-crespo](https://github.com/david-crespo))
 
 #### Authors: 1
 
@@ -98,7 +109,8 @@
 
 #### 🐛 Bug Fix
 
-- Parse table title [#31](https://github.com/oxidecomputer/react-asciidoc/pull/31) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Parse table title [#31](https://github.com/oxidecomputer/react-asciidoc/pull/31)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -110,7 +122,9 @@
 
 #### 🐛 Bug Fix
 
-- Listing: Match HTML5 renderer better [#30](https://github.com/oxidecomputer/react-asciidoc/pull/30) ([@benjaminleonard](https://github.com/benjaminleonard))
+- Listing: Match HTML5 renderer better
+  [#30](https://github.com/oxidecomputer/react-asciidoc/pull/30)
+  ([@benjaminleonard](https://github.com/benjaminleonard))
 
 #### Authors: 1
 
@@ -122,7 +136,8 @@
 
 #### 🐛 Bug Fix
 
-- chore: roll deps fwd [#28](https://github.com/oxidecomputer/react-asciidoc/pull/28) ([@cdaringe](https://github.com/cdaringe))
+- chore: roll deps fwd [#28](https://github.com/oxidecomputer/react-asciidoc/pull/28)
+  ([@cdaringe](https://github.com/cdaringe))
 
 #### Authors: 1
 

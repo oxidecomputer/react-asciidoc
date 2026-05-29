@@ -32,9 +32,9 @@ one.
 
 ## Running tests
 
-The tests are string-diff parity checks: each source is converted through stock
-Asciidoctor (embedded mode) and through the React renderer, then both outputs are
-normalised and compared. Run the whole suite with:
+The tests are string-diff parity checks: each source is converted through stock Asciidoctor
+(embedded mode) and through the React renderer, then both outputs are normalised and
+compared. Run the whole suite with:
 
 ```
 npm test
@@ -43,11 +43,11 @@ npm test
 There are two groups of tests under `tests/`:
 
 - **Examples** (`renderer.test.tsx`) — the hand-crafted fixtures in `src/examples/`.
-- **Corpus** (`corpus.*.test.tsx`) — every Oxide RFD plus the Asciidoctor writer's
-  guide (~694 docs). Because vitest parallelises across test *files* rather than
-  within one, the corpus is split into eight shard files that each run a round-robin
-  slice of the documents. This lets the worker pool spread the work across cores —
-  the suite runs in roughly a fifth of the time it took as a single file.
+- **Corpus** (`corpus.*.test.tsx`) — every Oxide RFD plus the Asciidoctor writer's guide
+  (~694 docs). Because vitest parallelises across test _files_ rather than within one, the
+  corpus is split into eight shard files that each run a round-robin slice of the documents.
+  This lets the worker pool spread the work across cores — the suite runs in roughly a fifth
+  of the time it took as a single file.
 
 ```
 # Just the corpus, in parallel across the worker pool.

@@ -1,7 +1,7 @@
-import parse from 'html-react-parser'
 import { Fragment } from 'react'
 
-import { Content } from '../'
+import { Content } from '..'
+import RenderInline from '../RenderInline'
 import { type DocumentBlock, getAttribute, hasAttribute } from '../utils/prepareDocument'
 import Outline from './Outline'
 
@@ -61,7 +61,11 @@ const Document = ({ document }: { document: DocumentBlock }) => {
               key={footnote.index}
             >
               <a href={`#_footnoteref_${footnote.index}`}>{footnote.index}</a>.{' '}
-              {parse(footnote.text || '')}
+              {footnote.textInlines ? (
+                <RenderInline nodes={footnote.textInlines} />
+              ) : (
+                <span dangerouslySetInnerHTML={{ __html: footnote.text || '' }} />
+              )}
             </div>
           ))}
         </div>
@@ -85,7 +89,7 @@ const Document = ({ document }: { document: DocumentBlock }) => {
               {author.name && (
                 <>
                   <span id={`author${index + 1 > 1 ? index + 1 : ''}`} className="author">
-                    {parse(author.name)}
+                    <span dangerouslySetInnerHTML={{ __html: author.name }} />
                   </span>
                   <br />
                 </>
@@ -93,7 +97,7 @@ const Document = ({ document }: { document: DocumentBlock }) => {
               {author.email && (
                 <>
                   <span id={`email${index + 1 > 1 ? index + 1 : ''}`} className="email">
-                    {parse(author.email)}
+                    <span dangerouslySetInnerHTML={{ __html: author.email }} />
                   </span>
                   <br />
                 </>

@@ -34,10 +34,7 @@ const Quote = ({ node }: { node: Block }) => {
         </blockquote>
       )}
       {attribHtml && (
-        <div
-          className="attribution"
-          dangerouslySetInnerHTML={{ __html: attribHtml }}
-        />
+        <div className="attribution" dangerouslySetInnerHTML={{ __html: attribHtml }} />
       )}
     </div>
   )
