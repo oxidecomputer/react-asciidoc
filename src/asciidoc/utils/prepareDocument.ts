@@ -1,6 +1,6 @@
 import type * as AdocTypes from '@asciidoctor/core'
 
-import { parseInline, type ParseState } from '../inline'
+import { type ParseState, parseInline } from '../inline'
 import type { InlineNode } from '../inline'
 
 type NodeType =
@@ -84,11 +84,16 @@ export type DocumentSection = {
   title: string
   level: number
   num: string
+  numbered: boolean
+  hasCaption: boolean
   sections: DocumentSection[]
 }
 
 export type DocumentBlock = {
   type: 'document'
+  /** Explicit id on the document title (`[[abstract]]` / `[#abstract]`),
+   *  emitted on the title `<h1>`. */
+  id?: string
   title: string
   hasHeader: boolean
   noHeader: boolean
@@ -132,6 +137,10 @@ export interface VideoBlock extends BaseBlock {
 export interface ImageBlock extends BaseBlock {
   type: 'image'
   imageUri: string
+  /** Substituted alt text (asciidoctor `getAlt()` — entities like `&#8217;`
+   *  already applied). Must be emitted verbatim, not via a JSX attribute,
+   *  which would re-escape the `&`. */
+  alt: string
 }
 
 export interface ListItemBlock extends BaseBlock {
@@ -165,6 +174,7 @@ export interface SectionBlock extends BaseBlock {
   title: string
   num: string
   name: string
+  hasCaption: boolean
 }
 
 export interface TableBlock extends BaseBlock {
@@ -304,22 +314,114 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   const inlineState: ParseState = {
     footnoteIndex: 0,
     footnotesById: new Map(),
+    counters: new Map(),
   }
 
-  // Build an id → title map so we can resolve `<<id>>` xrefs that have no
-  // explicit reftext to the target section's title (matches asciidoctor's
-  // behavior). Our inline parser doesn't have document context, so we
-  // walk its output and rewrite bracketed-id text into the real title.
-  const sectionTitles = new Map<string, string>()
+  // Build an id → display-text map so we can resolve `<<id>>` xrefs that
+  // have no explicit reftext to the right label. The display text mirrors
+  // asciidoctor's `Section#xreftext(xrefstyle)`: by default (no xrefstyle)
+  // it's the plain section title — NOT the captioned title; the
+  // "Appendix A: " / number prefix only appears in the TOC and headings,
+  // not in body xrefs. With `:xrefstyle: short|full` set, sections render
+  // as "Section N" / `Section N, "Title"`. Our inline parser has no
+  // document context, so we walk its output and rewrite the fallback
+  // `[id]` text into the real label.
+  const refLabels = new Map<string, string>()
+  // Every registered id (sections, block anchors, bibrefs). A target that is
+  // a registered id is a DIRECT hit — even one with no display label (a bare
+  // `[[RIFT]]` anchor) — and must NOT be re-interpreted as a natural xref.
+  const idSet = new Set<string>()
+  // Reverse map for "natural" cross references (`<<Section Title>>`):
+  // asciidoctor's `Document#resolve_id` matches the target against each
+  // ref's `xreftext()` (the plain title) EXACTLY — it does not slugify.
+  // First-write-wins, in document order.
+  const reftextToId = new Map<string, string>()
+
+  const docXrefstyle =
+    typeof docAttrs['xrefstyle'] === 'string'
+      ? (docAttrs['xrefstyle'] as string)
+      : undefined
+
+  // Mirrors Ruby `Section#xreftext`. `numeral` is the trailing-dot form
+  // returned by `getSectionNumeral()` (e.g. "2." / "14.3.3." / "A.").
+  const sectionXreftext = (info: {
+    title: string
+    numbered: boolean
+    sectname: string
+    numeral: string
+    reftext: string | undefined
+  }): string => {
+    if (info.reftext) return info.reftext
+    const isAppendixOrChapter = info.sectname === 'appendix' || info.sectname === 'chapter'
+    const italicOrPlain = isAppendixOrChapter ? `<em>${info.title}</em>` : info.title
+    if (docXrefstyle && info.numbered) {
+      const base = info.numeral.replace(/\.$/, '')
+      const sig = docAttrs[`${info.sectname}-refsig`]
+      if (docXrefstyle === 'full') {
+        const quotedTitle = isAppendixOrChapter
+          ? `<em>${info.title}</em>`
+          : `&#8220;${info.title}&#8221;`
+        return sig ? `${sig} ${base}, ${quotedTitle}` : `${base}, ${quotedTitle}`
+      }
+      if (docXrefstyle === 'short') {
+        return sig ? `${sig} ${base}` : base
+      }
+      return italicOrPlain
+    }
+    if (docXrefstyle) return italicOrPlain
+    return info.title
+  }
+
   const collectTitles = (parent: AdocTypes.AbstractBlock | AdocTypes.Document) => {
     for (const s of parent.getSections()) {
       const id = s.getId()
-      const title = (s.getCaption() ? s.getCaptionedTitle() : s.getTitle()) || ''
-      if (id) sectionTitles.set(id, title)
+      const reftext = (s.getReftext && s.getReftext()) || undefined
+      const info = {
+        title: s.getTitle() || '',
+        numbered: s.isNumbered ? s.isNumbered() : false,
+        sectname: (s.getSectionName && s.getSectionName()) || 'section',
+        numeral: (s.getSectionNumeral && s.getSectionNumeral()) || '',
+        reftext,
+      }
+      if (id) {
+        idSet.add(id)
+        refLabels.set(id, sectionXreftext(info))
+        // Natural-ref key: asciidoctor uses `xreftext()` with no style —
+        // the explicit reftext if set, otherwise the plain title.
+        const key = reftext || info.title
+        if (key && !reftextToId.has(key)) reftextToId.set(key, id)
+      }
       collectTitles(s)
     }
   }
   collectTitles(document)
+  // …then explicit reftexts override (matches `document.getRefs()` —
+  // anchors built with `[[id,reftext]]` or `[[[bibid, Cite Text]]]`).
+  const refs = (document as AdocTypes.Document).getRefs
+    ? ((document as AdocTypes.Document).getRefs() as Record<string, unknown>)
+    : {}
+  for (const id of Object.keys(refs)) {
+    idSet.add(id)
+    const r = refs[id] as {
+      title?: string
+      getReftext?: () => string | undefined
+      $xreftext?: (style: string | null) => string | undefined
+    }
+    const reftext = r.getReftext && r.getReftext()
+    if (reftext) {
+      refLabels.set(id, reftext)
+      if (!reftextToId.has(reftext)) reftextToId.set(reftext, id)
+    } else if (!refLabels.has(id)) {
+      // Captioned blocks (table, image, example, …) aren't covered by the
+      // section walk above. Use asciidoctor's own `xreftext`, honoring the
+      // document xrefstyle, so `<<tbl>>` resolves to e.g. "Table 7" (short)
+      // or the title (default) — matching `AbstractBlock#xreftext`.
+      const xt =
+        typeof r.$xreftext === 'function' ? r.$xreftext(docXrefstyle ?? null) : undefined
+      if (xt) refLabels.set(id, xt)
+      else if (r.title) refLabels.set(id, r.title)
+    }
+  }
 
   const resolveXrefs = (nodes: InlineNode[] | undefined): InlineNode[] | undefined => {
     if (!nodes) return nodes
@@ -329,10 +431,30 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const text = n.text
         const isBracketed =
           text.length === 1 && text[0].type === 'text' && text[0].text === fallback
-        if (isBracketed) {
-          const resolved = sectionTitles.get(n.target)
-          if (resolved) n.text = [{ type: 'text', text: resolved }]
+        const setLabel = (id: string) => {
+          const v = refLabels.get(id)
+          if (isBracketed && typeof v === 'string') {
+            n.text = [{ type: 'text', text: v }]
+          }
         }
+        // 1. The target is literally a registered id (even an unlabeled
+        //    bare anchor — leave its `[id]` text as-is).
+        if (idSet.has(n.target)) {
+          setLabel(n.target)
+        } else if (n.target.includes(' ') || n.target.toLowerCase() !== n.target) {
+          // 2. Natural cross reference: asciidoctor only attempts this when
+          // the target contains a space or has uppercase, then matches it
+          // EXACTLY against a section's title text (no slugification). A
+          // target that doesn't match (e.g. one that spans a line break, so
+          // it carries an embedded newline) is left as the broken `#target`
+          // / `[target]` form, exactly as stock does.
+          const id = reftextToId.get(n.target)
+          if (id) {
+            n.target = id
+            setLabel(id)
+          }
+        }
+        // else: leave the parser's broken `#target` / `[target]` fallback.
       }
       if ('text' in n && Array.isArray((n as { text?: InlineNode[] }).text)) {
         resolveXrefs((n as { text: InlineNode[] }).text)
@@ -343,12 +465,17 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
   const parseTitleInlines = (raw: string | undefined): InlineNode[] | undefined => {
     if (!raw) return undefined
-    // Titles use a throwaway state so footnotes in them don't bump the
-    // document-wide counter (asciidoctor also doesn't number title
-    // footnotes).
+    // Titles use a throwaway footnote state so footnotes in them don't bump
+    // the document-wide counter (asciidoctor also doesn't number title
+    // footnotes), but they SHARE the document-wide `counters` map so
+    // `{counter:...}` in section titles increments in source order.
     return parseInline(raw, {
       attributes: inlineAttrs,
-      state: { footnoteIndex: 0, footnotesById: new Map() },
+      state: {
+        footnoteIndex: 0,
+        footnotesById: new Map(),
+        counters: inlineState.counters,
+      },
     })
   }
 
@@ -429,6 +556,10 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     if (type === 'image') {
       let imageBlock = processedBlock as ImageBlock
       imageBlock.imageUri = block.getImageUri(block.getAttribute('target'))
+      imageBlock.alt =
+        typeof (block as { getAlt?: () => string }).getAlt === 'function'
+          ? (block as { getAlt: () => string }).getAlt()
+          : ((block.getAttribute('alt') as string) ?? '')
     }
 
     if (type === 'listing' || type === 'literal') {
@@ -444,10 +575,11 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
     if (type === 'section') {
       const sectionBlock = processedBlock as SectionBlock
-      sectionBlock.title = block.getCaption()
-        ? block.getCaptionedTitle()
-        : block.getTitle() || ''
-      sectionBlock.titleInlines = parseTitleInlines(rawTitle)
+      const hasCaption = !!block.getCaption()
+      sectionBlock.title = hasCaption ? block.getCaptionedTitle() : block.getTitle() || ''
+      sectionBlock.hasCaption = hasCaption
+      // titleInlines is already parsed by the base block above — don't
+      // re-parse here, or document-wide `{counter:...}` would double-count.
       if ('getSectionNumeral' in block) {
         sectionBlock.name = block.getSectionName()
         sectionBlock.numbered = block.isNumbered()
@@ -521,12 +653,14 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         ) as unknown as Cell[][]
       }
 
-      const rows = adocTable.getRows()
-      tableBlock.rows = {
-        head: processCellArray(rows.head),
-        body: processCellArray(rows.body),
-        foot: processCellArray(rows.foot),
-      }
+      // Parse each cell exactly once. `getRows()` returns the same cells as
+      // getHeadRows/getBodyRows/getFootRows, so reuse the parsed results for
+      // both views — parsing twice would double-count document-wide
+      // `{counter:...}` (and footnote indices) inside cells.
+      const headRows = processCellArray(adocTable.getHeadRows())
+      const bodyRows = processCellArray(adocTable.getBodyRows())
+      const footRows = processCellArray(adocTable.getFootRows())
+      tableBlock.rows = { head: headRows, body: bodyRows, foot: footRows }
 
       tableBlock = {
         ...tableBlock,
@@ -534,9 +668,9 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         hasHeader: adocTable.hasHeaderOption(),
         hasFooter: adocTable.hasFooterOption(),
         hasAutowidth: adocTable.hasAutowidthOption(),
-        headRows: processCellArray(adocTable.getHeadRows()),
-        bodyRows: processCellArray(adocTable.getBodyRows()),
-        footRows: processCellArray(adocTable.getFootRows()),
+        headRows,
+        bodyRows,
+        footRows,
       }
 
       // needs reassigning because of the use of spread
@@ -599,12 +733,15 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         (section.getCaption() ? section.getCaptionedTitle() : section.getTitle()) || '',
       level: section.getLevel(),
       num: section.getSectionNumber(),
+      numbered: section.isNumbered(),
+      hasCaption: !!section.getCaption(),
       sections: processSections(section),
     }))
   }
 
   preparedDocument = {
     type: 'document',
+    id: (document.getId && document.getId()) || undefined,
     title: document.getDocumentTitle()?.toString() || '',
     hasHeader: document.hasHeader(),
     noHeader: document.getNoheader(),

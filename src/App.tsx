@@ -4,7 +4,7 @@ import type { Extensions } from '@asciidoctor/core'
 import { useEffect, useMemo } from 'react'
 import { Fragment } from 'react'
 
-import { Asciidoc, type Options } from './asciidoc'
+import { Asciidoc } from './asciidoc'
 import './asciidoc.css'
 import { prepareDocument } from './asciidoc/utils/prepareDocument'
 import * as content from './examples'

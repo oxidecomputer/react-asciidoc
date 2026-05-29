@@ -13,6 +13,7 @@ const Document = ({ document }: { document: DocumentBlock }) => {
           {document.hasHeader && (
             <>
               <h1
+                id={document.id || undefined}
                 dangerouslySetInnerHTML={{
                   __html: document.title,
                 }}

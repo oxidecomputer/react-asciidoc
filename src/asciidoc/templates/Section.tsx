@@ -13,9 +13,12 @@ const Section = ({ node }: { node: SectionBlock }) => {
     : 3
 
   const numbered =
-    node.numbered && node.num && node.num !== '.' && node.level <= sectNumLevels
+    node.numbered && node.num && node.num !== '.' && node.level <= sectNumLevels && !node.hasCaption
   const titlePrefix = numbered ? `${node.num} ` : ''
-  const titleHtml = titlePrefix + inlineHtml(node.titleInlines).__html
+  const titleHtml =
+    (node.hasCaption
+      ? node.title
+      : titlePrefix + inlineHtml(node.titleInlines).__html)
 
   const hasAnchor = docAttrs['sectanchors'] !== undefined
   const hasLink = docAttrs['sectlinks'] !== undefined

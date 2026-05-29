@@ -40,3 +40,5 @@ tsconfig.tsbuildinfo
 /tests/*.*.ts-snapshots/
 
 /dist
+
+/tests/corpus/rfds

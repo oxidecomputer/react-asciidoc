@@ -39,7 +39,7 @@ const UList = ({ node }: { node: ListBlock }) => {
       <Title text={node.title} />
       <ul
         className={
-          isChecklist ? 'checklist' : isBibliography ? 'bibliography' : undefined
+          isChecklist ? 'checklist' : isBibliography ? 'bibliography' : node.style || undefined
         }
       >
         {node.items.map((item: ListItemBlock, index) => {

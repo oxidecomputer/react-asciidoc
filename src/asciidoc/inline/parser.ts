@@ -1,13 +1,6 @@
-import { InlineNode, TextNode } from './types'
-import {
-  SpecialCharsRx,
-  SpecialCharsTr,
-  NORMAL_SUBS,
-  QuotedTextSniffRx,
-  PassSlotRx,
-  HardLineBreakRx,
-} from './rx'
 import { QUOTE_SUBS } from './quotes'
+import { QuotedTextSniffRx, SpecialCharsRx, SpecialCharsTr } from './rx'
+import { InlineNode } from './types'
 
 export interface ParseOptions {
   compatMode?: boolean
@@ -19,18 +12,61 @@ export interface ParseOptions {
    *  has already been through subSpecialchars (e.g. recursive call from
    *  subQuotes on inner text). Skip specialchars to avoid double-escape. */
   _alreadyEscaped?: boolean
+  /** Internal: true when parsing the inner content of a quoted span. The
+   *  email macro uses this to suppress linkification at position 0 (the
+   *  quote tag's `>` is a non-linking context in stock asciidoctor). */
+  _quoted?: boolean
 }
 
 export interface ParseState {
   footnoteIndex: number
   footnotesById: Map<string, number>
+  /** Document-wide counters for `{counter:name}` / `{counter2:name}`. Shared
+   *  across the whole document (including titles) so values increment in
+   *  source order, matching asciidoctor. */
+  counters?: Map<string, number | string>
 }
 
 function createParseState(): ParseState {
   return { footnoteIndex: 0, footnotesById: new Map() }
 }
 
-type SubType = 'specialcharacters' | 'quotes' | 'attributes' | 'replacements' | 'macros' | 'post_replacements' | 'normal' | 'verbatim'
+/** Increment (or initialise) a document counter and return its new value.
+ *  Mirrors asciidoctor's `{counter:name[:seed]}` — the FIRST reference
+ *  yields the seed (or 1), subsequent references increment. Supports integer
+ *  and single-letter sequences. */
+function nextCounterValue(
+  counters: Map<string, number | string>,
+  name: string,
+  seed: string | undefined,
+): number | string {
+  const existing = counters.get(name)
+  let value: number | string
+  if (existing === undefined) {
+    if (seed !== undefined && seed !== '') {
+      value = /^-?\d+$/.test(seed) ? parseInt(seed, 10) : seed
+    } else {
+      value = 1
+    }
+  } else if (typeof existing === 'number') {
+    value = existing + 1
+  } else {
+    // Single-letter sequence: advance the last char's code point.
+    value = String.fromCharCode(existing.charCodeAt(existing.length - 1) + 1)
+  }
+  counters.set(name, value)
+  return value
+}
+
+type SubType =
+  | 'specialcharacters'
+  | 'quotes'
+  | 'attributes'
+  | 'replacements'
+  | 'macros'
+  | 'post_replacements'
+  | 'normal'
+  | 'verbatim'
 
 interface PassthroughEntry {
   text: string
@@ -94,7 +130,10 @@ function splitKbdKeys(raw: string): string[] {
   }
   const delim = keys[delimIdx]
   if (keys.endsWith(delim)) {
-    const parts = keys.slice(0, -1).split(delim).map((s) => s.trim())
+    const parts = keys
+      .slice(0, -1)
+      .split(delim)
+      .map((s) => s.trim())
     parts[parts.length - 1] = parts[parts.length - 1] + delim
     return parts
   }
@@ -249,8 +288,25 @@ function subSpecialchars(text: string): string {
 
 function subAttributes(
   text: string,
-  attributes: Record<string, string>
+  attributes: Record<string, string>,
+  state?: ParseState,
 ): string {
+  // Counters first: `{counter:name}` outputs the new value, `{counter2:name}`
+  // increments silently. Both advance a document-wide counter.
+  if (state && text.indexOf('{counter') !== -1) {
+    if (!state.counters) state.counters = new Map()
+    const counters = state.counters
+    text = text.replace(
+      /(\\)?\{(counter2?):([\w-]+)(?::([^}]*))?\}/g,
+      (match, esc, kind, name, seed) => {
+        if (esc) return match.slice(1)
+        const value = nextCounterValue(counters, name, seed)
+        // Keep the doc-attribute view in sync so plain `{name}` reflects it.
+        attributes[name] = String(value)
+        return kind === 'counter2' ? '' : String(value)
+      },
+    )
+  }
   return text.replace(/(\\)?\{(\w[\w-]*)\}/g, (match, esc, name) => {
     if (esc) return '{' + name + '}'
     const key = name.toLowerCase()
@@ -323,9 +379,11 @@ function subReplacements(text: string): string {
     if (match.includes('\\')) return match.replace('\\', '')
     return '&#8201;&#8212;&#8201;'
   })
-  text = text.replace(/(\p{Alpha})\\?--(?=\p{Alpha})/gu, (match, alpha) => {
+  // Word-joining em-dash: asciidoctor fires this between any two "word"
+  // characters, which includes digits (`2190--2020`) — not just letters.
+  text = text.replace(/([\p{L}\p{N}_])\\?--(?=[\p{L}\p{N}_])/gu, (match, word) => {
     if (match.includes('\\')) return match.replace('\\', '')
-    return alpha + '&#8212;&#8203;'
+    return word + '&#8212;&#8203;'
   })
   text = r(/\\?\.\.\./g, '&#8230;&#8203;')
   text = text.replace(/([\p{L}\p{N}])\\?'(?=\p{L})/gu, (match, alnum) => {
@@ -347,7 +405,7 @@ function subReplacements(text: string): string {
   // &copy;  in source → &copy; (entity preserved).
   text = text.replace(
     /(\\)?&amp;([a-zA-Z][a-zA-Z]+\d{0,2};|#\d{1,7};|#x[\da-fA-F]{1,6};)/g,
-    (_match, esc, body) => (esc ? '&amp;' + body : '&' + body)
+    (_match, esc, body) => (esc ? '&amp;' + body : '&' + body),
   )
   return text
 }
@@ -356,10 +414,7 @@ function subReplacements(text: string): string {
 // the `placeholders` array. Both quote and macro substitutions push to the
 // same array. We use indices (not embedded JSON) so the placeholder body
 // can't be matched by surrounding macro regex `]` terminators.
-function emitPlaceholder(
-  placeholders: InlineNode[][],
-  nodes: InlineNode[]
-): string {
+function emitPlaceholder(placeholders: InlineNode[][], nodes: InlineNode[]): string {
   const idx = placeholders.length
   placeholders.push(nodes)
   return '\x01' + idx + '\x02'
@@ -367,7 +422,8 @@ function emitPlaceholder(
 
 function rebuildAllPlaceholders(
   source: string,
-  placeholders: InlineNode[][]
+  placeholders: InlineNode[][],
+  seen: Set<number> = new Set(),
 ): InlineNode[] {
   const nodes: InlineNode[] = []
   const re = /\x01(\d+)\x02/g
@@ -380,10 +436,16 @@ function rebuildAllPlaceholders(
     }
     const idx = parseInt(match[1], 10)
     const entry = placeholders[idx]
-    if (entry) {
+    if (entry && !seen.has(idx)) {
+      seen.add(idx)
       for (const n of entry) {
-        nodes.push(resolveNestedPlaceholders(n, placeholders))
+        nodes.push(resolveNestedPlaceholders(n, placeholders, seen))
       }
+      seen.delete(idx)
+    } else if (entry) {
+      // Cyclic self-reference (a nested-parse index collision produced a
+      // placeholder whose own body references it). Break the loop rather
+      // than recurse forever; emit nothing for the cyclic slot.
     }
     lastIndex = match.index + match[0].length
   }
@@ -399,7 +461,8 @@ function rebuildAllPlaceholders(
 
 function resolveNestedPlaceholders(
   n: InlineNode,
-  placeholders: InlineNode[][]
+  placeholders: InlineNode[][],
+  seen: Set<number> = new Set(),
 ): InlineNode {
   if (n.type === 'text') return n
   if (
@@ -411,10 +474,10 @@ function resolveNestedPlaceholders(
     const newText: InlineNode[] = []
     for (const child of n.text) {
       if (child.type === 'text' && child.text.indexOf('\x01') !== -1) {
-        const rebuilt = rebuildAllPlaceholders(child.text, placeholders)
+        const rebuilt = rebuildAllPlaceholders(child.text, placeholders, seen)
         for (const r of rebuilt) newText.push(r)
       } else {
-        newText.push(resolveNestedPlaceholders(child, placeholders))
+        newText.push(resolveNestedPlaceholders(child, placeholders, seen))
       }
     }
     return { ...n, text: newText } as InlineNode
@@ -422,10 +485,7 @@ function resolveNestedPlaceholders(
   return n
 }
 
-export function parseInline(
-  text: string,
-  opts: ParseOptions = {}
-): InlineNode[] {
+export function parseInline(text: string, opts: ParseOptions = {}): InlineNode[] {
   const compatMode = opts.compatMode ?? false
   const attributes = opts.attributes ?? {}
   const state = opts.state ?? createParseState()
@@ -434,9 +494,7 @@ export function parseInline(
 
   let source = text
 
-  const sniffRx = compatMode
-    ? QuotedTextSniffRx['true']
-    : QuotedTextSniffRx['false']
+  const sniffRx = compatMode ? QuotedTextSniffRx['true'] : QuotedTextSniffRx['false']
 
   const passthroughs: PassthroughEntry[] = []
   const placeholders: InlineNode[][] = []
@@ -451,11 +509,18 @@ export function parseInline(
     source = subQuotes(source, quoteSubs, placeholders, state)
   }
 
-  source = subAttributes(source, attributes)
+  source = subAttributes(source, attributes, state)
 
   source = subReplacements(source)
 
-  source = subMacrosOnString(source, attributes, compatMode, placeholders, state)
+  source = subMacrosOnString(
+    source,
+    attributes,
+    compatMode,
+    placeholders,
+    state,
+    opts._quoted ?? false,
+  )
 
   let nodes = rebuildAllPlaceholders(source, placeholders)
   nodes = subPostReplacements(nodes, attributes)
@@ -467,7 +532,7 @@ export function parseInline(
 function extractPassthroughs(
   source: string,
   passthroughs: PassthroughEntry[],
-  compatMode: boolean
+  compatMode: boolean,
 ): string {
   // Two-pass extraction: first the "macro-like" passthroughs (pass:, stem:,
   // +++, $$, ++), then single-+ and single-` (compat). Order matters because
@@ -480,16 +545,14 @@ function extractPassthroughs(
 function extractHighPriorityPassthroughs(
   source: string,
   passthroughs: PassthroughEntry[],
-  compatMode: boolean
+  compatMode: boolean,
 ): string {
   let result = ''
   let i = 0
   const len = source.length
 
   const triplePlusPattern = compatMode ? null : /^\+\+\+([\s\S]*?)\+\+\+/
-  const doublePlusPattern = compatMode
-    ? null
-    : /^(?:\[([^\[\]]+)\])?\+\+([\s\S]+?)\+\+/
+  const doublePlusPattern = compatMode ? null : /^(?:\[([^\[\]]+)\])?\+\+([\s\S]+?)\+\+/
   const passPattern = /^pass:([a-z]+(?:,[a-z-]+)*)?\[(|[\s\S]*?[^\\])\]/
   const stemPattern =
     /^(stem|(?:latex|ascii)math):([a-z]+(?:,[a-z-]+)*)?\[([\s\S]*?[^\\])\]/
@@ -573,8 +636,7 @@ function extractHighPriorityPassthroughs(
       if (match) {
         const content = match[3]
         const idx = passthroughs.length
-        const stemType =
-          match[1] === 'asciimath' ? 'asciimath' : 'latexmath'
+        const stemType = match[1] === 'asciimath' ? 'asciimath' : 'latexmath'
         passthroughs.push({
           text: content,
           type: stemType,
@@ -596,7 +658,7 @@ function extractHighPriorityPassthroughs(
 function extractLowPriorityPassthroughs(
   source: string,
   passthroughs: PassthroughEntry[],
-  compatMode: boolean
+  compatMode: boolean,
 ): string {
   let result = ''
   let i = 0
@@ -641,21 +703,28 @@ function extractLowPriorityPassthroughs(
 
 function resolveInlineSubs(subStr: string): SubType[] {
   const hintMap: Record<string, SubType> = {
-    'a': 'attributes',
-    'm': 'macros',
-    'n': 'normal',
-    'p': 'post_replacements',
-    'q': 'quotes',
-    'r': 'replacements',
-    'c': 'specialcharacters',
-    'v': 'verbatim',
+    a: 'attributes',
+    m: 'macros',
+    n: 'normal',
+    p: 'post_replacements',
+    q: 'quotes',
+    r: 'replacements',
+    c: 'specialcharacters',
+    v: 'verbatim',
   }
   const subs: SubType[] = []
   for (const part of subStr.split(',')) {
     const trimmed = part.trim()
     const hint = hintMap[trimmed]
     if (hint === 'normal') {
-      subs.push('specialcharacters', 'quotes', 'attributes', 'replacements', 'macros', 'post_replacements')
+      subs.push(
+        'specialcharacters',
+        'quotes',
+        'attributes',
+        'replacements',
+        'macros',
+        'post_replacements',
+      )
     } else if (hint) {
       subs.push(hint)
     }
@@ -668,7 +737,7 @@ function subQuotes(
   source: string,
   quoteSubs: typeof QUOTE_SUBS.nonCompat,
   placeholders: InlineNode[][],
-  state: ParseState
+  state: ParseState,
 ): string {
   for (const entry of quoteSubs) {
     let result = ''
@@ -750,6 +819,7 @@ function subQuotes(
           compatMode: false,
           state,
           _alreadyEscaped: true,
+          _quoted: true,
         })
 
         const node: InlineNode = {
@@ -762,9 +832,7 @@ function subQuotes(
         result += emitPlaceholder(placeholders, [node])
       }
 
-      remaining = remaining.slice(
-        matchStart + fullMatch.length + absorbedTrailing
-      )
+      remaining = remaining.slice(matchStart + fullMatch.length + absorbedTrailing)
     }
     source = result
   }
@@ -785,7 +853,7 @@ interface MacroHandler {
   rx: RegExp
   handler: (
     match: RegExpExecArray,
-    attrs: Record<string, string>
+    attrs: Record<string, string>,
   ) => InlineNode | InlineNode[] | null
 }
 
@@ -794,24 +862,18 @@ function subMacrosOnString(
   attributes: Record<string, string>,
   _compatMode: boolean,
   placeholders: InlineNode[][],
-  state: ParseState
+  state: ParseState,
+  quotedStart: boolean = false,
 ): string {
   const result: string[] = []
   let text = source
 
-  const experimental = Object.prototype.hasOwnProperty.call(
-    attributes,
-    'experimental'
-  )
+  const experimental = Object.prototype.hasOwnProperty.call(attributes, 'experimental')
   const iconsAttr = Object.prototype.hasOwnProperty.call(attributes, 'icons')
     ? attributes['icons']
     : undefined
   const iconType: 'text' | 'image' | 'font' =
-    iconsAttr === undefined
-      ? 'text'
-      : iconsAttr === 'font'
-        ? 'font'
-        : 'image'
+    iconsAttr === undefined ? 'text' : iconsAttr === 'font' ? 'font' : 'image'
 
   const macroRegexes: MacroHandler[] = [
     {
@@ -835,9 +897,7 @@ function subMacrosOnString(
         if (!experimental) return null
         // By the time macros run, `>` has been escaped to `&gt;` by
         // specialchars. Split on either form for robustness.
-        const items = m[2]
-          ? [m[1], ...m[2].split(/&gt;|>/).map((s) => s.trim())]
-          : [m[1]]
+        const items = m[2] ? [m[1], ...m[2].split(/&gt;|>/).map((s) => s.trim())] : [m[1]]
         return { type: 'menu', items }
       },
     },
@@ -846,13 +906,9 @@ function subMacrosOnString(
       handler: (m) => {
         if (m[0].startsWith('\\')) return null
         const isIcon = m[1] === 'icon'
-        const attrs = isIcon
-          ? parseIconAttrs(m[3])
-          : parseImageAttrs(m[3])
+        const attrs = isIcon ? parseIconAttrs(m[3]) : parseImageAttrs(m[3])
         const target = m[2]
-        const alt =
-          attrs.alt ||
-          (isIcon ? target : deriveAltFromTarget(target))
+        const alt = attrs.alt || (isIcon ? target : deriveAltFromTarget(target))
         return {
           type: 'image',
           subtype: isIcon ? 'icon' : 'image',
@@ -868,20 +924,44 @@ function subMacrosOnString(
       },
     },
     {
-      rx: new RegExp(String.raw`\\?(?:(indexterm2?):\[([\s\S]*?[^\\])\]|\(\(([\s\S]+?)\)\)(?!\)))`),
+      rx: new RegExp(
+        String.raw`\\?(?:(indexterm2?):\[([\s\S]*?[^\\])\]|\(\(([\s\S]+?)\)\)(?!\)))`,
+      ),
       handler: (m) => {
         if (m[0].startsWith('\\')) return null
         const raw = m[2] || m[3] || ''
         const terms = raw.split(',').map((s: string) => s.trim())
-        const visible = m[1]
-          ? m[1].startsWith('indexterm2')
-          : m[0].startsWith('((')
+        const visible = m[1] ? m[1].startsWith('indexterm2') : m[0].startsWith('((')
         const v = visible === true
         return { type: 'indexterm', terms, visible: v }
       },
     },
     {
-      rx: /\\?(?:link|(mailto)):\s*(|[^\s\[][^\s\[]*)\[(|[\s\S]*?[^\\])\]/,
+      // The bibref macro must run BEFORE the URL/link macros in macroRegexes:
+      // otherwise the URL macro's leading-context capture group (which
+      // includes `]`) eats the third `]` of `[[[id]]]https://...` patterns
+      // and leaves only `[[id]]` for the ref macro to match. Ids accept
+      // any Unicode letter/digit — RFD citations occasionally use
+      // non-ASCII chars (e.g. `lipiński-2011`).
+      // A bibliography anchor id must be a valid XML name: it starts with a
+      // letter or `_` (NOT a digit). `[[[22-update]]]` is therefore left as
+      // literal text by stock, while `[[[lipiński-2011]]]` (Unicode letter)
+      // is a valid bibref.
+      rx: /\[\[\[([\p{L}_][\p{L}\p{N}_\-:.]*)(?:, *([\s\S]+?))?\]\]\]/u,
+      handler: (m) => {
+        return {
+          type: 'anchor',
+          subtype: 'bibref',
+          text: processInlineText(m[2] || m[1]),
+          target: m[1],
+        }
+      },
+    },
+    {
+      // The target must not start with `:` — `link::https://…` is malformed
+      // (double colon) and stock asciidoctor leaves it literal rather than
+      // producing a link whose href begins with `:`.
+      rx: /\\?(?:link|(mailto)):\s*(|[^\s\[:][^\s\[]*)\[(|[\s\S]*?[^\\])\]/,
       handler: (m): InlineNode | null => {
         if (m[0].startsWith('\\')) return null
         const isMailto = m[1] === 'mailto'
@@ -940,19 +1020,19 @@ function subMacrosOnString(
       },
     },
     {
-      rx: /(^|\s|&lt;|>|[\(\)\[\];"'])(\\?(?:https?|file|ftp|irc):\/\/)(?:([^\s\[\]]+)\[(|[\s\S]*?[^\\])\]|([^\s]+)&gt;|([^\s\[\]<]*([^\s,.?!\[\]<\)])))/m,
+      rx: /(?<=^|\s|&lt;|>|[\(\)\[\];"'`\x02-\x05])(\\?(?:https?|file|ftp|irc):\/\/)(?:([^\s\[\]]+)\[(|[\s\S]*?[^\\])\]|([^\s]+)&gt;|([^\s\[\]<]*([^\s,.?!\[\]<\)])))/m,
       handler: (m): InlineNode[] | null => {
-        const leading = m[1] || ''
-        if (m[2].startsWith('\\')) {
-          const scheme = m[2].slice(1)
-          const rest = m[3] !== undefined
-            ? `${m[3]}[${m[4] || ''}]`
-            : m[5] !== undefined
-              ? `${m[5]}&gt;`
-              : (m[6] || '')
-          return [{ type: 'text', text: leading + scheme + rest }]
+        if (m[1].startsWith('\\')) {
+          const scheme = m[1].slice(1)
+          const rest =
+            m[2] !== undefined
+              ? `${m[2]}[${m[3] || ''}]`
+              : m[4] !== undefined
+                ? `${m[4]}&gt;`
+                : m[5] || ''
+          return [{ type: 'text', text: scheme + rest }]
         }
-        const scheme = m[2]
+        const scheme = m[1]
 
         let target: string
         let label: InlineNode[]
@@ -960,9 +1040,9 @@ function subMacrosOnString(
         let suffix = ''
         let windowAttr: string | undefined
 
-        if (m[3] !== undefined) {
-          target = scheme + m[3]
-          let linkText = m[4] || ''
+        if (m[2] !== undefined) {
+          target = scheme + m[2]
+          let linkText = m[3] || ''
           if (linkText) {
             if (linkText.endsWith('^')) {
               linkText = linkText.slice(0, -1)
@@ -973,13 +1053,13 @@ function subMacrosOnString(
             label = [{ type: 'text', text: target }]
             role = 'bare'
           }
-        } else if (m[5] !== undefined) {
-          target = scheme + m[5]
+        } else if (m[4] !== undefined) {
+          target = scheme + m[4]
           label = [{ type: 'text', text: target }]
           role = 'bare'
         } else {
-          target = scheme + (m[6] || '')
-          const last = m[7] || ''
+          target = scheme + (m[5] || '')
+          const last = m[6] || ''
           if (last === ';') {
             target = target.slice(0, -1)
             if (target.endsWith(')')) {
@@ -998,16 +1078,23 @@ function subMacrosOnString(
             }
           }
           if (target === scheme) {
-            return [{ type: 'text', text: leading + m[0].slice(leading.length) }]
+            return [{ type: 'text', text: m[0] }]
           }
           label = [{ type: 'text', text: target }]
           role = 'bare'
         }
 
-        const result: InlineNode[] = []
-        if (leading) {
-          result.push({ type: 'text', text: leading })
+        // `:hide-uri-scheme:` drops the `scheme://` from the DISPLAYED text of
+        // a bare URL (the href is unchanged). Only applies when there's no
+        // explicit link text.
+        if (
+          role === 'bare' &&
+          Object.prototype.hasOwnProperty.call(attributes, 'hide-uri-scheme')
+        ) {
+          label = [{ type: 'text', text: target.replace(/^[a-z][a-z0-9.+-]*:\/\//i, '') }]
         }
+
+        const result: InlineNode[] = []
         result.push({
           type: 'anchor',
           subtype: 'link',
@@ -1027,6 +1114,12 @@ function subMacrosOnString(
       handler: (m) => {
         const prefix = m[1] || ''
         if (prefix && prefix !== ':' && !prefix.startsWith('&')) return null
+        // Asciidoctor runs the email macro AFTER quotes, so an email at the
+        // very start of quoted content (`\`a@b.com\``, `*a@b.com*`) is
+        // preceded by the quote tag's `>` — a non-linking context. Our
+        // recursive parse of quoted content strips that boundary, so emulate
+        // it: at the start of quoted content with no prefix, don't linkify.
+        if (quotedStart && m.index === 0 && !prefix) return null
         const email = m[0]
         return {
           type: 'anchor',
@@ -1037,18 +1130,9 @@ function subMacrosOnString(
       },
     },
     {
-      rx: /^\[\[\[(\w[\w\-:.]*)(?:, *([\s\S]+?))?\]\]\]/m,
-      handler: (m) => {
-        return {
-          type: 'anchor',
-          subtype: 'bibref',
-          text: processInlineText(m[2] || m[1]),
-          target: m[1],
-        }
-      },
-    },
-    {
-      rx: new RegExp(String.raw`(\\)?(?:\[\[([A-Za-z_][\w\-:.]*)(?:, *([\s\S]+?))? ?\]\]|anchor:([A-Za-z_][\w\-:.]*)\[(?:\]|([\s\S]*?[^\\])\]))`),
+      rx: new RegExp(
+        String.raw`(\\)?(?:\[\[([A-Za-z_][\w\-:.]*)(?:, *([\s\S]+?))? ?\]\]|anchor:([A-Za-z_][\w\-:.]*)\[(?:\]|([\s\S]*?[^\\])\]))`,
+      ),
       handler: (m) => {
         if (m[1]) return null
         const refid = m[2] || m[4] || ''
@@ -1063,14 +1147,23 @@ function subMacrosOnString(
       },
     },
     {
-      rx: new RegExp(String.raw`\\?(?:&lt;&lt;([\w#/.:{][\s\S]*?)&gt;&gt;|xref:([\w#/.:{][\s\S]*?)\[(?:\]|([\s\S]*?[^\\])\]))`),
+      rx: new RegExp(
+        String.raw`\\?(?:&lt;&lt;([\w#/.:{][\s\S]*?)&gt;&gt;|xref:([\w#/.:{][\s\S]*?)\[(?:\]|([\s\S]*?[^\\])\]))`,
+      ),
       handler: (m) => {
         if (m[0].startsWith('\\')) return null
         // Shorthand: <<target,reftext>>  vs macro: xref:target[label]
         if (m[1] !== undefined) {
-          const parts = m[1].split(',', 2)
-          const target = parts[0].trim()
-          const reftext = parts[1]?.trim() || `[${target}]`
+          // Ruby splits on the FIRST comma only (`refid.partition ','`) and
+          // lstrips the reftext — JS `split(',', 2)` would DROP everything
+          // after the second comma, truncating reftexts that contain commas
+          // (e.g. `<<id,RFD 78 Customers, Roles, and Priorities>>`). The
+          // target is left untrimmed so a trailing space prevents a natural
+          // match, exactly as stock does.
+          const ci = m[1].indexOf(',')
+          const target = ci === -1 ? m[1] : m[1].slice(0, ci)
+          const rawRef = ci === -1 ? '' : m[1].slice(ci + 1).replace(/^\s+/, '')
+          const reftext = rawRef || `[${target}]`
           return {
             type: 'anchor',
             subtype: 'xref',
@@ -1173,7 +1266,7 @@ function restorePassthroughs(
   nodes: InlineNode[],
   passthroughs: PassthroughEntry[],
   compatMode: boolean,
-  state: ParseState
+  state: ParseState,
 ): InlineNode[] {
   const slotRe = /(\d+)/g
   function restoreText(text: string): InlineNode[] {
@@ -1200,10 +1293,7 @@ function restorePassthroughs(
         let inner: InlineNode[]
         if (pt.subs.length === 0) {
           inner = [{ type: 'text', text: pt.text }]
-        } else if (
-          pt.subs.length === 1 &&
-          pt.subs[0] === 'specialcharacters'
-        ) {
+        } else if (pt.subs.length === 1 && pt.subs[0] === 'specialcharacters') {
           inner = [{ type: 'text', text: subSpecialchars(pt.text) }]
         } else {
           inner = parseInline(pt.text, { compatMode, state })
@@ -1269,12 +1359,14 @@ function restorePassthroughs(
 
 function subPostReplacements(
   nodes: InlineNode[],
-  attributes: Record<string, string>
+  attributes: Record<string, string>,
 ): InlineNode[] {
-  const hardbreaks = Object.prototype.hasOwnProperty.call(
-    attributes,
-    'hardbreaks'
-  )
+  // `:hardbreaks:` sets the `hardbreaks` doc attribute; `:hardbreaks-option:`
+  // (and `[%hardbreaks]`) set `hardbreaks-option`. Either enables doc-wide
+  // hard line breaks.
+  const hardbreaks =
+    Object.prototype.hasOwnProperty.call(attributes, 'hardbreaks') ||
+    Object.prototype.hasOwnProperty.call(attributes, 'hardbreaks-option')
   // With hardbreaks enabled, EVERY internal newline becomes a line break,
   // and a trailing " +" before the newline is stripped (still produces break).
   // Without hardbreaks, only " +\n" or " +$" produces a break.

@@ -73,62 +73,67 @@ const Table = ({ node }: { node: TableBlock }) => {
           })}
         </colgroup>
       )}
-      {node.headRows.map((row, hIndex) => (
-        <thead key={hIndex}>
-          <tr>
-            {row.map((cell, index) => (
-              <th
-                key={index}
-                className={getCellClass(cell)}
-                dangerouslySetInnerHTML={{ __html: cell.text }}
-              />
-            ))}
-          </tr>
-        </thead>
-      ))}
-      <tbody>
-        {node.bodyRows.map((row, bIndex) => (
-          <tr key={bIndex}>
-            {row.map((cell, index) => {
-              const style = cell.style
-              const className = getCellClass(cell)
-              const colSpan = cell.columnSpan
-              const rowSpan = cell.rowSpan
-              const Tag = style === 'header' ? 'th' : 'td'
-              const content = cell.content as unknown as string | string[]
-
-              const arr = Array.isArray(content)
-                ? content
-                : typeof content === 'string'
-                  ? [content]
-                  : []
-              let html = ''
-              if (style === 'asciidoc') {
-                html = `<div class="content">${arr.join('')}</div>`
-              } else if (style === 'literal') {
-                html = `<div class="literal"><pre>${arr.join('')}</pre></div>`
-              } else if (style === 'header') {
-                html =
-                  arr.length > 0
-                    ? `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
-                    : ''
-              } else if (arr.length > 0) {
-                html = `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
-              }
-
-              return (
-                <Tag
+      {node.headRows.length > 0 &&
+        node.headRows.map((row, hIndex) => (
+          <thead key={hIndex}>
+            <tr>
+              {row.map((cell, index) => (
+                <th
                   key={index}
-                  className={className}
-                  colSpan={colSpan}
-                  rowSpan={rowSpan}
-                  dangerouslySetInnerHTML={html ? { __html: html } : undefined}
+                  className={getCellClass(cell)}
+                  colSpan={cell.columnSpan}
+                  rowSpan={cell.rowSpan}
+                  dangerouslySetInnerHTML={{ __html: cell.text }}
                 />
-              )
-            })}
-          </tr>
+              ))}
+            </tr>
+          </thead>
         ))}
-      </tbody>
+      {node.bodyRows.length > 0 && (
+        <tbody>
+          {node.bodyRows.map((row, bIndex) => (
+            <tr key={bIndex}>
+              {row.map((cell, index) => {
+                const style = cell.style
+                const className = getCellClass(cell)
+                const colSpan = cell.columnSpan
+                const rowSpan = cell.rowSpan
+                const Tag = style === 'header' ? 'th' : 'td'
+                const content = cell.content as unknown as string | string[]
+
+                const arr = Array.isArray(content)
+                  ? content
+                  : typeof content === 'string'
+                    ? [content]
+                    : []
+                let html = ''
+                if (style === 'asciidoc') {
+                  html = `<div class="content">${arr.join('')}</div>`
+                } else if (style === 'literal') {
+                  html = `<div class="literal"><pre>${arr.join('')}</pre></div>`
+                } else if (style === 'header') {
+                  html =
+                    arr.length > 0
+                      ? `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                      : ''
+                } else if (arr.length > 0) {
+                  html = `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                }
+
+                return (
+                  <Tag
+                    key={index}
+                    className={className}
+                    colSpan={colSpan}
+                    rowSpan={rowSpan}
+                    dangerouslySetInnerHTML={html ? { __html: html } : undefined}
+                  />
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      )}
       {node.footRows.map((row, fIndex) => (
         <tfoot key={fIndex}>
           <tr>
