@@ -25,6 +25,14 @@ export interface ParseState {
    *  across the whole document (including titles) so values increment in
    *  source order, matching asciidoctor. */
   counters?: Map<string, number | string>
+  /** Source-order resets for counters. A `:!name:` (or `:name!:`) attribute
+   *  entry in the document body unsets the attribute; the next `{counter:name}`
+   *  then restarts from 1. Those entries aren't AST blocks, so the inline
+   *  parser can't see them — `prepareDocument` pre-scans the raw source and
+   *  records, per name, the set of use-indices BEFORE which the counter must
+   *  reset. `counterUses` tracks how many times each counter has been used. */
+  counterResets?: Map<string, Set<number>>
+  counterUses?: Map<string, number>
 }
 
 function createParseState(): ParseState {
@@ -242,6 +250,34 @@ function parseQuotedTextAttributes(attrStr: string): {
   return { role: head }
 }
 
+/** Parse the bracket text of a link/url macro. When it contains `=` it's an
+ *  attribute list (positional 0 = link text; named `role`/`window`/`id`);
+ *  otherwise the whole string is the link text. A trailing `^` on the text is
+ *  the `window=_blank` shorthand. */
+function parseLinkText(raw: string): {
+  text: string
+  role?: string
+  window?: string
+  id?: string
+} {
+  let text = raw
+  let role: string | undefined
+  let window: string | undefined
+  let id: string | undefined
+  if (raw.indexOf('=') !== -1) {
+    const a = parseAttributeList(raw)
+    text = a.text ?? ''
+    role = a.role
+    window = a.window
+    id = a.id
+  }
+  if (text.endsWith('^')) {
+    text = text.slice(0, -1)
+    window = window || '_blank'
+  }
+  return { text, role, window, id }
+}
+
 function parseAttributeList(attrStr: string): Record<string, string> {
   const attrs: Record<string, string> = {}
   if (!attrStr) return attrs
@@ -251,7 +287,12 @@ function parseAttributeList(attrStr: string): Record<string, string> {
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i].trim()
     const eqIdx = part.indexOf('=')
-    if (eqIdx >= 0) {
+    // Only treat `k=v` as a named attribute when `k` is a valid attribute
+    // name. Otherwise the `=` is incidental (e.g. a URL query string like
+    // `https://x?lang=node` used as link text) and the whole part is
+    // positional — matching asciidoctor's attribute-list parsing.
+    const validNamed = eqIdx > 0 && /^[A-Za-z][\w-]*$/.test(part.slice(0, eqIdx).trim())
+    if (validNamed) {
       const key = part.slice(0, eqIdx).trim()
       let value = part.slice(eqIdx + 1).trim()
       if (value.startsWith('"') && value.endsWith('"')) {
@@ -300,6 +341,11 @@ function subAttributes(
       /(\\)?\{(counter2?):([\w-]+)(?::([^}]*))?\}/g,
       (match, esc, kind, name, seed) => {
         if (esc) return match.slice(1)
+        // Honour source-order `:!name:` resets recorded by prepareDocument:
+        // if this use-index is flagged, drop the counter so it restarts.
+        const useIdx = state.counterUses?.get(name) ?? 0
+        if (state.counterResets?.get(name)?.has(useIdx)) counters.delete(name)
+        if (state.counterUses) state.counterUses.set(name, useIdx + 1)
         const value = nextCounterValue(counters, name, seed)
         // Keep the doc-attribute view in sync so plain `{name}` reflects it.
         attributes[name] = String(value)
@@ -919,6 +965,9 @@ function subMacrosOnString(
           id: attrs.id,
           role: attrs.role,
           title: attrs.title,
+          float: attrs.float,
+          link: attrs.link,
+          window: attrs.window,
           ...(isIcon ? { iconType } : {}),
         } as InlineNode
       },
@@ -961,7 +1010,7 @@ function subMacrosOnString(
       // The target must not start with `:` — `link::https://…` is malformed
       // (double colon) and stock asciidoctor leaves it literal rather than
       // producing a link whose href begins with `:`.
-      rx: /\\?(?:link|(mailto)):\s*(|[^\s\[:][^\s\[]*)\[(|[\s\S]*?[^\\])\]/,
+      rx: /\\?(?:link|(mailto)):(|[^\s\[:][^\s\[]*)\[(|[\s\S]*?[^\\])\]/,
       handler: (m): InlineNode | null => {
         if (m[0].startsWith('\\')) return null
         const isMailto = m[1] === 'mailto'
@@ -1004,18 +1053,15 @@ function subMacrosOnString(
             role: 'bare',
           }
         }
-        let labelText = rawAttrs
-        let windowAttr: string | undefined
-        if (labelText.endsWith('^')) {
-          labelText = labelText.slice(0, -1)
-          windowAttr = '_blank'
-        }
+        const parsed = parseLinkText(rawAttrs)
         return {
           type: 'anchor',
           subtype: 'link',
-          text: processInlineText(labelText),
+          text: processInlineText(parsed.text),
           target,
-          ...(windowAttr ? { window: windowAttr } : {}),
+          ...(parsed.id ? { id: parsed.id } : {}),
+          ...(parsed.role ? { role: parsed.role } : {}),
+          ...(parsed.window ? { window: parsed.window } : {}),
         }
       },
     },
@@ -1042,13 +1088,12 @@ function subMacrosOnString(
 
         if (m[2] !== undefined) {
           target = scheme + m[2]
-          let linkText = m[3] || ''
+          const linkText = m[3] || ''
           if (linkText) {
-            if (linkText.endsWith('^')) {
-              linkText = linkText.slice(0, -1)
-              windowAttr = '_blank'
-            }
-            label = processInlineText(linkText)
+            const parsed = parseLinkText(linkText)
+            if (parsed.window) windowAttr = parsed.window
+            if (parsed.role) role = parsed.role
+            label = processInlineText(parsed.text)
           } else {
             label = [{ type: 'text', text: target }]
             role = 'bare'
@@ -1113,7 +1158,10 @@ function subMacrosOnString(
       rx: /([\\>:/])?\w(?:&amp;|[\w\-.%+])*@[\w][\w_\-.]*\.[a-zA-Z]{2,5}\b/,
       handler: (m) => {
         const prefix = m[1] || ''
-        if (prefix && prefix !== ':' && !prefix.startsWith('&')) return null
+        // Any lead char (`\ > : /`) is a non-linking context in asciidoctor:
+        // `:` means the `@` belongs to a scheme like `mailto:` / `http:`, `/`
+        // a URL path, `>` the end of a tag, `\` an escape. Leave those plain.
+        if (prefix) return null
         // Asciidoctor runs the email macro AFTER quotes, so an email at the
         // very start of quoted content (`\`a@b.com\``, `*a@b.com*`) is
         // preceded by the quote tag's `>` — a non-linking context. Our
@@ -1173,6 +1221,19 @@ function subMacrosOnString(
         }
         const target = (m[2] || '').trim()
         const label = (m[3] || '').trim()
+        // The macro bracket is an attribute list: `xref:id[xrefstyle=full]`
+        // sets the display style with no positional reftext, so the label is
+        // computed from the target (in `prepareDocument`'s `resolveXrefs`).
+        const styleMatch = /^xrefstyle\s*=\s*("?)([\w-]+)\1$/.exec(label)
+        if (styleMatch) {
+          return {
+            type: 'anchor',
+            subtype: 'xref',
+            text: processInlineText(`[${target}]`),
+            target,
+            xrefstyle: styleMatch[2],
+          }
+        }
         return {
           type: 'anchor',
           subtype: 'xref',
@@ -1185,30 +1246,41 @@ function subMacrosOnString(
       rx: /\\?footnote(?:(ref):|:([\w-]+)?)\[(?:|([\s\S]*?[^\\]))\](?!<\/a>)/,
       handler: (m) => {
         if (m[0].startsWith('\\')) return null
-        const id = m[2]
-        const text = m[3] || ''
-        // footnoteref:id[] (deprecated) or footnote:id[content] with empty
-        // content → reference to an existing footnote.
-        if (m[1] === 'ref' || (id && !text)) {
-          // Reference an existing footnote (by id)
-          const existing = id ? state.footnotesById.get(id) : undefined
+        const reference = (refId: string) => {
+          const existing = refId ? state.footnotesById.get(refId) : undefined
           return {
-            type: 'footnote',
+            type: 'footnote' as const,
             text: [],
-            refid: id,
+            refid: refId,
             ...(existing !== undefined ? { index: existing } : {}),
           }
         }
-        // Definition (with or without id)
-        state.footnoteIndex++
-        const index = state.footnoteIndex
-        if (id) state.footnotesById.set(id, index)
-        return {
-          type: 'footnote',
-          text: processInlineText(text),
-          ...(id ? { id } : {}),
-          index,
+        const define = (refId: string | undefined, content: string) => {
+          state.footnoteIndex++
+          const index = state.footnoteIndex
+          if (refId) state.footnotesById.set(refId, index)
+          return {
+            type: 'footnote' as const,
+            text: processInlineText(content),
+            ...(refId ? { id: refId } : {}),
+            index,
+          }
         }
+        // Deprecated `footnoteref:[id]` (reference) / `footnoteref:[id,text]`
+        // (definition) — id and content both live in the bracket text.
+        if (m[1] === 'ref') {
+          const raw = m[3] || ''
+          const ci = raw.indexOf(',')
+          const refId = (ci === -1 ? raw : raw.slice(0, ci)).trim()
+          const content = ci === -1 ? '' : raw.slice(ci + 1)
+          return content ? define(refId, content) : reference(refId)
+        }
+        const id = m[2]
+        const text = m[3] || ''
+        // `footnote:id[]` with empty content → reference to an existing one.
+        if (id && !text) return reference(id)
+        // Definition (anonymous `footnote:[…]` or `footnote:id[…]`).
+        return define(id, text)
       },
     },
   ]
@@ -1290,10 +1362,29 @@ function restorePassthroughs(
         continue
       }
       if (pt) {
-        let inner: InlineNode[]
+        // No-subs passthrough → raw HTML emitted verbatim. Mark it `raw` so
+        // the React renderer parses it to elements instead of escaping it,
+        // and skip the nested restore/quoted-wrapping (raw HTML has no inner
+        // placeholders). An id/role wraps it in an unquoted span.
         if (pt.subs.length === 0) {
-          inner = [{ type: 'text', text: pt.text }]
-        } else if (pt.subs.length === 1 && pt.subs[0] === 'specialcharacters') {
+          const ptAttrs = pt.attributes ?? {}
+          const rawNode: InlineNode = { type: 'text', text: pt.text, raw: true }
+          if (ptAttrs.id || ptAttrs.role) {
+            out.push({
+              type: 'quoted',
+              subtype: 'unquoted',
+              text: [rawNode],
+              ...(ptAttrs.id ? { id: ptAttrs.id } : {}),
+              ...(ptAttrs.role ? { role: ptAttrs.role } : {}),
+            })
+          } else {
+            out.push(rawNode)
+          }
+          lastIndex = m.index + m[0].length
+          continue
+        }
+        let inner: InlineNode[]
+        if (pt.subs.length === 1 && pt.subs[0] === 'specialcharacters') {
           inner = [{ type: 'text', text: subSpecialchars(pt.text) }]
         } else {
           inner = parseInline(pt.text, { compatMode, state })
@@ -1339,16 +1430,37 @@ function restorePassthroughs(
     return out.length > 0 ? out : [node]
   }
 
+  // Restore passthrough slot placeholders embedded in a string attribute (a
+  // link/image target or link). These aren't walked as text nodes, so a `+…+`
+  // passthrough inside a bare URL (e.g. `…New+-+Hardware+-+PLA`) would
+  // otherwise leak its slot index into the href.
+  function restoreSlots(str: string | undefined): string | undefined {
+    if (!str || str.indexOf('') === -1) return str
+    return str.replace(/(\d+)/g, (m, d) => {
+      const pt = passthroughs[parseInt(d, 10)]
+      if (!pt) return m
+      if (pt.subs.length === 1 && pt.subs[0] === 'specialcharacters') {
+        return subSpecialchars(pt.text)
+      }
+      return pt.text
+    })
+  }
+
   function visit(n: InlineNode): InlineNode[] {
     if (n.type === 'text') {
       return restoreText(n.text)
     }
-    if (
-      n.type === 'quoted' ||
-      n.type === 'anchor' ||
-      n.type === 'footnote' ||
-      n.type === 'button'
-    ) {
+    if (n.type === 'anchor') {
+      return [
+        { ...n, target: restoreSlots(n.target), text: n.text.flatMap(visit) } as InlineNode,
+      ]
+    }
+    if (n.type === 'image') {
+      return [
+        { ...n, target: restoreSlots(n.target) ?? n.target, link: restoreSlots(n.link) },
+      ]
+    }
+    if (n.type === 'quoted' || n.type === 'footnote' || n.type === 'button') {
       return [{ ...n, text: n.text.flatMap(visit) } as InlineNode]
     }
     return [n]

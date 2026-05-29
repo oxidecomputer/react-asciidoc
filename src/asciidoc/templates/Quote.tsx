@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml } from '..'
+import { Content } from '..'
+import RenderInline from '../RenderInline'
 import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -23,8 +24,10 @@ const Quote = ({ node }: { node: Block }) => {
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <Title text={node.title} />
-      {node.content ? (
-        <blockquote dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+      {node.inlines ? (
+        <blockquote>
+          <RenderInline nodes={node.inlines} />
+        </blockquote>
       ) : (
         <blockquote>
           <Content blocks={node.blocks} />

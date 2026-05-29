@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml } from '../'
+import { Content } from '../'
+import RenderInline from '../RenderInline'
 import type { InlineNode } from '../inline'
 import { renderInlineAsString } from '../inline'
 import { type ListBlock, type ListItemBlock, isOption } from '../utils/prepareDocument'
@@ -14,11 +15,16 @@ import { Title } from './util'
 const renderBibliographyInlines = (nodes: InlineNode[] | undefined): string => {
   if (!nodes) return ''
   let out = ''
+  // Only the entry-defining bibref (the first one, at the item's start) is
+  // rewritten to anchor-first form; any later `[[[id]]]` in the same item is
+  // an inline citation and keeps the normal `[<a id></a>]` form.
+  let rewritten = false
   for (const n of nodes) {
-    if (n.type === 'anchor' && n.subtype === 'bibref') {
+    if (!rewritten && n.type === 'anchor' && n.subtype === 'bibref') {
       const id = n.id || n.target
       const text = renderInlineAsString(n.text) || id
       out += `<a id="${id}"></a>[${text}]`
+      rewritten = true
     } else {
       out += renderInlineAsString([n])
     }
@@ -45,18 +51,26 @@ const UList = ({ node }: { node: ListBlock }) => {
         {node.items.map((item: ListItemBlock, index) => {
           const checkbox = isChecklist && 'checkbox' in item.attributes
           const checked = checkbox && 'checked' in item.attributes
-          const itemInner = isBibliography
-            ? renderBibliographyInlines(item.textInlines)
-            : inlineHtml(item.textInlines).__html
-          // Checklists fold the icon into the inline HTML so we don't
-          // introduce a React wrapper that breaks whitespace between the
-          // icon and the text.
-          const html = checkbox
-            ? `<i class="fa ${checked ? 'fa-check-square-o' : 'fa-square-o'}"></i> ${itemInner}`
-            : itemInner
           return (
             <li key={index} id={item.id || undefined}>
-              <p dangerouslySetInnerHTML={{ __html: html }} />
+              {isBibliography ? (
+                // `[bibliography]` rewrites bibref output to anchor-first form
+                // (`<a id></a>[text]`), so this path stays string-rendered.
+                <p
+                  dangerouslySetInnerHTML={{
+                    __html: renderBibliographyInlines(item.textInlines),
+                  }}
+                />
+              ) : (
+                <p>
+                  {checkbox && (
+                    <>
+                      <i className={`fa ${checked ? 'fa-check-square-o' : 'fa-square-o'}`} />{' '}
+                    </>
+                  )}
+                  <RenderInline nodes={item.textInlines} />
+                </p>
+              )}
               <Content blocks={item.blocks} />
             </li>
           )

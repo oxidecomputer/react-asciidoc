@@ -22,6 +22,9 @@ import inlineKbd from './inlineKbd'
 import inlineMenu from './inlineMenu'
 import inlineQuoted from './inlineQuoted'
 import inlineUrlOptions from './inlineUrlOptions'
+import bodyAttribute from './bodyAttribute'
+import linkMacroWhitespace from './linkMacroWhitespace'
+import xrefStyleInline from './xrefStyleInline'
 import listing from './listing'
 import literal from './literal'
 import monoRoleBold from './monoRoleBold'
@@ -71,6 +74,9 @@ export {
   inlineMenu,
   inlineQuoted,
   inlineUrlOptions,
+  bodyAttribute,
+  linkMacroWhitespace,
+  xrefStyleInline,
   listing,
   literal,
   monoRoleBold,

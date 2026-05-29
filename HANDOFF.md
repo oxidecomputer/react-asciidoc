@@ -1,47 +1,230 @@
-# Status update (latest pass)
+# Status update (React-tree migration + parity pass)
 
-Corpus parity driven from **60 → 17** failing docs (677/694 passing); examples
-suite **76/76** (8 new regression fixtures added); `tsc` clean; `npm run build`
-green.
+Corpus parity at **665/694** passing; examples suite **75/76** (the lone failure,
+`writersGuide`, is the architectural em-in-em nesting limit); `tsc` clean.
 
-Fixed this pass:
-- **Natural xrefs** now match a section's title text EXACTLY (no slugification)
-  and only when the target has a space/uppercase — mirroring asciidoctor's
-  `resolve_id`. A registered id (even a bare `[[ID]]` anchor) wins as a direct
-  hit. Targets that match nothing (e.g. one spanning a line break) stay broken,
-  like stock. (`prepareDocument.ts`)
-- **xref display text** is the plain section title by default; `:xrefstyle:
-  short|full` renders `Section N` / `Section N, "Title"`. Captioned blocks
-  (tables/images) resolve via `xreftext` too (e.g. "Table 7"). (`prepareDocument.ts`)
-- **TOC** drops inline anchors/links from entry text (`DropAnchorRx`). (`Outline.tsx`)
-- **`<<id,reftext, with, commas>>`** keeps the whole reftext (was truncated by
-  `split(',', 2)`). (`parser.ts`)
-- **Placeholder cycle** in `` `[.black]#*x*#` `` (mono + roled mark + bold) no
-  longer infinite-loops — DFS guard in the placeholder rebuild. (`parser.ts`)
-- **Email** at the start of a quoted span isn't linkified; **`link::`** (double
-  colon) stays literal; **`:hide-uri-scheme:`** strips the scheme from bare URL
-  text. (`parser.ts`)
-- **`{counter:name}` / `{counter2:name}`** document-wide counters (no-reset
-  cases). De-duped section-title and table-cell parses (also fixed footnote
-  double-counting). (`parser.ts`, `prepareDocument.ts`)
-- **`:hardbreaks-option:`** (not just `:hardbreaks:`) enables doc-wide hard
-  breaks. **Em-dash** fires between digits (`2190--2020`). **Bibref** ids can't
-  start with a digit (`[[[22-update]]]` stays literal). (`parser.ts`)
-- **Image alt** entities preserved (`&#8217;` via raw HTML string). **Doc-title
-  `id`** emitted on the `<h1>`; title h1 only when the doc has a header.
-  (`Image.tsx`, `Document.tsx`, `prepareDocument.ts`, `helpers.tsx`)
+## Major change this pass: templates render our inline AST as React, not strings
 
-Remaining 17, all architectural or source-order-dependent (documented limits):
-- **Placeholder-vs-gsub** interactions: backslash-in-mono when a later `#…#`
-  mark pair forms (0137, 0353, 0479), mono-inside-emphasis (0609), a `` `*` ``
-  mono edge (0148). Need the HTML-inlining model, not opaque placeholders.
-- **Source-order attribute entries** (unrecoverable post-load): counter resets
-  via `:!steps:` (0524, 0528, 0539, 0582, 0585, 0598) and body-defined
-  attributes that asciidoctor resolves inline but doesn't retain (0007).
-- **Niche**: bibref rendering inside `[bibliography]` lists / malformed `=`
-  lines (0263, 0561), footnote whose content holds a URL with escaped brackets
-  (0234), URL with encoded `&lt;…&gt;` boundary (0268), inter-document xref with
-  a `relfileprefix` URL base (0520).
+Per the decision to "use our own parser everywhere and stop calling asciidoctor's
+inline converter", block templates were migrated from
+`dangerouslySetInnerHTML={inlineHtml(node.inlines)}` (byte-parity HTML strings)
+to `<RenderInline nodes={…} />` (a real React element tree). Migrated: Paragraph,
+Admonition, Sidebar, Section (title + anchor/link wrapping), FloatingTitle,
+OList, UList, CoList, DList, Example, Open, Quote. `RenderInline.tsx` was rewritten
+to a pure React walk (uses `entities.decodeHTML` + `html-react-parser` for `raw`
+nodes).
+
+**Byte-parity is intentionally forfeited.** React decodes/re-escapes entities and
+reorders attributes, so the harness (`tests/helpers.tsx` `normalise`) now compares
+**structure + decoded text**, not bytes: it decodes all numeric/named entities,
+sorts tag attributes, and protects `&lt;`/`&gt;`/`&amp;` (including stock's
+malformed semicolon-less `&gt`/`&lt`) so escaped chars stay comparison-equal.
+
+**Table cells were deliberately NOT migrated** (still render asciidoctor's
+`getText()`/`getContent()`). Routing cells through our parser exposed the
+mono/em/mark nesting limit in ~3 corpus docs and a counter case that needs
+source-order attribute resolution — a net parity loss — so the table template was
+reverted to asciidoctor output. Verbatim blocks (Listing/Literal/Verse/Stem) and
+`pass` likewise still use `getContent`.
+
+## Fixed this pass (each verified no-regression via triage)
+
+- **`link:`/`mailto:` macro** no longer spans whitespace (`a link: link:URL[x]`
+  now keeps `link:` literal and links `URL`, not `link:URL`). (`parser.ts`)
+- **Email autolink** suppressed after any lead char `\ > : /` — `mailto:a@b`
+  without brackets stays plain (was `mailto::a@b`). (`parser.ts`)
+- **Per-xref `xref:id[xrefstyle=short|full]`** computes the styled label from the
+  target (overriding the doc `:xrefstyle:`), instead of printing `xrefstyle=full`
+  as link text. (`parser.ts`, `prepareDocument.ts`, `types.ts`)
+- **Body-defined attributes** (`:name: value` after the header, which asciidoctor
+  only applies during *conversion* so they never reach `getAttributes()`) are
+  pre-scanned from the source and merged into `inlineAttrs` (body-only keys only,
+  so header/API/locked attrs are never overridden). (`prepareDocument.ts`)
+- **Bibref in a `[bibliography]` item**: only the entry-defining (first) `[[[id]]]`
+  is rewritten to anchor-first `<a id></a>[id]`; later inline `[[[id]]]` keep the
+  normal `[<a id></a>]` form. (`UList.tsx`)
+- **Harness**: stock's invalid semicolon-less `&gt`/`&lt` (emitted by its
+  email/URL macros) is now treated as the escaped char, matching our well-formed
+  `&gt;`/`&lt;`. (`helpers.tsx`)
+- **Counter-reset infrastructure** added (correct, currently neutral): a source
+  pre-scan records `:!name:` resets per counter-use-index and the parser replays
+  them; the pre-scan skips `----`/`....`/`++++`/`////` fences. (`parser.ts`,
+  `prepareDocument.ts`)
+
+## Remaining 29 — architectural or niche (documented limits)
+
+- **Mono/em/mark nesting** (~14: 0148, 0159, 0161, 0165, 0215, 0250, 0370, 0476,
+  0579, 0580, 0609, 0637, 0658): our placeholder model parses each quoted span in
+  isolation, so a formatting pair that straddles a span boundary (`<em>…<code>`,
+  `<code>…<strong>`, mono-in-curly-quote) is dropped. Needs asciidoctor's
+  single-gsub-over-rendered-HTML model.
+- **Backslash-in-mono** (0081, 0137, 0353, 0479): same gsub-vs-placeholder root —
+  `\#`/`\]` is only stripped when a later `#…#`/`]` pair forms across the whole
+  text, which our per-span parse can't see.
+- **Source-order counters in body attributes** (0524, 0528, 0539, 0582, 0585,
+  0598): `:hw-teardown: Act {counter:acts}` increments `acts` mid-body, then
+  `==== Act {acts}:` reads it — unrecoverable without per-block source positions
+  (blocks report no line number unless the doc is loaded with `sourcemap`).
+- **Niche**: footnote whose content holds a URL with escaped brackets (0234 —
+  macro-order tradeoff, see the comment above `macroRegexes`); `<…>` inside a URL
+  in monospace (0268, 0364, 0681); nested `<<xref>>` inside URL link text (0206 —
+  `processInlineText` doesn't re-run macros); iframe passthrough attribute casing
+  React normalizes (0213).
+
+---
+
+# TODO: finish the `getContent` / `getText` removal
+
+Goal: stop calling asciidoctor's inline/content converter entirely — every
+rendered string should come from our vendored parser (or our own verbatim
+escaping). Status: paused mid-way. The two helpers to delete live in
+`prepareDocument.ts` (`getContent` ~L267, `getText` ~L279). Below is the full
+remaining work, the exact behaviour each replacement must match, and the
+hard-won asciidoctor details.
+
+## 1. Remaining `getContent` / `getText` call sites and how to replace each
+
+`getContent(block)` populates the `content` field; `getText(node)` populates
+list-item / table-cell / footnote `text`. Consumers and replacements:
+
+### a. Verbatim blocks — Listing, Literal, Verse (`content` field)
+Render `content` ourselves from the raw source with **specialchars THEN
+callouts** (asciidoctor's verbatim sub set is `[:specialcharacters, :callouts]`).
+- Source = `block.getSourceLines().join('\n')` (already captured as `source` for
+  listing/literal; verse uses sourceLines too).
+- `subSpecialchars(src)` already exists in `parser.ts` (L326) — export it.
+- **Add `subCallouts(escapedText, iconsFont)`** — port of asciidoctor's
+  `sub_callouts`. It runs on the ALREADY-specialchars-escaped text (so it matches
+  `&lt;N&gt;`, not `<N>`). The regex (extracted from the installed
+  `@asciidoctor/core`, `dist/graalvm/asciidoctor.js`):
+  ```
+  CalloutSourceRx ≈ /((?:\/\/|#|--|;;) ?)?(\\)?&lt;!?(|--)(\d+|\.)\3?&gt;(?=(?: ?\\?&lt;!?\3(?:\d+|\.)\3&gt;)*$)/   (per line, multiline)
+  ```
+  Behaviour (verified against stock with `icons=font`):
+  - Group1 = optional line-comment delimiter (`//`/`#`/`--`/`;;`) + optional
+    trailing space. **It and its trailing space are DROPPED**; the whitespace
+    *before* the comment is preserved (e.g. `foo // <1>` → `foo <conum>`).
+  - Group2 = escape backslash. If present, emit `&lt;N&gt;` literally (drop only
+    the `\`), no conum.
+  - `<.>` auto-numbers: keep an `autonum` counter, `++autonum` per `.`; an
+    explicit `<N>` uses N (asciidoctor sets `autonum = N`). Counter resets per
+    block.
+  - Conum HTML: `icons=font` → `<i class="conum" data-value="N"></i><b>(N)</b>`;
+    otherwise `<b class="conum">(N)</b>` (note the listing form uses `(N)` with
+    parens; the colist table form uses bare `N` — that's already in CoList.tsx).
+  - `&lt;x&gt;` (non-numeric) is NOT a callout — stays escaped.
+- `iconsFont = docAttrs.icons === 'font'` (the test harness always sets it).
+- Then in prepareDocument: `content = subCallouts(subSpecialchars(source), iconsFont)`.
+  Templates (Listing/Literal/Verse) keep their `dangerouslySetInnerHTML` and the
+  `<pre>`/`<code class="language-…">` wrapping — only the *source* of the string
+  changes. **Regression net:** the `coList` and `listing` examples have callouts
+  in 6+ variations; match them exactly. Whitespace inside `<pre>` is significant
+  (the harness stashes `<pre>`/`<code>` verbatim).
+- **Limitation to document:** with a real `:source-highlighter:` set,
+  asciidoctor's `getContent` returns highlighted `<span>`s. Our escaping does
+  not highlight. The harness sets no highlighter so tests are unaffected; note it
+  for library consumers.
+
+### b. Stem (`content` field)
+`content = subSpecialchars(source)` (e.g. `x < y` → `x &lt; y`). The template
+wraps in `\[…\]` / `\$…\$`. No callouts.
+
+### c. Pass (`content` field)
+`content = block.getSourceLines().join('\n')` raw — passthrough emits the source
+unescaped (`<custom>raw & html</custom>` stays literal). Honour a `subs=` attr if
+present (rare); default is no subs.
+
+### d. Table cells (`cell.text` / `cell.content`)
+This is the migration that was prototyped and **reverted** (see git history of
+this session / the status note above) because it exposes the parser nesting limit.
+To finish the removal, re-apply it and accept the cost:
+- default / header style: parse cell source into per-paragraph inline ASTs
+  (`textParagraphs: InlineNode[][]`, split on blank lines, one `parseInline` pass
+  total so counters aren't double-bumped) and render each as
+  `<p class="tableblock">`, wrapping in the column style (`emphasis`→`<em>`,
+  `strong`→`<strong>`, `monospaced`→`<code>`; `header`/default unwrapped).
+- head cells: `<th><RenderInline nodes={cell.textInlines}/></th>` (no `<p>`).
+- foot cells: `<p class="tableblock"><RenderInline …/></p>`.
+- `asciidoc`-style cells: the cell holds a nested AST — recurse `processBlock`
+  over the cell's inner blocks and render via `<Content>` instead of
+  `cell.content`. (Check the Cell API for the inner-document/getBlocks accessor.)
+- `literal`-style cells: `subSpecialchars(source)` inside `<div class="literal"><pre>`.
+- **Known cost:** regresses ~3–4 corpus docs to the mono/em/mark nesting limit
+  (0144, 0160, 0327) plus a head-cell link case (0151), and the counter docs
+  (0524…) stay failing. These are the same architectural class as `writersGuide`.
+
+### e. Footnotes (`document.getFootnotes()`)
+Collect definitions from OUR parser instead of asciidoctor:
+- Add `footnoteDefs?: Array<{ index: number; id?: string; text: InlineNode[] }>`
+  to `ParseState`; have the footnote handler's `define()` (parser.ts ~L1258)
+  push `{ index, id, text }`.
+- In prepareDocument set `preparedDocument.footnotes` from
+  `inlineState.footnoteDefs` (sorted by index, dedup by index for references).
+- Render via `<RenderInline>` in both `Document.tsx` (`Footnotes`) and
+  `tests/helpers.tsx` (`BodyOnly`) instead of `parse(f.text)` /
+  `dangerouslySetInnerHTML`.
+
+### f. List-item `text`
+`item.text` (from `getText`) is now only a truthiness guard (DList `dd.text &&`,
+etc.) — replace with `item.textInlines?.length` or `block.hasText()`. The
+bibliography path already uses `textInlines`.
+
+## 2. Remaining internal asciidoctor inline parsing (beyond getContent/getText)
+
+- **Titles** — `node.title` comes from `getTitle()` / `getCaptionedTitle()`,
+  which inline-convert via asciidoctor. Replace with the already-populated
+  `titleInlines` (our parser) + a caption PREFIX from `block.getCaption()` (a
+  plain label like `"Table 1. "` — NOT inline-parsed, safe to keep). So a
+  captioned title = `getCaption()` string + `<RenderInline nodes={titleInlines}/>`.
+  Touch points: the `Title` util (`templates/util.tsx` — change it to take
+  `inlines` + optional caption), `Table` caption, `Outline` (TOC still reads
+  `section.title` strings — switch to `titleInlines`), `Example` collapsible
+  `<summary>`, and the doc-title `<h1>` in `helpers.tsx`/`Document.tsx`. Section
+  headings already use `titleInlines`.
+- **Authors** — `document.applySubstitutions(name/email)` in prepareDocument.
+  Minor; parse via our parser or leave (it's not getContent/getText, but it is
+  asciidoctor inline subs).
+- After all the above, **delete `getContent`, `getText`, and the `content` field**
+  (keep `source`); grep for `.getContent`/`.getText`/`getCaptionedTitle`/`getTitle`
+  to confirm none remain in `prepareDocument.ts`.
+
+## 3. Rough plan for the remaining ~29 corpus divergences
+
+Grouped by root cause (see the status section for the per-doc lists):
+
+1. **Mono/em/mark nesting (~14) + backslash-in-mono (4) — the big one.** Our
+   parser processes each quoted span as an isolated sub-tree, so a formatting
+   pair that straddles a span boundary (`<em>…<code>`, mono-in-curly-quote,
+   `\#`…`#`) is lost. The real fix is to replace the placeholder model with
+   asciidoctor's **single-gsub-over-emitted-HTML** approach — i.e. run the quote
+   substitutions against the rendered HTML string so a `#…#` / backtick pair is
+   matched across already-emitted tags. This is the same rewrite the
+   `asciidoctor-inline` repo did to get from 1025→4 divergences. Until then these
+   stay failing (same class as `writersGuide`). Biggest single lever for parity.
+2. **Source-order counters in body attributes (6: 0524, 0528, 0539, 0582, 0585,
+   0598).** `:hw-teardown: Act {counter:acts}` increments `acts` mid-body, then
+   `==== Act {acts}:` reads it. Needs per-block source POSITIONS to interleave
+   attribute-entry/counter resolution with the walk. **Load the doc with
+   `sourcemap: true`** so `block.getLineNumber()` is populated, then process
+   `:name: value` / `:!name:` / `{counter…}` entries in true line order
+   (updating `inlineState.counters` and `inlineAttrs` as you pass each block).
+   The count-aligned `counterResets` pre-scan already added is the fallback for
+   when line numbers are absent. (Harness: add `sourcemap: true` to the
+   `ad.load` in `reactHtml`.)
+3. **Niche, each ~1 doc:**
+   - `0206` nested `<<xref>>` inside URL link text — `processInlineText` only
+     wraps text; make it (or the link handler) re-run the macro pass on the link
+     text so the inner xref parses, or reorder xref before the URL macro and rely
+     on placeholder rebuild.
+   - `0268`/`0364`/`0681` `<…>` inside a URL in monospace — URL boundary vs the
+     `&gt` quirk; inspect the URL regex alternatives (parser.ts ~L1069).
+   - `0234` footnote whose content holds a URL with escaped brackets — macro
+     order tradeoff (URL-before-footnote is intentional; see comment above
+     `macroRegexes`). Needs asciidoctor's exact pass order + bracket balancing.
+   - `0213` iframe passthrough — React lowercases `frameBorder` and drops
+     `onmousewheel`. Needs raw-HTML passthrough rendering that bypasses React
+     attribute normalization (render the pass block's raw HTML as a string, not
+     through `html-react-parser`).
 
 ---
 
@@ -53,10 +236,12 @@ asciidoctor's inline substitution pipeline. There are two test suites:
 
 1. **`tests/renderer.test.tsx`** — 68 hand-crafted examples in
    `src/examples/`. All green.
-2. **`tests/corpus.test.tsx`** — every Oxide RFD in asciidoc format (694
+2. **corpus parity** — every Oxide RFD in asciidoc format (694
    docs, ~16 MB) plus the asciidoctor writer's guide. **The starting
    baseline is 80 cherry-picked RFDs at 73/80 passing**; the full 694 was
-   just pulled and has NOT been triaged yet.
+   just pulled and has NOT been triaged yet. The suite is split across
+   eight shard files (`tests/corpus.0.test.tsx` … `tests/corpus.7.test.tsx`)
+   so vitest's worker pool runs them in parallel — see "Running things".
 
 Your job is to drive corpus parity to zero divergences (or as close as a
 TypeScript port can reasonably get), the same way the
@@ -84,7 +269,11 @@ src/asciidoc/
 tests/
   helpers.tsx            # shared stockHtml/reactHtml/normalise + BodyOnly
   renderer.test.tsx      # examples test
-  corpus.test.tsx        # corpus test
+  corpus-shard.tsx       # defineCorpusShard(index, total) — loads the
+                         # corpus and registers a round-robin slice as tests
+  corpus.0.test.tsx      # eight thin shard files, each calling
+  …                      #   defineCorpusShard(i, 8); vitest runs them in
+  corpus.7.test.tsx      #   parallel across its worker pool
   triage.ts              # diagnostic — runs the corpus once and prints
                          # the first divergence per failing doc
   fetch-corpus.sh        # refresh tests/corpus/rfds/ from rfd-cli
@@ -100,9 +289,10 @@ CLAUDE.md                # repo-level architecture notes; read this first
 ```bash
 # Unit tests (examples) — quick, run constantly.
 npm test
-# Just the corpus.
-npx vitest run tests/corpus.test.tsx
-# One RFD.
+# Just the corpus, sharded across the worker pool (~7s on 16 cores;
+# was ~34s as a single file).
+npx vitest run tests/corpus.*.test.tsx
+# One RFD (works regardless of which shard it landed in).
 npx vitest run -t "rfds/0042"
 
 # The triage runner — best for understanding failures across the whole
@@ -113,6 +303,23 @@ npx vite-node tests/triage.ts 2>/dev/null
 
 # Refresh the corpus from rfd-cli (~30s).
 ./tests/fetch-corpus.sh
+```
+
+**Why eight shard files?** Vitest parallelises across test *files*, not
+within one, and each corpus test is CPU-bound synchronous work (asciidoctor
+convert + `renderToString`) with no IO to overlap — so `test.concurrent`
+wouldn't help. With all 694 tests in one file the suite pinned a single core
+(~34s); splitting them round-robin across eight files lets the worker pool
+spread them over the available cores (~7s on 16). To change the shard count,
+regenerate the thin files and update the `total` argument:
+
+```bash
+rm tests/corpus.*.test.tsx
+N=8
+for i in $(seq 0 $((N-1))); do
+  printf "import { defineCorpusShard } from './corpus-shard'\n\ndefineCorpusShard(%d, %d)\n" "$i" "$N" \
+    > "tests/corpus.$i.test.tsx"
+done
 ```
 
 `rfd-cli` lives at `~/Development/rfd-cli`. It needs internet + an
@@ -337,7 +544,7 @@ slug-rewrite on "target doesn't start with idprefix"**. Don't undo this.
 ## When you're done
 
 - `npm test` is fully green (examples).
-- `npx vitest run tests/corpus.test.tsx` passes, or you've documented
+- `npx vitest run tests/corpus.*.test.tsx` passes, or you've documented
   the last few divergences as architectural limits (mono-inside-em,
   backslash-in-mono — same class of "HTML-inlining vs placeholders"
   issue that the asciidoctor-inline HANDOFF documents).

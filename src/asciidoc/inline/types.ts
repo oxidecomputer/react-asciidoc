@@ -33,6 +33,10 @@ export type InlineNode =
 export interface TextNode {
   type: 'text'
   text: string
+  /** Raw HTML from a no-subs passthrough (`+++…+++`, `pass:[…]`). Must be
+   *  emitted verbatim — the React renderer parses it into elements rather
+   *  than escaping it as text. */
+  raw?: boolean
 }
 
 export interface QuotedNode {
@@ -62,6 +66,9 @@ export interface AnchorNode {
   id?: string
   role?: string
   window?: string
+  /** Per-xref display style from `xref:id[xrefstyle=short|full]`. Overrides
+   *  the document `:xrefstyle:` when computing the fallback label. */
+  xrefstyle?: string
 }
 
 export interface ImageNode {
@@ -74,6 +81,12 @@ export interface ImageNode {
   id?: string
   role?: string
   title?: string
+  /** `float` attribute — rendered as an extra class on the wrapper span. */
+  float?: string
+  /** `link` attribute — wraps the image/icon in `<a class="image" href>`. */
+  link?: string
+  /** `window` (`^` or `window=`) for the link wrapper. */
+  window?: string
   iconType?: 'text' | 'image' | 'font'
 }
 

@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml, useConverterContext } from '../'
+import { Content, useConverterContext } from '../'
+import RenderInline from '../RenderInline'
 import type { CoListBlock, ListItemBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -25,11 +26,13 @@ const CoList = ({ node }: { node: CoListBlock }) => {
               </td>
               {item.blocks.length > 0 ? (
                 <td>
-                  <span dangerouslySetInnerHTML={inlineHtml(item.textInlines)} />
+                  <RenderInline nodes={item.textInlines} />
                   <Content blocks={item.blocks} />
                 </td>
               ) : (
-                <td dangerouslySetInnerHTML={inlineHtml(item.textInlines)} />
+                <td>
+                  <RenderInline nodes={item.textInlines} />
+                </td>
               )}
             </tr>
           ))}
@@ -38,7 +41,9 @@ const CoList = ({ node }: { node: CoListBlock }) => {
         <ol>
           {node.items.map((item: ListItemBlock, index) => (
             <li key={index}>
-              <p dangerouslySetInnerHTML={inlineHtml(item.textInlines)} />
+              <p>
+                <RenderInline nodes={item.textInlines} />
+              </p>
               <Content blocks={item.blocks} />
             </li>
           ))}

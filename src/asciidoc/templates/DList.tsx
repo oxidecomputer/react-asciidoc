@@ -1,7 +1,8 @@
 import cn from 'classnames'
 import { Fragment } from 'react'
 
-import { Content, inlineHtml } from '../'
+import { Content } from '../'
+import RenderInline from '../RenderInline'
 import { type DListBlock, type ListItemBlock, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -20,7 +21,9 @@ const DList = ({ node }: { node: DListBlock }) => {
     if (!dd) return null
     return (
       <dd>
-        {dd.text && <p dangerouslySetInnerHTML={inlineHtml(dd.textInlines)} />}
+        {dd.text && <p>
+                      <RenderInline nodes={dd.textInlines} />
+                    </p>}
         <Content blocks={dd.blocks} />
       </dd>
     )
@@ -42,13 +45,17 @@ const DList = ({ node }: { node: DListBlock }) => {
               <li key={index}>
                 {terms.map((dt, i) => (
                   <p key={i}>
-                    <em dangerouslySetInnerHTML={inlineHtml(dt.textInlines)} />
+                    <em>
+                      <RenderInline nodes={dt.textInlines} />
+                    </em>
                   </p>
                 ))}
                 {dd && (
                   <>
                     {dd.text && (
-                      <p dangerouslySetInnerHTML={inlineHtml(dd.textInlines)} />
+                      <p>
+                      <RenderInline nodes={dd.textInlines} />
+                    </p>
                     )}
                     <Content blocks={dd.blocks} />
                   </>
@@ -91,16 +98,20 @@ const DList = ({ node }: { node: DListBlock }) => {
                     'hdlist1',
                     isOption(node.attributes, 'strong') && 'strong',
                   )}
-                  dangerouslySetInnerHTML={{
-                    __html: terms
-                      .map((dt) => inlineHtml(dt.textInlines).__html)
-                      .join('<br>'),
-                  }}
-                />
+                >
+                  {terms.map((dt, i) => (
+                    <Fragment key={i}>
+                      {i > 0 && <br />}
+                      <RenderInline nodes={dt.textInlines} />
+                    </Fragment>
+                  ))}
+                </td>
                 {dd && (
                   <td className="hdlist2">
                     {dd.text && (
-                      <p dangerouslySetInnerHTML={inlineHtml(dd.textInlines)} />
+                      <p>
+                      <RenderInline nodes={dd.textInlines} />
+                    </p>
                     )}
                     <Content blocks={dd.blocks} />
                   </td>
@@ -130,8 +141,9 @@ const DList = ({ node }: { node: DListBlock }) => {
                 <dt
                   key={i}
                   className={node.style === 'glossary' ? undefined : 'hdlist1'}
-                  dangerouslySetInnerHTML={inlineHtml(dt.textInlines)}
-                />
+                >
+                  <RenderInline nodes={dt.textInlines} />
+                </dt>
               ))}
               {renderDd(dd)}
             </Fragment>

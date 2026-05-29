@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml } from '../'
+import { Content } from '../'
+import RenderInline from '../RenderInline'
 import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -19,14 +20,12 @@ const Sidebar = ({ node }: { node: Block }) => {
           <Content blocks={node.blocks} />
         </div>
       ) : (
-        <div
-          className="content"
-          dangerouslySetInnerHTML={{
-            __html:
-              (node.title ? `<div class="title">${node.title}</div>` : '') +
-              inlineHtml(node.inlines).__html,
-          }}
-        />
+        <div className="content">
+          {node.title && (
+            <div className="title" dangerouslySetInnerHTML={{ __html: node.title }} />
+          )}
+          <RenderInline nodes={node.inlines} />
+        </div>
       )}
     </div>
   )

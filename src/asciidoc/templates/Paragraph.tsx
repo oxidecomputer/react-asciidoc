@@ -1,6 +1,6 @@
 import cn from 'classnames'
 
-import { inlineHtml } from '../'
+import RenderInline from '../RenderInline'
 import { type ParagraphBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -11,13 +11,12 @@ const Paragraph = ({ node }: { node: ParagraphBlock }) => (
     {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
   >
     <Title text={node.title} />
-    {/* Render from our own inline AST (the vendored parser), not asciidoctor's
-        `content` HTML. `content` is kept only as a defensive fallback for the
-        rare paragraph whose inlines weren't parsed. */}
-    {node.inlines ? (
-      <p dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
-    ) : (
-      node.content && <p dangerouslySetInnerHTML={{ __html: node.content }} />
+    {/* Render from our own inline AST (the vendored parser) as a real React
+        tree, never asciidoctor's `content` HTML. */}
+    {node.inlines && (
+      <p>
+        <RenderInline nodes={node.inlines} />
+      </p>
     )}
   </div>
 )

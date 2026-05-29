@@ -311,10 +311,89 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   for (const [k, v] of Object.entries(docAttrs)) {
     if (v != null) inlineAttrs[k] = String(v)
   }
+  // Pre-scan the raw source for source-order counter resets. Lines like
+  // `:!steps:` / `:steps!:` unset a document attribute; asciidoctor restarts
+  // the next `{counter:steps}` from 1. These entries aren't AST blocks, so the
+  // inline parser never sees them. We can't align them by line number (blocks
+  // report no line number without `sourcemap`), so instead we count counter
+  // uses per name in source order and record, for each name, the use-indices
+  // immediately preceded by a reset. The parser replays those resets.
+  const counterResets = new Map<string, Set<number>>()
+  // Body-defined attributes (`:name: value` after the header) are applied by
+  // asciidoctor only during conversion, so they never reach `getAttributes()`
+  // and our inline parser can't resolve `{name}` references to them. Collect
+  // them from the source and merge the body-only ones into `inlineAttrs`
+  // (header/API attributes already present win, so locked attrs are safe).
+  const bodyAttrs = new Map<string, string>()
+  {
+    const useCount = new Map<string, number>()
+    const srcLines: string[] =
+      typeof (document as unknown as { getSourceLines?: () => string[] })
+        .getSourceLines === 'function'
+        ? (document as unknown as { getSourceLines: () => string[] }).getSourceLines()
+        : []
+    const unsetRe = /^:(?:!([\w-]+)|([\w-]+)!):\s*$/
+    const setRe = /^:([A-Za-z][\w-]*):(?: (.*))?$/
+    const useRe = /(\\)?\{counter2?:([\w-]+)(?::[^}]*)?\}/g
+    // Skip lines inside verbatim/comment fences (`----`, `....`, `++++`,
+    // `////`), where `:name:` / `{counter:…}` are literal text, not directives.
+    const fenceRe = /^(-{4,}|\.{4,}|\+{4,}|\/{4,})$/
+    let fence: string | null = null
+    for (const ln of srcLines) {
+      const fm = fenceRe.exec(ln.trimEnd())
+      if (fm) {
+        const kind = fm[1][0]
+        if (fence === null) fence = kind
+        else if (fence === kind) fence = null
+        continue
+      }
+      if (fence !== null) continue
+      const unset = unsetRe.exec(ln)
+      if (unset) {
+        const name = unset[1] || unset[2]
+        const at = useCount.get(name) ?? 0
+        if (!counterResets.has(name)) counterResets.set(name, new Set())
+        counterResets.get(name)!.add(at)
+        bodyAttrs.delete(name)
+        continue
+      }
+      const set = setRe.exec(ln)
+      if (set) {
+        bodyAttrs.set(set[1], set[2] ?? '')
+        continue
+      }
+      let m: RegExpExecArray | null
+      useRe.lastIndex = 0
+      while ((m = useRe.exec(ln))) {
+        if (m[1]) continue // escaped `\{counter:...}`
+        useCount.set(m[2], (useCount.get(m[2]) ?? 0) + 1)
+      }
+    }
+  }
+  // Add body-only attributes (don't override header/API values already set).
+  for (const [k, v] of bodyAttrs) {
+    if (!(k in inlineAttrs)) inlineAttrs[k] = v
+  }
+
   const inlineState: ParseState = {
     footnoteIndex: 0,
     footnotesById: new Map(),
     counters: new Map(),
+    counterResets,
+    counterUses: new Map(),
+  }
+
+  // Block-scoped inline attributes: a block can carry options that affect
+  // inline substitution (e.g. `[%hardbreaks]` → `hardbreaks-option`). Merge
+  // those over the document attributes for that block's inline parse.
+  const inlineAttrsFor = (block: { getAttributes?: () => unknown }) => {
+    const a = (block.getAttributes && block.getAttributes()) as
+      | Record<string, unknown>
+      | undefined
+    if (a && a['hardbreaks-option'] !== undefined) {
+      return { ...inlineAttrs, 'hardbreaks-option': String(a['hardbreaks-option']) }
+    }
+    return inlineAttrs
   }
 
   // Build an id → display-text map so we can resolve `<<id>>` xrefs that
@@ -344,33 +423,48 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
   // Mirrors Ruby `Section#xreftext`. `numeral` is the trailing-dot form
   // returned by `getSectionNumeral()` (e.g. "2." / "14.3.3." / "A.").
-  const sectionXreftext = (info: {
-    title: string
-    numbered: boolean
-    sectname: string
-    numeral: string
-    reftext: string | undefined
-  }): string => {
+  const sectionXreftext = (
+    info: {
+      title: string
+      numbered: boolean
+      sectname: string
+      numeral: string
+      reftext: string | undefined
+    },
+    style: string | undefined = docXrefstyle,
+  ): string => {
     if (info.reftext) return info.reftext
     const isAppendixOrChapter = info.sectname === 'appendix' || info.sectname === 'chapter'
     const italicOrPlain = isAppendixOrChapter ? `<em>${info.title}</em>` : info.title
-    if (docXrefstyle && info.numbered) {
+    if (style && info.numbered) {
       const base = info.numeral.replace(/\.$/, '')
       const sig = docAttrs[`${info.sectname}-refsig`]
-      if (docXrefstyle === 'full') {
+      if (style === 'full') {
         const quotedTitle = isAppendixOrChapter
           ? `<em>${info.title}</em>`
           : `&#8220;${info.title}&#8221;`
         return sig ? `${sig} ${base}, ${quotedTitle}` : `${base}, ${quotedTitle}`
       }
-      if (docXrefstyle === 'short') {
+      if (style === 'short') {
         return sig ? `${sig} ${base}` : base
       }
       return italicOrPlain
     }
-    if (docXrefstyle) return italicOrPlain
+    if (style) return italicOrPlain
     return info.title
   }
+
+  // Per-id data so a single xref carrying its own `xrefstyle=` can recompute
+  // its label with that style (overriding the document default).
+  type SectionInfo = {
+    title: string
+    numbered: boolean
+    sectname: string
+    numeral: string
+    reftext: string | undefined
+  }
+  const sectionInfos = new Map<string, SectionInfo>()
+  const blockRefs = new Map<string, { $xreftext?: (style: string | null) => string | undefined }>()
 
   const collectTitles = (parent: AdocTypes.AbstractBlock | AdocTypes.Document) => {
     for (const s of parent.getSections()) {
@@ -385,6 +479,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       }
       if (id) {
         idSet.add(id)
+        sectionInfos.set(id, info)
         refLabels.set(id, sectionXreftext(info))
         // Natural-ref key: asciidoctor uses `xreftext()` with no style —
         // the explicit reftext if set, otherwise the plain title.
@@ -407,6 +502,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       getReftext?: () => string | undefined
       $xreftext?: (style: string | null) => string | undefined
     }
+    if (typeof r.$xreftext === 'function') blockRefs.set(id, r)
     const reftext = r.getReftext && r.getReftext()
     if (reftext) {
       refLabels.set(id, reftext)
@@ -432,14 +528,54 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const isBracketed =
           text.length === 1 && text[0].type === 'text' && text[0].text === fallback
         const setLabel = (id: string) => {
-          const v = refLabels.get(id)
-          if (isBracketed && typeof v === 'string') {
-            n.text = [{ type: 'text', text: v }]
+          // A per-xref `xrefstyle=` recomputes the label with that style;
+          // otherwise use the precomputed (document-style) label.
+          let v = refLabels.get(id)
+          if (n.xrefstyle) {
+            const info = sectionInfos.get(id)
+            if (info) v = sectionXreftext(info, n.xrefstyle)
+            else {
+              const r = blockRefs.get(id)
+              if (r && typeof r.$xreftext === 'function')
+                v = r.$xreftext(n.xrefstyle) ?? v
+            }
           }
+          if (isBracketed && typeof v === 'string') {
+            // refLabels values are asciidoctor HTML (titles may contain
+            // `&#8217;`, `<code>`, `<em>`, `&#8220;…&#8221;`). Mark `raw` so
+            // the React renderer parses them to elements rather than escaping.
+            n.text = [{ type: 'text', text: v, raw: true }]
+          }
+        }
+        const hashIdx = n.target.indexOf('#')
+        // 0. Inter-document xref: `path#fragment` (a non-empty path before the
+        //    `#`). Resolve the path with `relfileprefix`/`outfilesuffix` like
+        //    asciidoctor's `convert_inline_anchor`; an asciidoc source path
+        //    (`.adoc`, or extensionless) maps to the output suffix.
+        if (hashIdx > 0 && !n.target.slice(0, hashIdx).includes('://')) {
+          let path = n.target.slice(0, hashIdx)
+          const frag = n.target.slice(hashIdx + 1)
+          const outfilesuffix = (docAttrs['outfilesuffix'] as string) ?? '.html'
+          let src2src = false
+          if (path.endsWith('.adoc')) {
+            path = path.slice(0, -5)
+            src2src = true
+          } else if (!/\.[^./]+$/.test(path)) {
+            src2src = true
+          }
+          const relfileprefix = (docAttrs['relfileprefix'] as string) ?? ''
+          const relfilesuffix = src2src
+            ? docAttrs['relfilesuffix'] !== undefined
+              ? String(docAttrs['relfilesuffix'])
+              : outfilesuffix
+            : ''
+          const resolvedPath = relfileprefix + path + relfilesuffix
+          n.target = frag ? `${resolvedPath}#${frag}` : resolvedPath
+          if (isBracketed) n.text = [{ type: 'text', text: resolvedPath, raw: true }]
         }
         // 1. The target is literally a registered id (even an unlabeled
         //    bare anchor — leave its `[id]` text as-is).
-        if (idSet.has(n.target)) {
+        else if (idSet.has(n.target)) {
           setLabel(n.target)
         } else if (n.target.includes(' ') || n.target.toLowerCase() !== n.target) {
           // 2. Natural cross reference: asciidoctor only attempts this when
@@ -475,6 +611,8 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         footnoteIndex: 0,
         footnotesById: new Map(),
         counters: inlineState.counters,
+        counterResets: inlineState.counterResets,
+        counterUses: inlineState.counterUses,
       },
     })
   }
@@ -507,7 +645,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         blocks.length === 0 && contentModel === 'simple'
           ? resolveXrefs(
               parseInline(sourceFromBlock(block as AdocTypes.AbstractBlock), {
-                attributes: inlineAttrs,
+                attributes: inlineAttrsFor(block),
                 state: inlineState,
               }),
             )

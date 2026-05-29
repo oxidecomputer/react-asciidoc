@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml } from '../'
+import { Content } from '../'
+import RenderInline from '../RenderInline'
 import { type BaseBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -20,7 +21,9 @@ const Open = ({ node }: { node: BaseBlock }) => {
             <Content blocks={node.blocks} />
           ) : (
             node.content && (
-              <span dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+              <span>
+              <RenderInline nodes={node.inlines} />
+            </span>
             )
           )}
         </blockquote>
@@ -40,7 +43,9 @@ const Open = ({ node }: { node: BaseBlock }) => {
           <Content blocks={node.blocks} />
         ) : (
           node.content && (
-            <span dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+            <span>
+              <RenderInline nodes={node.inlines} />
+            </span>
           )
         )}
       </div>

@@ -32,23 +32,30 @@ one.
 
 ## Running tests
 
-Before running the full set of tests we must first generate the screenshots. The tests are
-running a visual diff on the original renderer and the React one. You must therefore run the
-following command first:
+The tests are string-diff parity checks: each source is converted through stock
+Asciidoctor (embedded mode) and through the React renderer, then both outputs are
+normalised and compared. Run the whole suite with:
 
 ```
-npm run test:init
+npm test
 ```
 
-This will produce an error on first run; this is expected, as it needs to generate the
-screenshots. You should then run the following command, which runs all of the React renderer
-tests, comparing them to the baseline.
+There are two groups of tests under `tests/`:
+
+- **Examples** (`renderer.test.tsx`) — the hand-crafted fixtures in `src/examples/`.
+- **Corpus** (`corpus.*.test.tsx`) — every Oxide RFD plus the Asciidoctor writer's
+  guide (~694 docs). Because vitest parallelises across test *files* rather than
+  within one, the corpus is split into eight shard files that each run a round-robin
+  slice of the documents. This lets the worker pool spread the work across cores —
+  the suite runs in roughly a fifth of the time it took as a single file.
 
 ```
-npm run test:run
-```
+# Just the corpus, in parallel across the worker pool.
+npx vitest run tests/corpus.*.test.tsx
 
-![GIF of the visual diff tests](https://user-images.githubusercontent.com/4020798/196468163-a3fac4eb-ddec-43d1-99ee-a38fe7cd7062.gif)
+# A single document, regardless of which shard it lives in.
+npx vitest run -t "rfds/0042"
+```
 
 ## Limitations
 

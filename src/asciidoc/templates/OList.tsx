@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml } from '../'
+import { Content } from '../'
+import RenderInline from '../RenderInline'
 import { type ListBlock, type ListItemBlock, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -33,7 +34,9 @@ const OList = ({ node }: { node: ListBlock }) => {
       >
         {node.items.map((item: ListItemBlock, index) => (
           <li key={index} id={item.id || undefined}>
-            <p dangerouslySetInnerHTML={inlineHtml(item.textInlines)} />
+            <p>
+              <RenderInline nodes={item.textInlines} />
+            </p>
             <Content blocks={item.blocks} />
           </li>
         ))}

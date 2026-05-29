@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml, useConverterContext } from '..'
+import { Content, useConverterContext } from '..'
+import RenderInline from '../RenderInline'
 import { AdmonitionBlock } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -37,14 +38,12 @@ const Admonition = ({ node }: { node: AdmonitionBlock }) => {
               <Content blocks={node.blocks} />
             </td>
           ) : (
-            <td
-              className="content"
-              dangerouslySetInnerHTML={{
-                __html:
-                  (node.title ? `<div class="title">${node.title}</div>` : '') +
-                  inlineHtml(node.inlines).__html,
-              }}
-            />
+            <td className="content">
+              {node.title && (
+                <div className="title" dangerouslySetInnerHTML={{ __html: node.title }} />
+              )}
+              <RenderInline nodes={node.inlines} />
+            </td>
           )}
         </tr>
       </table>

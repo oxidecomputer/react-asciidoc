@@ -1,6 +1,7 @@
 import cn from 'classnames'
 
-import { Content, inlineHtml } from '../'
+import { Content } from '../'
+import RenderInline from '../RenderInline'
 import { type Block, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
@@ -27,7 +28,9 @@ const Example = ({ node }: { node: Block }) => {
             <Content blocks={node.blocks} />
           ) : (
             node.content && (
-              <span dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+              <span>
+              <RenderInline nodes={node.inlines} />
+            </span>
             )
           )}
         </div>
@@ -47,7 +50,9 @@ const Example = ({ node }: { node: Block }) => {
           <Content blocks={node.blocks} />
         ) : (
           node.content && (
-            <span dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+            <span>
+              <RenderInline nodes={node.inlines} />
+            </span>
           )
         )}
       </div>
