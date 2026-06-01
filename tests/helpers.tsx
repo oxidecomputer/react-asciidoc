@@ -4,6 +4,7 @@ import * as React from 'react'
 import { renderToString } from 'react-dom/server'
 
 import { Asciidoc, Content, prepareDocument } from '../src/asciidoc'
+import { renderInlineAsString } from '../src/asciidoc/inline'
 import Outline from '../src/asciidoc/templates/Outline'
 import type { DocumentBlock } from '../src/asciidoc/utils/prepareDocument'
 
@@ -68,7 +69,7 @@ const BodyOnly = ({ document }: { document: DocumentBlock }) => {
               id={`_footnotedef_${f.index}`}
               key={f.index}
               dangerouslySetInnerHTML={{
-                __html: `<a href="#_footnoteref_${f.index}">${f.index}</a>. ${f.text || ''}`,
+                __html: `<a href="#_footnoteref_${f.index}">${f.index}</a>. ${f.textInlines ? renderInlineAsString(f.textInlines) : f.text || ''}`,
               }}
             />
           ))}

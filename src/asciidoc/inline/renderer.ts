@@ -46,11 +46,11 @@ function escapeAttr(str: string): string {
   return out
 }
 
-export function renderInline(nodes: InlineNode[]): string {
-  return nodes.map(renderNode).join('')
+export function renderInline(nodes: InlineNode[], iconsFont = false): string {
+  return nodes.map((n) => renderNode(n, iconsFont)).join('')
 }
 
-function renderNode(node: InlineNode): string {
+function renderNode(node: InlineNode, iconsFont: boolean): string {
   switch (node.type) {
     case 'text':
       return node.text
@@ -58,7 +58,7 @@ function renderNode(node: InlineNode): string {
     case 'quoted': {
       const tags = QUOTE_TAGS[node.subtype] || ['', '']
       const hasTag = tags[2] === true
-      const text = renderInline(node.text)
+      const text = renderInline(node.text, iconsFont)
 
       let attrs = ''
       if (node.id) attrs += ` id="${node.id}"`
@@ -91,7 +91,7 @@ function renderNode(node: InlineNode): string {
       let classAttr = role ? ` class="${escapeAttr(role)}"` : ''
       if (id) idAttr += classAttr
       else idAttr = classAttr
-      const text = renderInline(node.text)
+      const text = renderInline(node.text, iconsFont)
       switch (node.subtype) {
         case 'link': {
           const target = escapeAttr(node.target)
@@ -180,7 +180,7 @@ function renderNode(node: InlineNode): string {
       const idx = node.index
       if (idx === undefined) {
         const id = node.id ? ` id="${escapeAttr(node.id)}"` : ''
-        const text = renderInline(node.text)
+        const text = renderInline(node.text, iconsFont)
         return `<sup${id}>[${text}]</sup>`
       }
       const idAttr = node.id ? ` id="_footnote_${escapeAttr(node.id)}"` : ''
@@ -189,7 +189,7 @@ function renderNode(node: InlineNode): string {
 
     case 'indexterm':
       return node.visible
-        ? renderInline([{ type: 'text', text: node.terms.join(', ') }])
+        ? renderInline([{ type: 'text', text: node.terms.join(', ') }], iconsFont)
         : ''
 
     case 'callout':
@@ -201,7 +201,7 @@ function renderNode(node: InlineNode): string {
       return '<br>\n'
 
     case 'button':
-      return `<b class="button">${renderInline(node.text)}</b>`
+      return `<b class="button">${renderInline(node.text, iconsFont)}</b>`
 
     case 'kbd': {
       if (node.keys.length === 1) {
@@ -219,7 +219,9 @@ function renderNode(node: InlineNode): string {
       //   &#160;<b class="caret">&#8250;</b> <b class="submenu">Mid</b>
       //   ...
       //   &#160;<b class="caret">&#8250;</b> <b class="menuitem">Last</b></span>
-      const SEPARATOR = '&#160;<b class="caret">&#8250;</b> '
+      const SEPARATOR = iconsFont
+        ? '&#160;<i class="fa fa-angle-right caret"></i> '
+        : '&#160;<b class="caret">&#8250;</b> '
       const parts: string[] = []
       for (let i = 0; i < node.items.length; i++) {
         const item = node.items[i]
@@ -236,6 +238,6 @@ function renderNode(node: InlineNode): string {
   }
 }
 
-export function renderInlineAsString(nodes: InlineNode[]): string {
-  return renderInline(nodes)
+export function renderInlineAsString(nodes: InlineNode[], iconsFont = false): string {
+  return renderInline(nodes, iconsFont)
 }

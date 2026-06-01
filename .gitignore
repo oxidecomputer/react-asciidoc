@@ -43,3 +43,5 @@ tsconfig.tsbuildinfo
 
 /tests/corpus/rfds
 /tests/corpus/asciidoctor-extracted
+/tests/categorize.mts
+HANDOFF.md

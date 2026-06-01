@@ -8,17 +8,35 @@ const Stem = ({ node }: { node: Block }) => {
   const { document } = useConverterContext()
   const docAttrs = document.attributes || {}
 
-  const style =
-    (node.style as string | undefined) || (docAttrs['stem'] as string) || 'asciimath'
-  const equation = node.content || ''
+  const docStem = (docAttrs['stem'] as string) || 'asciimath'
+  let style = (node.style as string | undefined) || docStem
+  // A bare `[stem]` block resolves to the document's configured stem flavour.
+  if (style === 'stem') style = docStem === 'latexmath' ? 'latexmath' : 'asciimath'
+
   // Stem blocks wrap their content in either AsciiMath (\$…\$) or LaTeX
   // (\[…\]) delimiters depending on the configured stem style.
-  const wrapped =
+  const [open, close] =
     style === 'latexmath'
-      ? `\\[${equation}\\]`
-      : style === 'asciimath' || style === 'stem'
-        ? `\\$${equation}\\$`
-        : equation
+      ? ['\\[', '\\]']
+      : style === 'asciimath'
+        ? ['\\$', '\\$']
+        : ['', '']
+
+  let wrapped = Array.isArray(node.content) ? node.content.join('\n') : node.content || ''
+  if (open) {
+    // AsciiMath blocks split on blank lines / explicit line continuations into
+    // separate display equations joined by <br>, mirroring StemBreakRx.
+    if (style === 'asciimath' && wrapped.indexOf('\n') !== -1) {
+      wrapped = wrapped.replace(/ *\\\n(?:\\?\n)*|\n\n+/g, (m) => {
+        const breaks = (m.match(/\n/g) || []).length
+        return close + '\n<br>'.repeat(breaks - 1) + '\n' + open
+      })
+    }
+    // Don't double-wrap content that already carries the delimiters.
+    if (!(wrapped.startsWith(open) && wrapped.endsWith(close))) {
+      wrapped = `${open}${wrapped}${close}`
+    }
+  }
 
   return (
     <div

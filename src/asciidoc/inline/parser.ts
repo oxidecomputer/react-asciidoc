@@ -16,6 +16,21 @@ export interface ParseOptions {
    *  email macro uses this to suppress linkification at position 0 (the
    *  quote tag's `>` is a non-linking context in stock asciidoctor). */
   _quoted?: boolean
+  /** Internal: index into the quote-subs list to start from when parsing the
+   *  inner content of a quoted span. Asciidoctor applies the substitution
+   *  passes sequentially over the whole string, so a span's content is only
+   *  subject to the passes that come AFTER the one that matched it — earlier
+   *  passes already ran (replacing their matches with placeholders) and the
+   *  matching pass itself never re-scans its own replacement. Re-applying
+   *  earlier passes here would wrongly re-format literal content such as the
+   *  `_un_` inside `\__un__` → `<em>_un_</em>`. */
+  _quoteFromIndex?: number
+  /** Internal: restrict which substitution steps run, by asciidoctor sub name
+   *  (`specialcharacters`, `quotes`, `attributes`, `replacements`, `macros`,
+   *  `post_replacements`). Used for verbatim blocks with an explicit `subs`
+   *  list (e.g. a listing with `subs=+macros` runs macros but NOT quotes). When
+   *  undefined, all normal subs run. */
+  _subs?: string[]
 }
 
 export interface ParseState {
@@ -38,10 +53,11 @@ export interface ParseState {
    *  reset. `counterUses` tracks how many times each counter has been used. */
   counterResets?: Map<string, Set<number>>
   counterUses?: Map<string, number>
-  /** Attribute-set counter seeds: when `:name: N` appears in the document
-   *  body with a numeric value, the next `{counter:name}` after that point
-   *  should start from N+1 instead of 1. Maps counter name → (use-index → seed value). */
-  counterSeeds?: Map<string, Map<number, number>>
+  /** Attribute-set counter seeds: when `:name: VALUE` appears in the document
+   *  body with a non-empty value, the next `{counter:name}` after that point
+   *  uses `succ(VALUE)` as its value (e.g. `:c: 10` → 11, `:c: @` → A) instead
+   *  of starting at 1. Maps counter name → (use-index → raw seed value). */
+  counterSeeds?: Map<string, Map<number, string>>
 }
 
 function createParseState(): ParseState {
@@ -68,11 +84,49 @@ function nextCounterValue(
   } else if (typeof existing === 'number') {
     value = existing + 1
   } else {
-    // Single-letter sequence: advance the last char's code point.
-    value = String.fromCharCode(existing.charCodeAt(existing.length - 1) + 1)
+    // Alphanumeric sequence: Ruby's `String#succ`.
+    value = rubySucc(existing)
   }
   counters.set(name, value)
   return value
+}
+
+/** Port of Ruby's `String#succ` (a.k.a. `next`): increment the rightmost
+ *  alphanumeric character, carrying left (z→a, 9→0, Z→A) and growing the
+ *  string on overflow. With no alphanumerics, the rightmost code point is
+ *  incremented. Code-point aware so it handles emoji/multi-byte chars. */
+function rubySucc(input: string): string {
+  const chars = Array.from(input)
+  const isAlnum = (c: string) => /^[0-9A-Za-z]$/.test(c)
+  if (!chars.some(isAlnum)) {
+    const last = chars[chars.length - 1]
+    chars[chars.length - 1] = String.fromCodePoint((last.codePointAt(0) ?? 0) + 1)
+    return chars.join('')
+  }
+  let i = chars.length - 1
+  for (;;) {
+    while (i >= 0 && !isAlnum(chars[i])) i--
+    if (i < 0) break
+    const c = chars[i]
+    if (c === '9') chars[i] = '0'
+    else if (c === 'z') chars[i] = 'a'
+    else if (c === 'Z') chars[i] = 'A'
+    else {
+      chars[i] = String.fromCharCode(c.charCodeAt(0) + 1)
+      return chars.join('')
+    }
+    // Carried: continue to the next alphanumeric on the left, or grow.
+    const carried = c
+    i--
+    while (i >= 0 && !isAlnum(chars[i])) i--
+    if (i < 0) {
+      const grow = carried === '9' ? '1' : carried === 'z' ? 'a' : 'A'
+      const at = chars.findIndex(isAlnum)
+      chars.splice(at, 0, grow)
+      return chars.join('')
+    }
+  }
+  return chars.join('')
 }
 
 type SubType =
@@ -269,6 +323,9 @@ function parseLinkText(raw: string): {
   window?: string
   id?: string
 } {
+  // Unescape `\]` → `]`: a closing bracket inside link text is backslash-
+  // escaped so it doesn't terminate the macro early (asciidoctor's ESC_R_SB).
+  if (raw.indexOf('\\]') !== -1) raw = raw.replace(/\\\]/g, ']')
   let text = raw
   let role: string | undefined
   let window: string | undefined
@@ -415,15 +472,15 @@ function subAttributes(
         const useIdx = state.counterUses?.get(name) ?? 0
         if (state.counterResets?.get(name)?.has(useIdx)) counters.delete(name)
         if (state.counterUses) state.counterUses.set(name, useIdx + 1)
-        // When `:name: N` sets a numeric attribute value in the body before
-        // this counter use (but after any prior counter use for the same
-        // name), seed the counter from N+1 instead of 1. The seed overrides
-        // any prior counter value.
+        // When `:name: VALUE` sets a non-empty attribute value in the body
+        // before this counter use (but after any prior counter use for the
+        // same name), the counter's value becomes `succ(VALUE)` (e.g. 10→11,
+        // @→A). The seed overrides any prior counter value.
         const seedMap = state.counterSeeds?.get(name)
         const attributeSeed = seedMap
           ? (() => {
               // Find the latest seed at or before the current use-index.
-              let best: number | undefined
+              let best: string | undefined
               for (const [idx, val] of seedMap) {
                 if (idx <= useIdx) best = val
               }
@@ -431,9 +488,13 @@ function subAttributes(
             })()
           : undefined
         // If an attribute entry seeded this counter, overwrite the stored
-        // value so nextCounterValue increments from the seed.
+        // value so nextCounterValue increments from the seed. Numeric seeds
+        // increment arithmetically; everything else via Ruby's String#succ.
         if (attributeSeed !== undefined) {
-          counters.set(name, attributeSeed)
+          counters.set(
+            name,
+            /^-?\d+$/.test(attributeSeed) ? parseInt(attributeSeed, 10) : attributeSeed,
+          )
         }
         const value = nextCounterValue(counters, name, seed)
         // Keep the doc-attribute view in sync so plain `{name}` reflects it.
@@ -442,8 +503,68 @@ function subAttributes(
       },
     )
   }
-  return text.replace(/(\\)?\{(\w[\w-]*)\}/g, (match, esc, name) => {
-    if (esc) return '{' + name + '}'
+  // `{set:name}` / `{set:name:value}` / `{set:name!}` directives. These set or
+  // unset a document attribute inline and leave a DEL (set / drop-the-marker)
+  // or CAN (drop-the-whole-line) sentinel that drives line removal below.
+  // Mirrors asciidoctor's `set` case in `sub_attributes`.
+  if (text.indexOf('{set:') !== -1) {
+    const DEL = '\x7F'
+    const CAN = '\x18'
+    let drop = false
+    let dropLine = false
+    let dropEmptyLine = false
+    const attributeUndefined = attributes['attribute-undefined'] || 'drop-line'
+    text = text.replace(/(\\)?\{set:([^}\\]+)(\\)?\}/g, (match, esc, body, esc2) => {
+      if (esc || esc2) return '{set:' + body + '}'
+      const colon = body.indexOf(':')
+      let name = colon === -1 ? body : body.slice(0, colon)
+      const value = colon === -1 ? '' : body.slice(colon + 1)
+      let unset = false
+      if (name.endsWith('!')) {
+        name = name.slice(0, -1)
+        unset = true
+      } else if (name.startsWith('!')) {
+        name = name.slice(1)
+        unset = true
+      }
+      name = name.toLowerCase()
+      if (unset) {
+        delete attributes[name]
+      } else {
+        attributes[name] = value
+      }
+      drop = true
+      // A set assignment (truthy value in Ruby, even when empty) always drops
+      // just the marker; an unset only drops the marker unless `attribute-
+      // undefined` is `drop-line`, in which case the whole line goes.
+      if (!unset || attributeUndefined !== 'drop-line') {
+        dropEmptyLine = true
+        return DEL
+      }
+      dropLine = true
+      return CAN
+    })
+    if (drop) {
+      if (dropEmptyLine) {
+        const lines = text.replace(/\x7F+/g, DEL).split('\n')
+        const kept = dropLine
+          ? lines.filter((l) => !(l === DEL || l.includes(CAN)))
+          : lines.filter((l) => l !== DEL)
+        text = kept.join('\n').split(DEL).join('')
+      } else if (text.indexOf('\n') !== -1) {
+        text = text
+          .split('\n')
+          .filter((l) => !l.includes(CAN))
+          .join('\n')
+      } else {
+        text = ''
+      }
+    }
+  }
+  return text.replace(/(\\)?\{(\w[\w-]*)(\\)?\}/g, (match, esc, name, esc2) => {
+    // A backslash before either brace (`\{name}`, `{name\}`, `\{name\}`)
+    // escapes the reference — strip the backslashes and leave it literal.
+    if (esc || esc2) return '{' + name + '}'
     const key = name.toLowerCase()
     if (Object.prototype.hasOwnProperty.call(INTRINSIC_ATTRIBUTES, key)) {
       return INTRINSIC_ATTRIBUTES[key]
@@ -488,6 +609,7 @@ function resolveNodeAttributes(
 // Subset of asciidoctor's INTRINSIC_ATTRIBUTES, covering the inline-relevant
 // entries. Add more as fixtures demand.
 const INTRINSIC_ATTRIBUTES: Record<string, string> = {
+  blank: '',
   empty: '',
   sp: ' ',
   nbsp: '&#160;',
@@ -660,37 +782,48 @@ export function parseInline(text: string, opts: ParseOptions = {}): InlineNode[]
 
   const passthroughs: PassthroughEntry[] = []
   const placeholders: InlineNode[][] = []
+  // When an explicit subs list is supplied, only the named passes run.
+  const runSub = (name: string) => !opts._subs || opts._subs.includes(name)
 
-  source = extractPassthroughs(source, passthroughs, compatMode)
+  // Passthrough extraction (`pass:`, `+++`, `$$`, …) is part of the `macros`
+  // sub group; only extract when macros run.
+  if (runSub('macros')) {
+    source = extractPassthroughs(source, passthroughs, compatMode)
+  }
 
-  if (!opts._alreadyEscaped) {
+  if (!opts._alreadyEscaped && runSub('specialcharacters')) {
     source = subSpecialchars(source)
   }
 
-  if (source.match(/\*/) || source.match(/_/) || sniffRx.test(source)) {
-    source = subQuotes(source, quoteSubs, placeholders, state)
+  if (
+    runSub('quotes') &&
+    (source.match(/\*/) || source.match(/_/) || sniffRx.test(source))
+  ) {
+    source = subQuotes(source, quoteSubs, placeholders, state, opts._quoteFromIndex ?? 0)
   }
 
-  source = subAttributes(source, attributes, state)
+  if (runSub('attributes')) source = subAttributes(source, attributes, state)
 
-  source = subReplacements(source)
+  if (runSub('replacements')) source = subReplacements(source)
 
-  source = subMacrosOnString(
-    source,
-    attributes,
-    compatMode,
-    placeholders,
-    state,
-    opts._quoted ?? false,
-  )
+  if (runSub('macros')) {
+    source = subMacrosOnString(
+      source,
+      attributes,
+      compatMode,
+      placeholders,
+      state,
+      opts._quoted ?? false,
+    )
+  }
 
   let nodes = rebuildAllPlaceholders(source, placeholders)
-  nodes = subPostReplacements(nodes, attributes)
+  if (runSub('post_replacements')) nodes = subPostReplacements(nodes, attributes)
   nodes = restorePassthroughs(nodes, passthroughs, compatMode, state)
   // Attribute references inside quoted/linked text were hidden behind
   // placeholders when subAttributes ran on the source string. Walk the
   // AST now and resolve any remaining {attr} in text nodes.
-  nodes = resolveNodeAttributes(nodes, attributes, state)
+  if (runSub('attributes')) nodes = resolveNodeAttributes(nodes, attributes, state)
 
   return nodes
 }
@@ -868,15 +1001,26 @@ function extractLowPriorityPassthroughs(
 }
 
 function resolveInlineSubs(subStr: string): SubType[] {
+  // Both the single-letter shorthands (`pass:q[…]`) and the full sub names
+  // (`pass:quotes[…]`) are accepted.
   const hintMap: Record<string, SubType> = {
     a: 'attributes',
+    attributes: 'attributes',
     m: 'macros',
+    macros: 'macros',
     n: 'normal',
+    normal: 'normal',
     p: 'post_replacements',
+    post_replacements: 'post_replacements',
     q: 'quotes',
+    quotes: 'quotes',
     r: 'replacements',
+    replacements: 'replacements',
     c: 'specialcharacters',
+    specialcharacters: 'specialcharacters',
+    specialchars: 'specialcharacters',
     v: 'verbatim',
+    verbatim: 'verbatim',
   }
   const subs: SubType[] = []
   for (const part of subStr.split(',')) {
@@ -904,8 +1048,10 @@ function subQuotes(
   quoteSubs: typeof QUOTE_SUBS.nonCompat,
   placeholders: InlineNode[][],
   state: ParseState,
+  fromIndex = 0,
 ): string {
-  for (const entry of quoteSubs) {
+  for (let entryIdx = fromIndex; entryIdx < quoteSubs.length; entryIdx++) {
+    const entry = quoteSubs[entryIdx]
     let result = ''
     let remaining = source
     const isConstrained = entry.scope === 'constrained'
@@ -986,6 +1132,10 @@ function subQuotes(
           state,
           _alreadyEscaped: true,
           _quoted: true,
+          // Only later quote passes apply to the span's content (see
+          // _quoteFromIndex docs) — prevents re-formatting literal markers
+          // such as the `_un_` left inside `\__un__`.
+          _quoteFromIndex: entryIdx + 1,
         })
 
         const node: InlineNode = {
@@ -1164,23 +1314,23 @@ function subMacrosOnString(
         }
 
         const target = m[2]
-        if (rawAttrs === '') {
-          return {
-            type: 'anchor',
-            subtype: 'link',
-            text: [{ type: 'text', text: target }],
-            target,
-            role: 'bare',
-          }
-        }
         const parsed = parseLinkText(rawAttrs)
+        let linkText = parsed.text
+        let role = parsed.role
+        // An empty link text (whether `link:x[]` or `link:x[role=foo]`) falls
+        // back to the bare target as the label, and the class gains `bare`
+        // (matching asciidoctor's empty-link-text branch).
+        if (!linkText) {
+          linkText = target
+          role = role ? `bare ${role}` : 'bare'
+        }
         return {
           type: 'anchor',
           subtype: 'link',
-          text: processInlineText(parsed.text),
+          text: processInlineText(linkText),
           target,
           ...(parsed.id ? { id: parsed.id } : {}),
-          ...(parsed.role ? { role: parsed.role } : {}),
+          ...(role ? { role } : {}),
           ...(parsed.window ? { window: parsed.window } : {}),
         }
       },
@@ -1337,10 +1487,13 @@ function subMacrosOnString(
             subtype: 'xref',
             text: processInlineText(reftext),
             target,
+            ...(rawRef ? { explicitText: true } : {}),
           }
         }
         const target = (m[2] || '').trim()
-        const label = (m[3] || '').trim()
+        // Unescape `\]` → `]` in the reftext (asciidoctor's ESC_R_SB), so an
+        // escaped closing bracket inside the label survives as a literal.
+        const label = (m[3] || '').replace(/\\\]/g, ']').trim()
         // The macro bracket is an attribute list: `xref:id[xrefstyle=full]`
         // sets the display style with no positional reftext, so the label is
         // computed from the target (in `prepareDocument`'s `resolveXrefs`).
@@ -1352,6 +1505,7 @@ function subMacrosOnString(
             text: processInlineText(`[${target}]`),
             target,
             xrefstyle: styleMatch[2],
+            macro: true,
           }
         }
         return {
@@ -1359,11 +1513,13 @@ function subMacrosOnString(
           subtype: 'xref',
           text: processInlineText(label || `[${target}]`),
           target,
+          macro: true,
+          ...(label ? { explicitText: true } : {}),
         }
       },
     },
     {
-      rx: /\\?footnote(?:(ref):|:([\w-]+)?)\[(?:|([\s\S]*?[^\\]))\](?!<\/a>)/,
+      rx: /\\?footnote(?:(ref):|:([\p{L}\p{N}_-]+)?)\[(?:|([\s\S]*?[^\\]))\](?!<\/a>)/u,
       handler: (m) => {
         if (m[0].startsWith('\\')) return null
         const reference = (refId: string) => {
@@ -1391,7 +1547,9 @@ function subMacrosOnString(
         // Deprecated `footnoteref:[id]` (reference) / `footnoteref:[id,text]`
         // (definition) — id and content both live in the bracket text.
         if (m[1] === 'ref') {
-          const raw = m[3] || ''
+          // `footnoteref:[]` with empty brackets does not resolve.
+          if (!m[3]) return null
+          const raw = m[3]
           const ci = raw.indexOf(',')
           const refId = (ci === -1 ? raw : raw.slice(0, ci)).trim()
           const content = ci === -1 ? '' : raw.slice(ci + 1)
@@ -1399,8 +1557,14 @@ function subMacrosOnString(
         }
         const id = m[2]
         const text = m[3] || ''
+        // `footnote:[]` with neither id nor content does not resolve — leave
+        // the macro text in place (matches asciidoctor's fall-through).
+        if (!id && !text) return null
         // `footnote:id[]` with empty content → reference to an existing one.
-        if (id && !text) return reference(id)
+        // `footnote:id[content]` whose id is already registered is ALSO a
+        // reference (the duplicate content is discarded, not re-registered),
+        // mirroring asciidoctor's "find existing footnote by id" branch.
+        if (id && (!text || state.footnotesById.has(id))) return reference(id)
         // Definition (anonymous `footnote:[…]` or `footnote:id[…]`).
         return define(id, text)
       },
@@ -1509,7 +1673,10 @@ function restorePassthroughs(
         if (pt.subs.length === 1 && pt.subs[0] === 'specialcharacters') {
           inner = [{ type: 'text', text: subSpecialchars(pt.text) }]
         } else {
-          inner = parseInline(pt.text, { compatMode, state })
+          // Apply only the substitutions this passthrough requested (e.g.
+          // `pass:q[<u>*me*</u>]` runs quotes but NOT specialchars, so the
+          // `<u>` stays raw while `*me*` is formatted).
+          inner = parseInline(pt.text, { compatMode, state, _subs: pt.subs })
         }
         // Restore any nested passthroughs whose placeholders are inside `inner`.
         inner = restorePassthroughs(inner, passthroughs, compatMode, state)

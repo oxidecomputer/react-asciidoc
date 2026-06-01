@@ -22,8 +22,11 @@ import type {
  * `dangerouslySetInnerHTML`. Retained for consumers and tooling that still
  * want the serialised form; the React templates render via `<RenderInline>`.
  */
-export const inlineHtml = (nodes: InlineNode[] | undefined): { __html: string } => ({
-  __html: nodes ? renderInlineAsString(nodes) : '',
+export const inlineHtml = (
+  nodes: InlineNode[] | undefined,
+  iconsFont = false,
+): { __html: string } => ({
+  __html: nodes ? renderInlineAsString(nodes, iconsFont) : '',
 })
 
 /** Decode HTML entities (numeric + all named) before handing text/attribute

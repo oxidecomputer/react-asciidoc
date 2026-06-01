@@ -69,6 +69,14 @@ export interface AnchorNode {
   /** Per-xref display style from `xref:id[xrefstyle=short|full]`. Overrides
    *  the document `:xrefstyle:` when computing the fallback label. */
   xrefstyle?: string
+  /** Set when the xref carried an explicit reftext (e.g. `<<id,text>>` or
+   *  `xref:id[text]`). Distinguishes a user-typed label that happens to equal
+   *  `[id]` from the auto-generated fallback, so `resolveXrefs` leaves it be. */
+  explicitText?: boolean
+  /** Set for the macro form (`xref:target[]`) as opposed to the shorthand
+   *  (`<<target>>`). Only the macro form treats a target with a file extension
+   *  (`.adoc`, …) as an inter-document path. */
+  macro?: boolean
 }
 
 export interface ImageNode {

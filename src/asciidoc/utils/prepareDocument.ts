@@ -290,6 +290,19 @@ const sourceFromBlock = (block: AdocTypes.AbstractBlock): string => {
   return ''
 }
 
+/** Strip leading and trailing blank lines (whitespace-only) from verbatim /
+ *  raw block content, AFTER substitutions — mirrors asciidoctor's
+ *  `Block#content` for the verbatim/raw content models. Unlike the pre-subs
+ *  strip in `sourceFromBlock`, this catches lines that only became blank once
+ *  e.g. `{empty}` was resolved. No-op for content of fewer than two lines. */
+const stripVerbatimEdges = (content: string): string => {
+  const lines = content.split('\n')
+  if (lines.length < 2) return content
+  while (lines.length && lines[0].replace(/\s+$/, '') === '') lines.shift()
+  while (lines.length && lines[lines.length - 1].replace(/\s+$/, '') === '') lines.pop()
+  return lines.join('\n')
+}
+
 /** Collect footnote definitions (with text) from a resolved inline AST. */
 const collectFootnoteDefs = (nodes: InlineNode[]): FootnoteNode[] => {
   const defs: FootnoteNode[] = []
@@ -327,7 +340,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   // and the counter `name` hasn't been used yet, the next `{counter:name}`
   // should start from N+1 instead of 1. We record the use-index at which each
   // seed applies so we can look it up during inline parsing.
-  const counterSeeds = new Map<string, Map<number, number>>()
+  const counterSeeds = new Map<string, Map<number, string>>()
   // Body-defined attributes (`:name: value` after the header) are applied by
   // asciidoctor only during conversion, so they never reach `getAttributes()`
   // and our inline parser can't resolve `{name}` references to them. Collect
@@ -371,12 +384,13 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const attrName = set[1]
         const attrValue = set[2] ?? ''
         bodyAttrs.set(attrName, attrValue)
-        // If this sets a numeric value for a counter name, record the seed
-        // at the current use-index so the next `{counter:name}` uses it.
-        if (/^-?\d+$/.test(attrValue)) {
+        // If this sets a non-empty value for a (potential) counter name,
+        // record the seed at the current use-index so the next
+        // `{counter:name}` increments from it (numeric or `succ`-able string).
+        if (attrValue !== '') {
           const useIdx = useCount.get(attrName) ?? 0
           if (!counterSeeds.has(attrName)) counterSeeds.set(attrName, new Map())
-          counterSeeds.get(attrName)!.set(useIdx, parseInt(attrValue, 10))
+          counterSeeds.get(attrName)!.set(useIdx, attrValue)
         }
         continue
       }
@@ -549,7 +563,10 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const fallback = `[${n.target}]`
         const text = n.text
         const isBracketed =
-          text.length === 1 && text[0].type === 'text' && text[0].text === fallback
+          !n.explicitText &&
+          text.length === 1 &&
+          text[0].type === 'text' &&
+          text[0].text === fallback
         const setLabel = (id: string) => {
           // A per-xref `xrefstyle=` recomputes the label with that style;
           // otherwise use the precomputed (document-style) label.
@@ -570,6 +587,18 @@ export const prepareDocument = (document: AdocTypes.Document) => {
           }
         }
         const hashIdx = n.target.indexOf('#')
+        // 0a. Self / top reference (`xref:#[]` → target `#`): fall back to the
+        //     root document's reftext (or its title), or `[^top]` when it has
+        //     neither — mirroring asciidoctor's `get_root_document` branch.
+        if (n.target === '#') {
+          if (isBracketed) {
+            const docTitle = (document as AdocTypes.Document).getDocumentTitle?.()
+            const docRt =
+              (document.getAttribute && (document.getAttribute('reftext') as string)) ||
+              (typeof docTitle === 'string' ? docTitle : undefined)
+            n.text = [{ type: 'text', text: docRt || '[^top]', raw: true }]
+          }
+        }
         // 0. Inter-document xref: `path#fragment` (a non-empty path before the
         //    `#`). Resolve the path with `relfileprefix`/`outfilesuffix` like
         //    asciidoctor's `convert_inline_anchor`; an asciidoc source path
@@ -594,6 +623,35 @@ export const prepareDocument = (document: AdocTypes.Document) => {
           const resolvedPath = relfileprefix + path + relfilesuffix
           n.target = frag ? `${resolvedPath}#${frag}` : resolvedPath
           if (isBracketed) n.text = [{ type: 'text', text: resolvedPath, raw: true }]
+        }
+        // 0b. Inter-document xref macro with a file extension but no fragment
+        //     (`xref:other.adoc[]`). Only the macro form treats this as a path;
+        //     `.adoc` maps to the output suffix, other extensions are kept.
+        else if (
+          n.macro &&
+          hashIdx === -1 &&
+          /\.[^./]+$/.test(n.target) &&
+          !n.target.includes('://')
+        ) {
+          let path = n.target
+          let src2src = false
+          if (path.endsWith('.adoc')) {
+            path = path.slice(0, -5)
+            src2src = true
+          }
+          const outfilesuffix = (docAttrs['outfilesuffix'] as string) ?? '.html'
+          const relfileprefix = (docAttrs['relfileprefix'] as string) ?? ''
+          const relfilesuffix = src2src
+            ? docAttrs['relfilesuffix'] !== undefined
+              ? String(docAttrs['relfilesuffix'])
+              : outfilesuffix
+            : ''
+          const resolvedPath = relfileprefix + path + relfilesuffix
+          n.target = resolvedPath
+          if (isBracketed) n.text = [{ type: 'text', text: resolvedPath, raw: true }]
+          // The resolved target is a real path, not a `#fragment`; render it as
+          // a plain link so the href is used verbatim (no `#` prefix).
+          n.subtype = 'link'
         }
         // 1. The target is literally a registered id (even an unlabeled
         //    bare anchor — leave its `[id]` text as-is).
@@ -748,19 +806,23 @@ export const prepareDocument = (document: AdocTypes.Document) => {
             parseInline(verbatimSource, {
               attributes: inlineAttrsFor(block),
               state: inlineState,
+              // Honour the block's exact subs list (e.g. `subs=+macros` runs
+              // macros but not quotes, so `*bold*` stays literal while a
+              // `pass:quotes[…]` macro still formats its own content).
+              _subs: subs,
             }),
           )
           let content = renderInlineAsString(inlines ?? [])
           if (subs.includes('callouts')) {
             content = subCallouts(content, iconsFont, lineComment)
           }
-          processedBlock.content = content
+          processedBlock.content = stripVerbatimEdges(content)
         } else {
           let content = subSpecialchars(verbatimSource)
           if (subs.includes('callouts')) {
             content = subCallouts(content, iconsFont, lineComment)
           }
-          processedBlock.content = content
+          processedBlock.content = stripVerbatimEdges(content)
         }
       }
     }
@@ -810,9 +872,11 @@ export const prepareDocument = (document: AdocTypes.Document) => {
             state: inlineState,
           }),
         )
-        processedBlock.content = renderInlineAsString(inlines ?? [])
+        processedBlock.content = stripVerbatimEdges(renderInlineAsString(inlines ?? []))
       } else {
-        processedBlock.content = sourceFromBlock(block as AdocTypes.AbstractBlock)
+        processedBlock.content = stripVerbatimEdges(
+          sourceFromBlock(block as AdocTypes.AbstractBlock),
+        )
       }
     }
 
