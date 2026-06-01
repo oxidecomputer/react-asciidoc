@@ -819,11 +819,13 @@ export function parseInline(text: string, opts: ParseOptions = {}): InlineNode[]
 
   let nodes = rebuildAllPlaceholders(source, placeholders)
   if (runSub('post_replacements')) nodes = subPostReplacements(nodes, attributes)
-  nodes = restorePassthroughs(nodes, passthroughs, compatMode, state)
   // Attribute references inside quoted/linked text were hidden behind
-  // placeholders when subAttributes ran on the source string. Walk the
-  // AST now and resolve any remaining {attr} in text nodes.
+  // placeholders when subAttributes ran on the source string. Resolve any
+  // remaining {attr} in text nodes NOW — before restoring passthroughs, whose
+  // content is literal and must never be attribute-substituted (e.g.
+  // `+{vbar}+` must stay `{vbar}`, not become `|`).
   if (runSub('attributes')) nodes = resolveNodeAttributes(nodes, attributes, state)
+  nodes = restorePassthroughs(nodes, passthroughs, compatMode, state)
 
   return nodes
 }
