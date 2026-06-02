@@ -163,6 +163,28 @@ const inlineOverrides: InlineOverrides = {
 `externalHref` is only set when the reference resolves to that entry under stock rules; an
 unresolved citation is left as the normal fallback.
 
+Alongside `externalHref`, `prepareDocument` also records the entry's citation body on the
+anchor as `node.referenceInlines` — the entry's inline AST with the leading `[[[id]]]`
+bibref label stripped (the free text and links that follow it). It is set for every xref
+that resolves to a `[bibliography]` entry, whether or not the citation carries a URL. The
+default renderer ignores it (preserving stock parity); an `anchor` override can render it
+through `<RenderInline>` to show the reference's content in a hover tooltip:
+
+```tsx
+import { RenderInline } from '@oxide/react-asciidoc'
+
+const inlineOverrides: InlineOverrides = {
+  anchor: ({ node, children }) =>
+    node.subtype === 'xref' && node.referenceInlines ? (
+      <Tooltip content={<RenderInline nodes={node.referenceInlines} />}>
+        <a href={`#${node.target}`}>{children}</a>
+      </Tooltip>
+    ) : (
+      <a href={node.target.startsWith('#') ? node.target : `#${node.target}`}>{children}</a>
+    ),
+}
+```
+
 > **Inline overrides change the inline output path.** Without them, inline content is
 > emitted as an HTML string and matches Asciidoctor exactly. Supplying any `inlineOverrides`
 > switches to a React element tree, which entity-decodes text (e.g. `&#8217;` renders as a

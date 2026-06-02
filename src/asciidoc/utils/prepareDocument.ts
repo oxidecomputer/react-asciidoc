@@ -331,6 +331,18 @@ const splitInlineParagraphs = (nodes: InlineNode[]): InlineNode[][] => {
   return groups
 }
 
+/** Drop leading whitespace from an inline AST: trims the front of a leading
+ *  plain-text node, dropping it entirely if it was whitespace-only. Used to
+ *  clean up the gap a stripped `[[[id]]]` bibref label leaves behind. */
+const trimLeadingSpace = (nodes: InlineNode[]): InlineNode[] => {
+  const first = nodes[0]
+  if (!first || first.type !== 'text' || first.raw) return nodes
+  const trimmed = first.text.replace(/^\s+/, '')
+  if (trimmed === '') return nodes.slice(1)
+  if (trimmed === first.text) return nodes
+  return [{ ...first, text: trimmed }, ...nodes.slice(1)]
+}
+
 /** Collect footnote definitions (with text) from a resolved inline AST. */
 const collectFootnoteDefs = (nodes: InlineNode[]): FootnoteNode[] => {
   const defs: FootnoteNode[] = []
@@ -585,11 +597,15 @@ export const prepareDocument = (document: AdocTypes.Document) => {
   }
 
   // Map bibliography ids → the external URL carried by their citation, so a
-  // `<<id>>` xref into a `[bibliography]` entry can become a direct link. Built
-  // in the pre-pass (before any body xref is resolved) by re-parsing each bibref
-  // list item and reading the parser's resolved bibref id + first link target —
-  // which captures every link form (bare URL, `url[label]`, `link:`, `mailto:`).
+  // `<<id>>` xref into a `[bibliography]` entry can become a direct link, and
+  // bibliography ids → the entry's citation body (its inline AST minus the
+  // leading `[[[id]]]` bibref label) so an xref can show the reference content
+  // on hover. Both built in the same pre-pass (before any body xref is
+  // resolved) by re-parsing each bibref list item and reading the parser's
+  // resolved bibref id + first link target — which captures every link form
+  // (bare URL, `url[label]`, `link:`, `mailto:`).
   const bibUrls = new Map<string, string>()
+  const bibInlines = new Map<string, InlineNode[]>()
   if (typeof (document as AdocTypes.Document).findBy === 'function') {
     const items = (document as AdocTypes.Document).findBy({
       context: 'list_item',
@@ -617,6 +633,13 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         }
       }
       scan(nodes)
+      if (id) {
+        // Citation body: everything after the leading `[[[id]]]` bibref label,
+        // with the space the label left behind trimmed off the front.
+        const bibIdx = nodes.findIndex((n) => n.type === 'anchor' && n.subtype === 'bibref')
+        const body = trimLeadingSpace(bibIdx === -1 ? nodes : nodes.slice(bibIdx + 1))
+        if (body.length > 0) bibInlines.set(id, body)
+      }
       if (id && url) bibUrls.set(id, url)
     }
   }
@@ -737,11 +760,14 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         }
         // else: leave the parser's broken `#target` / `[target]` fallback.
 
-        // If this xref resolved to a bibliography entry with a URL, surface it
-        // for an `inlineOverrides.anchor` to use. Non-destructive — subtype,
-        // target and label stay exactly as stock asciidoctor renders them.
+        // If this xref resolved to a bibliography entry, surface its URL and
+        // citation body for an `inlineOverrides.anchor` to use. Non-destructive
+        // — subtype, target and label stay exactly as stock asciidoctor renders
+        // them.
         const bibUrl = bibUrls.get(n.target)
         if (bibUrl) n.externalHref = bibUrl
+        const bibBody = bibInlines.get(n.target)
+        if (bibBody) n.referenceInlines = bibBody
       }
       if ('text' in n && Array.isArray((n as { text?: InlineNode[] }).text)) {
         resolveXrefs((n as { text: InlineNode[] }).text)

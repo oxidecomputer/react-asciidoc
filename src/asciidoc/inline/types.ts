@@ -82,6 +82,13 @@ export interface AnchorNode {
    *  renderer ignores it (preserving stock parity), but an
    *  `inlineOverrides.anchor` can read it to link straight to the resource. */
   externalHref?: string
+  /** Inline content of the `[bibliography]` entry an xref resolves to, with
+   *  the leading `[[[id]]]` bibref label stripped (the citation body: free
+   *  text + links). Set by `prepareDocument` alongside `externalHref`; the
+   *  default renderer ignores it (preserving stock parity), but an
+   *  `inlineOverrides.anchor` can read it to show the reference's content in a
+   *  hover tooltip. */
+  referenceInlines?: InlineNode[]
 }
 
 export interface ImageNode {
