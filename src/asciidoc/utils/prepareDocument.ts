@@ -107,9 +107,8 @@ export type DocumentBlock = {
   blocks: Block[]
   contentModel: ContentModel | undefined
   footnotes: {
-    text: string | undefined
-    index: number | undefined
-    textInlines?: InlineNode[]
+    index: number
+    textInlines: InlineNode[]
   }[]
   sections: DocumentSection[]
   authors: { name: string | undefined; email: string | undefined }[]
@@ -151,7 +150,6 @@ export interface ImageBlock extends BaseBlock {
 }
 
 export interface ListItemBlock extends BaseBlock {
-  text: string | undefined
   textInlines?: InlineNode[] | undefined
 }
 
@@ -1258,9 +1256,8 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     preparedDocument.footnotes = [...seen.values()]
       .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
       .map((fn) => ({
-        text: undefined,
         index: fn.index!,
-        textInlines: fn.text,
+        textInlines: fn.text ?? [],
       }))
   }
 

@@ -61,11 +61,7 @@ const Document = ({ document }: { document: DocumentBlock }) => {
               key={footnote.index}
             >
               <a href={`#_footnoteref_${footnote.index}`}>{footnote.index}</a>.{' '}
-              {footnote.textInlines ? (
-                <RenderInline nodes={footnote.textInlines} />
-              ) : (
-                <span dangerouslySetInnerHTML={{ __html: footnote.text || '' }} />
-              )}
+              <RenderInline nodes={footnote.textInlines} />
             </div>
           ))}
         </div>

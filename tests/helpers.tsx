@@ -69,7 +69,7 @@ const BodyOnly = ({ document }: { document: DocumentBlock }) => {
               id={`_footnotedef_${f.index}`}
               key={f.index}
               dangerouslySetInnerHTML={{
-                __html: `<a href="#_footnoteref_${f.index}">${f.index}</a>. ${f.textInlines ? renderInlineAsString(f.textInlines) : f.text || ''}`,
+                __html: `<a href="#_footnoteref_${f.index}">${f.index}</a>. ${renderInlineAsString(f.textInlines)}`,
               }}
             />
           ))}
