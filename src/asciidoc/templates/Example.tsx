@@ -1,11 +1,12 @@
 import cn from 'classnames'
 
 import { Content } from '..'
-import { inlineHtml } from '../RenderInline'
+import RenderInline, { inlineHtml, useInlineRenderMode } from '../RenderInline'
 import { type Block, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Example = ({ node }: { node: Block }) => {
+  const { react, iconsFont } = useInlineRenderMode(node.inlines)
   const isCollapsible = isOption(node.attributes, 'collapsible')
   if (isCollapsible) {
     const isOpen = isOption(node.attributes, 'open')
@@ -27,7 +28,13 @@ const Example = ({ node }: { node: Block }) => {
           {node.blocks.length > 0 ? (
             <Content blocks={node.blocks} />
           ) : node.inlines ? (
-            <div dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
+            react ? (
+              <div>
+                <RenderInline nodes={node.inlines} />
+              </div>
+            ) : (
+              <div dangerouslySetInnerHTML={inlineHtml(node.inlines, iconsFont)} />
+            )
           ) : null}
         </div>
       </details>
@@ -43,11 +50,15 @@ const Example = ({ node }: { node: Block }) => {
       <Title text={node.title} />
       <div
         className="content"
-        {...(node.blocks.length === 0 && node.inlines
-          ? { dangerouslySetInnerHTML: inlineHtml(node.inlines) }
+        {...(node.blocks.length === 0 && node.inlines && !react
+          ? { dangerouslySetInnerHTML: inlineHtml(node.inlines, iconsFont) }
           : {})}
       >
-        {node.blocks.length > 0 ? <Content blocks={node.blocks} /> : null}
+        {node.blocks.length > 0 ? (
+          <Content blocks={node.blocks} />
+        ) : node.inlines && react ? (
+          <RenderInline nodes={node.inlines} />
+        ) : null}
       </div>
     </div>
   )

@@ -1,6 +1,8 @@
 import cn from 'classnames'
+import { type ReactNode } from 'react'
 
 import { Content, useConverterContext } from '..'
+import RenderInline, { hasRawInline } from '../RenderInline'
 import {
   type Cell,
   type TableBlock,
@@ -10,8 +12,17 @@ import {
 } from '../utils/prepareDocument'
 
 const Table = ({ node }: { node: TableBlock }) => {
-  const { document } = useConverterContext()
+  const { document, inlineOverrides } = useConverterContext()
   const docAttrs = document.attributes || {}
+
+  const hasOverrides = !!inlineOverrides && Object.keys(inlineOverrides).length > 0
+
+  // Render a cell's inline content as a real React tree (so inlineOverrides
+  // apply) unless it carries straddling passthrough HTML and no overrides are
+  // registered — then the string path preserves it. Decided per cell since a
+  // table mixes plain and passthrough cells. Mirrors `useInlineRenderMode`,
+  // inlined here because the decision is per-cell, not per-component.
+  const cellReact = (cell: Cell): boolean => hasOverrides || !hasRawInline(cell.textInlines)
 
   let classes = [
     'frame-' + getAttribute(node.attributes, 'frame', 'all', 'table-frame', docAttrs),
@@ -49,6 +60,30 @@ const Table = ({ node }: { node: TableBlock }) => {
     return classAttr
   }
 
+  // Render a body cell's inline content as a React tree, preserving the
+  // per-paragraph `<p class="tableblock">` wrappers and the
+  // column-style wrapping tag (`emphasis`/`strong`/`monospaced`) that the
+  // string path bakes into `cell.content`.
+  const renderCellInlines = (cell: Cell) => {
+    const wrap = (inner: ReactNode) => {
+      switch (cell.style) {
+        case 'emphasis':
+          return <em>{inner}</em>
+        case 'strong':
+          return <strong>{inner}</strong>
+        case 'monospaced':
+          return <code>{inner}</code>
+        default:
+          return inner
+      }
+    }
+    return (cell.contentInlines || []).map((para, pIndex) => (
+      <p className="tableblock" key={pIndex}>
+        {wrap(<RenderInline nodes={para} />)}
+      </p>
+    ))
+  }
+
   return (
     <table
       id={node.id || undefined}
@@ -73,15 +108,26 @@ const Table = ({ node }: { node: TableBlock }) => {
         node.headRows.map((row, hIndex) => (
           <thead key={hIndex}>
             <tr>
-              {row.map((cell, index) => (
-                <th
-                  key={index}
-                  className={getCellClass(cell)}
-                  colSpan={cell.columnSpan}
-                  rowSpan={cell.rowSpan}
-                  dangerouslySetInnerHTML={{ __html: cell.text || '' }}
-                />
-              ))}
+              {row.map((cell, index) =>
+                cellReact(cell) && cell.textInlines ? (
+                  <th
+                    key={index}
+                    className={getCellClass(cell)}
+                    colSpan={cell.columnSpan}
+                    rowSpan={cell.rowSpan}
+                  >
+                    <RenderInline nodes={cell.textInlines} />
+                  </th>
+                ) : (
+                  <th
+                    key={index}
+                    className={getCellClass(cell)}
+                    colSpan={cell.columnSpan}
+                    rowSpan={cell.rowSpan}
+                    dangerouslySetInnerHTML={{ __html: cell.text || '' }}
+                  />
+                ),
+              )}
             </tr>
           </thead>
         ))}
@@ -96,8 +142,15 @@ const Table = ({ node }: { node: TableBlock }) => {
                 const rowSpan = cell.rowSpan
                 const Tag = style === 'header' ? 'th' : 'td'
 
+                // React path: render inline content through <RenderInline>
+                // (so inlineOverrides apply). Literal cells keep the string
+                // path (escaped source, no inline nodes); asciidoc cells always
+                // go through <Content>.
+                const renderInlineReact =
+                  cellReact(cell) && style !== 'asciidoc' && style !== 'literal'
+
                 let html = ''
-                if (style === 'asciidoc') {
+                if (style === 'asciidoc' || renderInlineReact) {
                   // Asciidoc cells render via <Content> (React templates),
                   // not dangerouslySetInnerHTML
                 } else {
@@ -126,13 +179,19 @@ const Table = ({ node }: { node: TableBlock }) => {
                     colSpan={colSpan}
                     rowSpan={rowSpan}
                     dangerouslySetInnerHTML={
-                      style === 'asciidoc' ? undefined : html ? { __html: html } : undefined
+                      style === 'asciidoc' || renderInlineReact
+                        ? undefined
+                        : html
+                          ? { __html: html }
+                          : undefined
                     }
                   >
                     {style === 'asciidoc' ? (
                       <div className="content">
                         <Content blocks={cell.blocks} />
                       </div>
+                    ) : renderInlineReact ? (
+                      renderCellInlines(cell)
                     ) : null}
                   </Tag>
                 )
@@ -146,10 +205,16 @@ const Table = ({ node }: { node: TableBlock }) => {
           <tr>
             {row.map((cell, index) => (
               <td key={index} className={getCellClass(cell)}>
-                <p
-                  className="tableblock"
-                  dangerouslySetInnerHTML={{ __html: cell.text || '' }}
-                />
+                {cellReact(cell) && cell.textInlines ? (
+                  <p className="tableblock">
+                    <RenderInline nodes={cell.textInlines} />
+                  </p>
+                ) : (
+                  <p
+                    className="tableblock"
+                    dangerouslySetInnerHTML={{ __html: cell.text || '' }}
+                  />
+                )}
               </td>
             ))}
           </tr>

@@ -1,10 +1,11 @@
 import cn from 'classnames'
 
-import { inlineHtml } from '../RenderInline'
+import RenderInline, { inlineHtml, useInlineRenderMode } from '../RenderInline'
 import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Verse = ({ node }: { node: Block }) => {
+  const { react, iconsFont } = useInlineRenderMode(node.inlines)
   const attribution = node.attributes['attribution']
   const citetitle = node.attributes['citetitle']
 
@@ -25,9 +26,17 @@ const Verse = ({ node }: { node: Block }) => {
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <Title text={node.title} />
-      {node.inlines && (
-        <pre className="content" dangerouslySetInnerHTML={inlineHtml(node.inlines)} />
-      )}
+      {node.inlines &&
+        (react ? (
+          <pre className="content">
+            <RenderInline nodes={node.inlines} />
+          </pre>
+        ) : (
+          <pre
+            className="content"
+            dangerouslySetInnerHTML={inlineHtml(node.inlines, iconsFont)}
+          />
+        ))}
       {attribHtml && (
         <div className="attribution" dangerouslySetInnerHTML={{ __html: attribHtml }} />
       )}

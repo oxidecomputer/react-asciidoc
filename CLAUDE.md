@@ -50,17 +50,26 @@ Rendering pipeline:
    switches on `block.type` and renders the matching template from
    `src/asciidoc/templates/`. Before the switch, it checks `options.overrides[block.type]`
    and prefers that component when supplied.
-5. Inline content is rendered via `dangerouslySetInnerHTML={inlineHtml(node.inlines)}`
-   (templates pre-build the HTML string from the AST so React doesn't decode entities in
-   passthrough text). Consumers who want React-level inline customisation supply
-   `options.inlineOverrides` and switch the template to `<RenderInline nodes={…} />`, which
-   walks the AST and routes each subtype through its override component.
+5. Inline content is rendered as a real React tree via `<RenderInline nodes={…} />`, which
+   walks the AST and emits actual elements (and routes each subtype through its
+   `options.inlineOverrides` component when supplied). This is a React renderer, so the
+   React tree is the default. Templates fall back to the legacy HTML-string path
+   (`dangerouslySetInnerHTML={inlineHtml(node.inlines)}`) only when the AST carries
+   _straddling_ passthrough HTML — `hasRawInline()` in `RenderInline.tsx` detects it, and
+   the shared `useInlineRenderMode()` hook makes the choice. Registered overrides always
+   force the React path.
 
-Why two inline paths? React's `parse()` / JSX children path decodes HTML entities (`&#8217;`
-→ `'`), which breaks byte-parity with stock asciidoctor. Building the inline HTML once and
-injecting it via `dangerouslySetInnerHTML` preserves entity choices exactly. The
-override-aware `<RenderInline>` path forfeits byte-parity to expose individual inline nodes
-to React.
+Why a fallback path at all? React's `parse()` / JSX children path decodes HTML entities
+(`&#8217;` → `'`) — harmless, because the test harness decodes entities on both sides — but
+it renders the AST node-by-node, so it can't reconstruct an HTML element whose open and
+close tags straddle sibling inline nodes. That happens with partial-subs passthroughs like
+`pass:q[<u>x *y*</u>]`, which parse to a text `<u>x `, a `<strong>y</strong>`, then a text
+`</u>`. Only re-serialising the whole sequence to one string and injecting it via
+`dangerouslySetInnerHTML` keeps that intact. `hasRawInline()` flags this (explicit `raw`
+text nodes, or any text node still holding a bare `<`/`>` after the substitution pipeline
+escaped all the real ones), and the template uses the string path for that block. When you
+add a new template that renders `node.inlines`, drive the choice through
+`useInlineRenderMode()` rather than hard-coding either path.
 
 Some block-level invariants that come back to bite if you change them:
 

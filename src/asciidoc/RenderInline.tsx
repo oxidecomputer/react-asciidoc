@@ -29,6 +29,55 @@ export const inlineHtml = (
   __html: nodes ? renderInlineAsString(nodes, iconsFont) : '',
 })
 
+/**
+ * True when the inline AST carries verbatim passthrough HTML that can't be
+ * faithfully rebuilt as a React tree, so the template must fall back to the
+ * `dangerouslySetInnerHTML` string path. Two forms:
+ *
+ *  - `raw` text nodes (`+++…+++`, `pass:[…]`) — explicit no-subs passthroughs.
+ *  - text nodes holding a bare `<`/`>`. The substitution pipeline escapes every
+ *    real `<`/`>` to `&lt;`/`&gt;` *before* quotes/macros run, so a bare angle
+ *    bracket surviving into a text node can only be passthrough HTML where
+ *    specialchars was skipped — e.g. `pass:q[<u>x *y*</u>]`, which parses to
+ *    text `<u>x `, a `<strong>y</strong>`, then text `</u>`. Such HTML may
+ *    *straddle* sibling nodes (open tag in one, close in another), and React
+ *    renders node-by-node — `parse('<u>x ')` auto-closes the tag — so only
+ *    re-serialising the whole sequence to one string preserves it.
+ *
+ * Registered inline overrides still force the React path (overrides win; the
+ * straddling-passthrough-plus-override combination is vanishingly rare).
+ * Recurses into the `text` children of quoted/anchor/footnote/button nodes. */
+export const hasRawInline = (nodes: InlineNode[] | undefined): boolean => {
+  if (!nodes) return false
+  for (const node of nodes) {
+    if (node.type === 'text') {
+      if (node.raw || /[<>]/.test(node.text)) return true
+    } else if ('text' in node && Array.isArray(node.text) && hasRawInline(node.text)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Decide how a template should render an inline AST. This is a React renderer,
+ * so the default is to walk the AST as a real React tree (`<RenderInline>`),
+ * which is also what lets `inlineOverrides` reach inline nodes. The only reason
+ * to fall back to the `dangerouslySetInnerHTML` string path is straddling
+ * passthrough HTML (see `hasRawInline`) — and only when no overrides are
+ * registered, since overrides require the React path regardless. Returns
+ * `iconsFont` too, for templates that need it on the string-path serialiser. */
+export const useInlineRenderMode = (
+  nodes: InlineNode[] | undefined,
+): { react: boolean; iconsFont: boolean } => {
+  const ctx = useContext(Context)
+  const hasOverrides = !!ctx.inlineOverrides && Object.keys(ctx.inlineOverrides).length > 0
+  return {
+    react: hasOverrides || !hasRawInline(nodes),
+    iconsFont: ctx.document?.attributes?.['icons'] === 'font',
+  }
+}
+
 /** Decode HTML entities (numeric + all named) before handing text/attribute
  *  values to React. React re-escapes the structural characters (`<`, `>`,
  *  `&`, `"`) on output so they round-trip, while typographic characters

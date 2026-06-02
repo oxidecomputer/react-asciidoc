@@ -221,6 +221,12 @@ export interface Cell extends BaseBlock {
   /** Content for cell rendering: a string for asciidoc/literal cells,
    *  or an array of per-paragraph HTML strings for other styles. */
   content: string | string[] | undefined
+  /** Per-paragraph inline ASTs mirroring the paragraph boundaries of
+   *  `content`. Lets the Table template render cell inline content through
+   *  `<RenderInline>` (so `inlineOverrides` apply) instead of injecting the
+   *  serialized HTML string. Undefined for asciidoc/literal cells, which
+   *  don't go through the inline-string path. */
+  contentInlines?: InlineNode[][] | undefined
   source: string
   lines: string[]
   column: Column | undefined
@@ -301,6 +307,30 @@ const stripVerbatimEdges = (content: string): string => {
   while (lines.length && lines[0].replace(/\s+$/, '') === '') lines.shift()
   while (lines.length && lines[lines.length - 1].replace(/\s+$/, '') === '') lines.pop()
   return lines.join('\n')
+}
+
+/**
+ * Split a flat inline AST into per-paragraph groups at blank-line (`\n\n`)
+ * boundaries, mirroring how the serialized HTML is split on `/\n\n+/`. Paragraph
+ * breaks only ever occur inside top-level text nodes (other node types render
+ * without a `\n\n`), so we split those and keep every other node intact. The
+ * group count matches the `/\n\n+/`.split() of the rendered string, so the
+ * resulting paragraphs line up 1:1 with `cell.content`.
+ */
+const splitInlineParagraphs = (nodes: InlineNode[]): InlineNode[][] => {
+  const groups: InlineNode[][] = [[]]
+  for (const node of nodes) {
+    if (node.type === 'text' && !node.raw && /\n\n+/.test(node.text)) {
+      const parts = node.text.split(/\n\n+/)
+      parts.forEach((part, i) => {
+        if (i > 0) groups.push([])
+        if (part.length > 0) groups[groups.length - 1].push({ type: 'text', text: part })
+      })
+    } else {
+      groups[groups.length - 1].push(node)
+    }
+  }
+  return groups
 }
 
 /** Collect footnote definitions (with text) from a resolved inline AST. */
@@ -1055,6 +1085,10 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       //   - header: plain text paragraphs (no <p> wrapper)
       //   - default: plain text paragraphs wrapped in <p class="tableblock">
       let cellContent: string | string[] | undefined
+      // Per-paragraph inline ASTs, populated for the styles whose content is
+      // built from cellInlines (everything except asciidoc/literal). Lets the
+      // Table template render through <RenderInline> so inlineOverrides apply.
+      let cellContentInlines: InlineNode[][] | undefined
       if (cellStyle === 'asciidoc') {
         cellContent = '' // rendered via <Content>, not dangerouslySetInnerHTML
       } else if (cellStyle === 'literal') {
@@ -1082,8 +1116,10 @@ export const prepareDocument = (document: AdocTypes.Document) => {
                 ? '</code>'
                 : ''
         cellContent = paragraphs.length > 0 ? paragraphs.map((p) => open + p + close) : []
+        cellContentInlines = cellInlines ? splitInlineParagraphs(cellInlines) : []
       } else {
         cellContent = []
+        cellContentInlines = []
       }
 
       let tableCellBlock: Cell = {
@@ -1091,6 +1127,7 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         blocks: asciidocCellBlocks ?? processedBlock.blocks,
         type: 'table_cell',
         content: cellContent,
+        contentInlines: cellContentInlines,
         text: cellStyle === 'asciidoc' ? '' : renderInlineAsString(cellInlines || []),
         textInlines: cellInlines,
         columnSpan: adocCell.getColumnSpan(),
