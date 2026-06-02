@@ -1,7 +1,7 @@
 import cn from 'classnames'
 
-import { Content } from '../'
-import RenderInline from '../RenderInline'
+import { Content, useConverterContext } from '../'
+import RenderInline, { hasRawInline } from '../RenderInline'
 import type { InlineNode } from '../inline'
 import { renderInlineAsString } from '../inline'
 import { type ListBlock, type ListItemBlock, isOption } from '../utils/prepareDocument'
@@ -33,9 +33,20 @@ const renderBibliographyInlines = (nodes: InlineNode[] | undefined): string => {
 }
 
 const UList = ({ node }: { node: ListBlock }) => {
+  const { inlineOverrides } = useConverterContext()
   const isChecklist = isOption(node.attributes, 'checklist')
   const isInteractive = isChecklist && isOption(node.attributes, 'interactive')
   const isBibliography = node.style === 'bibliography'
+
+  // Render bibliography entries as a real React tree (so `inlineOverrides` reach
+  // the reference links/xrefs inside) unless an entry carries straddling
+  // passthrough HTML and no overrides are registered — then the bibliography-
+  // aware string serializer preserves it. Mirrors `useInlineRenderMode`, but
+  // the decision is per item, not per component. `RenderInline bibliography`
+  // reproduces the anchor-first definition form the serializer emits.
+  const hasOverrides = !!inlineOverrides && Object.keys(inlineOverrides).length > 0
+  const bibReact = (item: ListItemBlock): boolean =>
+    hasOverrides || !hasRawInline(item.textInlines)
 
   return (
     <div
@@ -59,13 +70,20 @@ const UList = ({ node }: { node: ListBlock }) => {
           return (
             <li key={index} id={item.id || undefined}>
               {isBibliography ? (
-                // `[bibliography]` rewrites bibref output to anchor-first form
-                // (`<a id></a>[text]`), so this path stays string-rendered.
-                <p
-                  dangerouslySetInnerHTML={{
-                    __html: renderBibliographyInlines(item.textInlines),
-                  }}
-                />
+                bibReact(item) ? (
+                  <p>
+                    <RenderInline nodes={item.textInlines} bibliography />
+                  </p>
+                ) : (
+                  // Straddling passthrough HTML with no overrides: the
+                  // bibliography-aware serializer keeps the anchor-first
+                  // definition form (`<a id></a>[text]`) intact.
+                  <p
+                    dangerouslySetInnerHTML={{
+                      __html: renderBibliographyInlines(item.textInlines),
+                    }}
+                  />
+                )
               ) : (
                 <p>
                   {checkbox && !isInteractive && (

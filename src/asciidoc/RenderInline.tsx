@@ -106,6 +106,10 @@ export type InlineOverrides = {
 interface RenderCtx {
   overrides: InlineOverrides
   iconsFont: boolean
+  // Set inside a `[bibliography]` list. The first bibref encountered is the
+  // entry definition (rendered anchor-first with its label); `pending` flips
+  // to false once consumed so later bibrefs render as inline citations.
+  bibDef?: { pending: boolean }
 }
 
 /**
@@ -114,12 +118,21 @@ interface RenderCtx {
  * actual elements (no `dangerouslySetInnerHTML`), and consumers can replace
  * any subtype via `options.inlineOverrides`.
  */
-const RenderInline = ({ nodes }: { nodes: InlineNode[] | undefined }) => {
+const RenderInline = ({
+  nodes,
+  bibliography = false,
+}: {
+  nodes: InlineNode[] | undefined
+  // When true, the first bibref is rendered as a `[bibliography]` entry
+  // definition (`<a id></a>[label]`) rather than an inline citation.
+  bibliography?: boolean
+}) => {
   const ctx = useContext(Context)
   if (!nodes || nodes.length === 0) return null
   const rctx: RenderCtx = {
     overrides: ctx.inlineOverrides || {},
     iconsFont: ctx.document?.attributes?.['icons'] === 'font',
+    bibDef: bibliography ? { pending: true } : undefined,
   }
   return <>{walk(nodes, rctx)}</>
 }
@@ -141,6 +154,27 @@ const renderNode = (node: InlineNode, ctx: RenderCtx): ReactNode => {
       return defaultQuoted(node, children)
     }
     case 'anchor': {
+      // A bibref is an anchor *definition*, not a navigable link, so it
+      // bypasses `overrides.anchor` (which targets link/xref) and renders its
+      // default form directly. In a `[bibliography]` list the first bibref is
+      // the entry definition (anchor-first + bracketed label, `<a id></a>[label]`);
+      // later bibrefs are inline citations (`[<a id></a>]`), as is every bibref
+      // outside a bibliography. This keeps the definition byte-identical to the
+      // string path while real links/xrefs in the entry still reach overrides.
+      if (node.subtype === 'bibref') {
+        const isDef = ctx.bibDef?.pending ?? false
+        if (ctx.bibDef) ctx.bibDef.pending = false
+        if (isDef)
+          return (
+            <>
+              <a id={node.id || node.target} />
+              {'['}
+              {walk(node.text, ctx)}
+              {']'}
+            </>
+          )
+        return defaultAnchor(node, null)
+      }
       const children = walk(node.text, ctx)
       if (overrides.anchor)
         return <overrides.anchor node={node}>{children}</overrides.anchor>
