@@ -556,6 +556,43 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     }
   }
 
+  // Map bibliography ids → the external URL carried by their citation, so a
+  // `<<id>>` xref into a `[bibliography]` entry can become a direct link. Built
+  // in the pre-pass (before any body xref is resolved) by re-parsing each bibref
+  // list item and reading the parser's resolved bibref id + first link target —
+  // which captures every link form (bare URL, `url[label]`, `link:`, `mailto:`).
+  const bibUrls = new Map<string, string>()
+  if (typeof (document as AdocTypes.Document).findBy === 'function') {
+    const items = (document as AdocTypes.Document).findBy({
+      context: 'list_item',
+    }) as AdocTypes.AbstractBlock[]
+    for (const item of items) {
+      const raw = (item as unknown as { text?: string }).text
+      if (typeof raw !== 'string' || !raw.includes('[[[')) continue
+      // Throwaway footnote state so bibliography footnotes don't bump the
+      // document-wide counter.
+      const nodes = parseInline(raw, {
+        attributes: inlineAttrs,
+        state: { footnoteIndex: 0, footnotesById: new Map() },
+      })
+      let id: string | undefined
+      let url: string | undefined
+      const scan = (ns: InlineNode[]) => {
+        for (const n of ns) {
+          if (n.type === 'anchor') {
+            if (n.subtype === 'bibref' && id === undefined) id = n.target
+            else if (n.subtype === 'link' && url === undefined) url = n.target
+          }
+          if ('text' in n && Array.isArray((n as { text?: InlineNode[] }).text)) {
+            scan((n as { text: InlineNode[] }).text)
+          }
+        }
+      }
+      scan(nodes)
+      if (id && url) bibUrls.set(id, url)
+    }
+  }
+
   const resolveXrefs = (nodes: InlineNode[] | undefined): InlineNode[] | undefined => {
     if (!nodes) return nodes
     for (const n of nodes) {
@@ -671,6 +708,12 @@ export const prepareDocument = (document: AdocTypes.Document) => {
           }
         }
         // else: leave the parser's broken `#target` / `[target]` fallback.
+
+        // If this xref resolved to a bibliography entry with a URL, surface it
+        // for an `inlineOverrides.anchor` to use. Non-destructive — subtype,
+        // target and label stay exactly as stock asciidoctor renders them.
+        const bibUrl = bibUrls.get(n.target)
+        if (bibUrl) n.externalHref = bibUrl
       }
       if ('text' in n && Array.isArray((n as { text?: InlineNode[] }).text)) {
         resolveXrefs((n as { text: InlineNode[] }).text)

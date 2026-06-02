@@ -77,6 +77,11 @@ export interface AnchorNode {
    *  (`<<target>>`). Only the macro form treats a target with a file extension
    *  (`.adoc`, …) as an inter-document path. */
   macro?: boolean
+  /** Resolved external URL when an xref points at a `[bibliography]` entry
+   *  whose citation carries a link. Set by `prepareDocument`; the default
+   *  renderer ignores it (preserving stock parity), but an
+   *  `inlineOverrides.anchor` can read it to link straight to the resource. */
+  externalHref?: string
 }
 
 export interface ImageNode {

@@ -130,6 +130,39 @@ quoted · anchor · image · footnote · indexterm · callout · break · button
 `emphasis | strong | monospaced | mark | superscript | subscript | double | single | unquoted`
 (distinguished by `node.subtype`).
 
+#### Bibliography cross-references as direct links
+
+When an `<<id>>` cross-reference resolves to a `[bibliography]` entry whose citation carries
+a URL, `prepareDocument` records that URL on the anchor node as `node.externalHref`. The
+default output is unchanged (it still links to the in-page `#id` anchor, matching
+Asciidoctor), but an `anchor` override can read `externalHref` to link straight to the
+external resource instead:
+
+```asciidoc
+See <<pegjs>> for the parser generator.
+
+[bibliography]
+== References
+
+- [[[pegjs]]] PEG.js https://pegjs.org
+```
+
+```tsx
+const inlineOverrides: InlineOverrides = {
+  anchor: ({ node, children }) =>
+    node.subtype === 'xref' && node.externalHref ? (
+      <a href={node.externalHref} target="_blank" rel="noopener">
+        {children}
+      </a>
+    ) : (
+      <a href={node.target.startsWith('#') ? node.target : `#${node.target}`}>{children}</a>
+    ),
+}
+```
+
+`externalHref` is only set when the reference resolves to that entry under stock rules; an
+unresolved citation is left as the normal fallback.
+
 > **Inline overrides change the inline output path.** Without them, inline content is
 > emitted as an HTML string and matches Asciidoctor exactly. Supplying any `inlineOverrides`
 > switches to a React element tree, which entity-decodes text (e.g. `&#8217;` renders as a
