@@ -453,6 +453,62 @@ export function subCallouts(text: string, iconsFont = false, lineComment?: strin
   })
 }
 
+/** Like {@link subCallouts}, but keyed to RAW (un-escaped) callout markers.
+ *
+ *  `subCallouts` matches specialchars-escaped markers (`&lt;N&gt;`) because it
+ *  runs on the escaped content the default `innerHTML` renderer needs.
+ *  Consumers that post-process the raw `block.source` instead — e.g. a syntax
+ *  highlighter — need callouts resolved against the original `<N>` markers,
+ *  which never went through specialchars. This is that counterpart: same
+ *  matching rules (comment-guard callouts, comment-prefix stripping, escape
+ *  with `\`, end-of-line lookahead, auto-numbered `.`), but the literal
+ *  delimiters are `<`/`>` rather than `&lt;`/`&gt;`.
+ *
+ *  With `iconsFont=true` the marker is replaced with conum markup
+ *  (`<i class="conum" data-value="N"></i><b>(N)</b>`); otherwise the bare
+ *  `<N>` marker is preserved (with any comment prefix). All non-callout text
+ *  is returned untouched and un-escaped, ready to feed to a highlighter. */
+export function subCalloutsRaw(
+  text: string,
+  iconsFont = false,
+  lineComment?: string,
+): string {
+  let autonum = 0
+  // HTML comment callout guards: <!--1--> or <!--.--> (auto-numbered)
+  const commentGuardRx = /<!--(!?)(\d+|\.)\1-->(?=(?: ?<!--!?\1(?:\d+|\.)\1-->)*$)/gm
+  text = text.replace(commentGuardRx, (_match, _badge, num) => {
+    if (num === '.') num = String(++autonum)
+    if (iconsFont) {
+      return `<i class="conum" data-value="${num}"></i><b>(${num})</b>`
+    }
+    return `<${num}>`
+  })
+  autonum = 0
+  // Match: optional comment prefix + raw callout marker (see subCallouts for
+  // how the prefix set is derived from the block's line-comment attribute).
+  let prefixPattern: string
+  if (lineComment === '') {
+    prefixPattern = '(?!\\d)\\b\\b'
+  } else if (lineComment) {
+    const escaped = lineComment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    prefixPattern = `(?:${escaped}|\\/\\/|#|--|;;)`
+  } else {
+    prefixPattern = `(?:\\/\\/|#|--|;;)`
+  }
+  const calloutLineRx = new RegExp(
+    `(${prefixPattern} ?)?(\\\\)?<(!?)(\\d+|\\.)\\3>(?=(?: ?\\\\?<!?\\3(?:\\d+|\\.)\\3>)*$)`,
+    'gm',
+  )
+  return text.replace(calloutLineRx, (_match, prefix, escaped, _badge, num) => {
+    if (escaped) return (prefix || '') + '<' + _badge + num + '>'
+    if (num === '.') num = String(++autonum)
+    if (iconsFont) {
+      return `<i class="conum" data-value="${num}"></i><b>(${num})</b>`
+    }
+    return `${prefix || ''}<${num}>`
+  })
+}
+
 function subAttributes(
   text: string,
   attributes: Record<string, string>,
