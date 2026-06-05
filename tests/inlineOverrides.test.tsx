@@ -130,4 +130,17 @@ describe('straddling passthrough HTML falls back to the string path', () => {
     expect(html).toContain('<u>underline <strong>me</strong></u>')
     expect(html).not.toContain('&lt;u&gt;')
   })
+
+  // Registering an inline override used to force the whole document onto the
+  // React path, corrupting straddling passthrough into visible `&lt;u&gt;`.
+  // The string-path fallback must win regardless: showing the HTML correctly
+  // beats applying an override (here a cosmetic `quoted` wrapper) to a run that
+  // can't be rebuilt node-by-node anyway.
+  test('verbatim <u> survives when overrides are registered', () => {
+    const Quoted: InlineOverrides['quoted'] = ({ children }) => <span>{children}</span>
+    const source = `The text pass:q[<u>underline *me*</u>] is bold.`
+    const html = render(source, { quoted: Quoted })
+    expect(html).toContain('<u>underline <strong>me</strong></u>')
+    expect(html).not.toContain('&lt;u&gt;')
+  })
 })

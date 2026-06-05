@@ -1486,9 +1486,13 @@ function subMacrosOnString(
       rx: /([\\>:/])?\w(?:&amp;|[\w\-.%+])*@[\w][\w_\-.]*\.[a-zA-Z]{2,5}\b/,
       handler: (m) => {
         const prefix = m[1] || ''
-        // Any lead char (`\ > : /`) is a non-linking context in asciidoctor:
-        // `:` means the `@` belongs to a scheme like `mailto:` / `http:`, `/`
-        // a URL path, `>` the end of a tag, `\` an escape. Leave those plain.
+        // `\` is an escape marker: asciidoctor consumes it and emits the
+        // address as plain (unlinked) text. Returned text isn't re-scanned, so
+        // this won't re-trigger the email rule.
+        if (prefix === '\\') return { type: 'text', text: m[0].slice(1) }
+        // The other lead chars (`> : /`) belong to preceding content — `:` a
+        // scheme like `mailto:` / `http:`, `/` a URL path, `>` the end of a
+        // tag. They're non-linking contexts; leave the whole match plain.
         if (prefix) return null
         // Asciidoctor runs the email macro AFTER quotes, so an email at the
         // very start of quoted content (`\`a@b.com\``, `*a@b.com*`) is

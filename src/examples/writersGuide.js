@@ -7,22 +7,11 @@ Dan Allen <https://github.com/mojavelinux[@mojavelinux]>; Sarah White <https://g
 :page-description: {description}
 :page-keywords: {keywords}
 :page-layout: docs
-ifndef::env-site[]
 :toc: left
 :icons: font
 :idprefix:
 :idseparator: -
 :sectanchors:
-:source-highlighter: highlightjs
-endif::[]
-:experimental:
-:mdash: &#8212;
-:language: asciidoc
-:source-language: {language}
-:table-caption!:
-:example-caption!:
-:figure-caption!:
-:imagesdir: ../images
 // Refs
 :url-docs-asciidoc: https://docs.asciidoctor.org/asciidoc/latest/
 :url-quickref: {url-docs-asciidoc}syntax-quick-reference/

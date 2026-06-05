@@ -44,8 +44,6 @@ export const inlineHtml = (
  *    renders node-by-node — `parse('<u>x ')` auto-closes the tag — so only
  *    re-serialising the whole sequence to one string preserves it.
  *
- * Registered inline overrides still force the React path (overrides win; the
- * straddling-passthrough-plus-override combination is vanishingly rare).
  * Recurses into the `text` children of quoted/anchor/footnote/button nodes. */
 export const hasRawInline = (nodes: InlineNode[] | undefined): boolean => {
   if (!nodes) return false
@@ -64,16 +62,19 @@ export const hasRawInline = (nodes: InlineNode[] | undefined): boolean => {
  * so the default is to walk the AST as a real React tree (`<RenderInline>`),
  * which is also what lets `inlineOverrides` reach inline nodes. The only reason
  * to fall back to the `dangerouslySetInnerHTML` string path is straddling
- * passthrough HTML (see `hasRawInline`) — and only when no overrides are
- * registered, since overrides require the React path regardless. Returns
- * `iconsFont` too, for templates that need it on the string-path serialiser. */
+ * passthrough HTML (see `hasRawInline`), which React can't reconstruct node by
+ * node. That fallback wins even when overrides are registered: the string path
+ * shows the HTML correctly, whereas the React path would corrupt it into
+ * visible `&lt;…&gt;`. The trade-off is that an override targeting a node in
+ * the same straddling run won't apply — vanishingly rare, and an invisible
+ * missing override beats visibly corrupted content. Returns `iconsFont` too,
+ * for templates that need it on the string-path serialiser. */
 export const useInlineRenderMode = (
   nodes: InlineNode[] | undefined,
 ): { react: boolean; iconsFont: boolean } => {
   const ctx = useContext(Context)
-  const hasOverrides = !!ctx.inlineOverrides && Object.keys(ctx.inlineOverrides).length > 0
   return {
-    react: hasOverrides || !hasRawInline(nodes),
+    react: !hasRawInline(nodes),
     iconsFont: ctx.document?.attributes?.['icons'] === 'font',
   }
 }
