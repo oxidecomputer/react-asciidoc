@@ -18,24 +18,26 @@ const CoList = ({ node }: { node: CoListBlock }) => {
       <Title text={node.title} />
       {fontIcons ? (
         <table>
-          {node.items.map((item: ListItemBlock, index) => (
-            <tr key={index}>
-              <td>
-                <i className="conum" data-value={index + 1} />
-                <b>{index + 1}</b>
-              </td>
-              {item.blocks.length > 0 ? (
+          <tbody>
+            {node.items.map((item: ListItemBlock, index) => (
+              <tr key={index}>
                 <td>
-                  <RenderInline nodes={item.textInlines} />
-                  <Content blocks={item.blocks} />
+                  <i className="conum" data-value={index + 1} />
+                  <b>{index + 1}</b>
                 </td>
-              ) : (
-                <td>
-                  <RenderInline nodes={item.textInlines} />
-                </td>
-              )}
-            </tr>
-          ))}
+                {item.blocks.length > 0 ? (
+                  <td>
+                    <RenderInline nodes={item.textInlines} />
+                    <Content blocks={item.blocks} />
+                  </td>
+                ) : (
+                  <td>
+                    <RenderInline nodes={item.textInlines} />
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
         </table>
       ) : (
         <ol>
