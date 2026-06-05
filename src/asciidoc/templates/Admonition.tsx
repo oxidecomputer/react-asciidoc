@@ -24,28 +24,30 @@ const Admonition = ({ node }: { node: AdmonitionBlock }) => {
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       <table>
-        <tr>
-          <td className="icon">
-            {docAttrs.icons ? (
-              renderIcon()
-            ) : (
-              <div className="title">{`${attrs.textlabel}`}</div>
-            )}
-          </td>
-          {node.blocks.length > 0 ? (
-            <td className="content">
-              <Title text={node.title} />
-              <Content blocks={node.blocks} />
-            </td>
-          ) : (
-            <td className="content">
-              {node.title && (
-                <div className="title" dangerouslySetInnerHTML={{ __html: node.title }} />
+        <tbody>
+          <tr>
+            <td className="icon">
+              {docAttrs.icons ? (
+                renderIcon()
+              ) : (
+                <div className="title">{`${attrs.textlabel}`}</div>
               )}
-              <RenderInline nodes={node.inlines} />
             </td>
-          )}
-        </tr>
+            {node.blocks.length > 0 ? (
+              <td className="content">
+                <Title text={node.title} />
+                <Content blocks={node.blocks} />
+              </td>
+            ) : (
+              <td className="content">
+                {node.title && (
+                  <div className="title" dangerouslySetInnerHTML={{ __html: node.title }} />
+                )}
+                <RenderInline nodes={node.inlines} />
+              </td>
+            )}
+          </tr>
+        </tbody>
       </table>
     </div>
   )

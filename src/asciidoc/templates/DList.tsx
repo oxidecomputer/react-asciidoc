@@ -90,34 +90,39 @@ const DList = ({ node }: { node: DListBlock }) => {
               <col {...(itemWidth ? { style: colWidth(itemWidth) } : {})} />
             </colgroup>
           )}
-          {node.items.map((item: any, index) => {
-            const { terms, dd } = getItem(item)
-            if (!terms) return null
-            return (
-              <tr key={index}>
-                <td
-                  className={cn('hdlist1', isOption(node.attributes, 'strong') && 'strong')}
-                >
-                  {terms.map((dt, i) => (
-                    <Fragment key={i}>
-                      {i > 0 && <br />}
-                      <RenderInline nodes={dt.textInlines} />
-                    </Fragment>
-                  ))}
-                </td>
-                {dd && (
-                  <td className="hdlist2">
-                    {dd.textInlines && (
-                      <p>
-                        <RenderInline nodes={dd.textInlines} />
-                      </p>
+          <tbody>
+            {node.items.map((item: any, index) => {
+              const { terms, dd } = getItem(item)
+              if (!terms) return null
+              return (
+                <tr key={index}>
+                  <td
+                    className={cn(
+                      'hdlist1',
+                      isOption(node.attributes, 'strong') && 'strong',
                     )}
-                    <Content blocks={dd.blocks} />
+                  >
+                    {terms.map((dt, i) => (
+                      <Fragment key={i}>
+                        {i > 0 && <br />}
+                        <RenderInline nodes={dt.textInlines} />
+                      </Fragment>
+                    ))}
                   </td>
-                )}
-              </tr>
-            )
-          })}
+                  {dd && (
+                    <td className="hdlist2">
+                      {dd.textInlines && (
+                        <p>
+                          <RenderInline nodes={dd.textInlines} />
+                        </p>
+                      )}
+                      <Content blocks={dd.blocks} />
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
         </table>
       </div>
     )
