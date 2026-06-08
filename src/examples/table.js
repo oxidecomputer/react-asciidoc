@@ -146,6 +146,22 @@ const table = `
 Second paragraph on row 2
 |===
 
+// .styled-cell-with-paragraphs
+[cols="e,s,m"]
+|===
+|First emphasized para
+
+Second emphasized para
+
+|First strong para
+
+Second strong para
+
+|First monospaced para
+
+Second monospaced para
+|===
+
 // .aligns-per-cell
 [cols="3"]
 |===

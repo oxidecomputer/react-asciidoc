@@ -1,7 +1,8 @@
 import cn from 'classnames'
-import parse from 'html-react-parser'
+import { type ReactNode } from 'react'
 
-import { Title, useConverterContext } from '..'
+import { Content, useConverterContext } from '..'
+import RenderInline, { hasRawInline } from '../RenderInline'
 import {
   type Cell,
   type TableBlock,
@@ -11,8 +12,17 @@ import {
 } from '../utils/prepareDocument'
 
 const Table = ({ node }: { node: TableBlock }) => {
-  const { document } = useConverterContext()
+  const { document, inlineOverrides } = useConverterContext()
   const docAttrs = document.attributes || {}
+
+  const hasOverrides = !!inlineOverrides && Object.keys(inlineOverrides).length > 0
+
+  // Render a cell's inline content as a real React tree (so inlineOverrides
+  // apply) unless it carries straddling passthrough HTML and no overrides are
+  // registered — then the string path preserves it. Decided per cell since a
+  // table mixes plain and passthrough cells. Mirrors `useInlineRenderMode`,
+  // inlined here because the decision is per-cell, not per-component.
+  const cellReact = (cell: Cell): boolean => hasOverrides || !hasRawInline(cell.textInlines)
 
   let classes = [
     'frame-' + getAttribute(node.attributes, 'frame', 'all', 'table-frame', docAttrs),
@@ -50,111 +60,156 @@ const Table = ({ node }: { node: TableBlock }) => {
     return classAttr
   }
 
-  const title = node.title
-  const id = node.id
-  const slug = id || slugify(title || '')
+  // Render a body cell's inline content as a React tree, preserving the
+  // per-paragraph `<p class="tableblock">` wrappers and the
+  // column-style wrapping tag (`emphasis`/`strong`/`monospaced`) that the
+  // string path bakes into `cell.content`.
+  const renderCellInlines = (cell: Cell) => {
+    const wrap = (inner: ReactNode) => {
+      switch (cell.style) {
+        case 'emphasis':
+          return <em>{inner}</em>
+        case 'strong':
+          return <strong>{inner}</strong>
+        case 'monospaced':
+          return <code>{inner}</code>
+        default:
+          return inner
+      }
+    }
+    return (cell.contentInlines || []).map((para, pIndex) => (
+      <p className="tableblock" key={pIndex}>
+        {wrap(<RenderInline nodes={para} />)}
+      </p>
+    ))
+  }
 
   return (
     <table
+      id={node.id || undefined}
       className={cn('tableblock', ...classes)}
       style={{ width: width ? width : undefined }}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
       {node.title && (
-        <caption className="title">
-          {!id && <a className="anchor" id={slug}></a>}
-          <a href={`#${slug}`}>
-            <Title text={node.title} />
-          </a>
-        </caption>
+        <caption className="title" dangerouslySetInnerHTML={{ __html: node.title }} />
       )}
       {node.columns.length > 0 && (
         <colgroup>
           {node.columns.map((col, index) => {
             const colWidth = col.attributes['colpcwidth']
-            return <col key={index} style={{ width: `${colWidth}%` }} />
+            return (
+              <col key={index} style={autowidth ? undefined : { width: `${colWidth}%` }} />
+            )
           })}
         </colgroup>
       )}
-      {node.headRows.map((row, hIndex) => (
-        <thead key={hIndex}>
-          <tr>
-            {row.map((cell, index) => (
-              <th
-                key={index}
-                className={getCellClass(cell)}
-                dangerouslySetInnerHTML={{ __html: cell.text }}
-              />
-            ))}
-          </tr>
-        </thead>
-      ))}
-      <tbody>
-        {node.bodyRows.map((row, bIndex) => (
-          <tr key={bIndex}>
-            {row.map((cell, index) => {
-              const colSpan = cell.columnSpan
-              const rowSpan = cell.rowSpan
-              const content = cell.content
-
-              const cellProps = {
-                colSpan,
-                rowSpan,
-                className: getCellClass(cell),
-              }
-
-              const style = cell.style
-
-              if (style === 'asciidoc') {
-                return (
-                  <td {...cellProps} key={index}>
-                    <div
-                      className="content"
-                      dangerouslySetInnerHTML={{ __html: content || '' }}
-                    />
-                  </td>
-                )
-              } else if (style === 'literal') {
-                return (
-                  <td {...cellProps} key={index}>
-                    <div className="literal">
-                      <pre dangerouslySetInnerHTML={{ __html: content || '' }} />
-                    </div>
-                  </td>
-                )
-              } else if (style === 'header') {
-                return (
-                  <th {...cellProps} key={index}>
-                    <p
-                      className="tableblock"
-                      dangerouslySetInnerHTML={{ __html: content || '' }}
-                    />
+      {node.headRows.length > 0 &&
+        node.headRows.map((row, hIndex) => (
+          <thead key={hIndex}>
+            <tr>
+              {row.map((cell, index) =>
+                cellReact(cell) && cell.textInlines ? (
+                  <th
+                    key={index}
+                    className={getCellClass(cell)}
+                    colSpan={cell.columnSpan}
+                    rowSpan={cell.rowSpan}
+                  >
+                    <RenderInline nodes={cell.textInlines} />
                   </th>
-                )
-              } else {
-                let cellContent = content as unknown as string[]
-                return (
-                  <td {...cellProps} key={index}>
-                    {cellContent.length === 0
-                      ? ''
-                      : parse(
-                          `<p class="tableblock">${cellContent.join(
-                            '</p>\n<p class="tableblock">',
-                          )}</p>`,
-                        )}
-                  </td>
-                )
-              }
-            })}
-          </tr>
+                ) : (
+                  <th
+                    key={index}
+                    className={getCellClass(cell)}
+                    colSpan={cell.columnSpan}
+                    rowSpan={cell.rowSpan}
+                    dangerouslySetInnerHTML={{ __html: cell.text || '' }}
+                  />
+                ),
+              )}
+            </tr>
+          </thead>
         ))}
-      </tbody>
+      {node.bodyRows.length > 0 && (
+        <tbody>
+          {node.bodyRows.map((row, bIndex) => (
+            <tr key={bIndex}>
+              {row.map((cell, index) => {
+                const style = cell.style
+                const className = getCellClass(cell)
+                const colSpan = cell.columnSpan
+                const rowSpan = cell.rowSpan
+                const Tag = style === 'header' ? 'th' : 'td'
+
+                // React path: render inline content through <RenderInline>
+                // (so inlineOverrides apply). Literal cells keep the string
+                // path (escaped source, no inline nodes); asciidoc cells always
+                // go through <Content>.
+                const renderInlineReact =
+                  cellReact(cell) && style !== 'asciidoc' && style !== 'literal'
+
+                let html = ''
+                if (style === 'asciidoc' || renderInlineReact) {
+                  // Asciidoc cells render via <Content> (React templates),
+                  // not dangerouslySetInnerHTML
+                } else {
+                  const arr = cell.content || []
+                  if (style === 'literal') {
+                    html = `<div class="literal"><pre>${arr.join('')}</pre></div>`
+                  } else if (style === 'header') {
+                    html =
+                      arr.length > 0
+                        ? `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                        : ''
+                  } else if (arr.length > 0) {
+                    html = `<p class="tableblock">${arr.join('</p>\n<p class="tableblock">')}</p>`
+                  }
+                }
+
+                return (
+                  <Tag
+                    key={index}
+                    className={className}
+                    colSpan={colSpan}
+                    rowSpan={rowSpan}
+                    dangerouslySetInnerHTML={
+                      style === 'asciidoc' || renderInlineReact
+                        ? undefined
+                        : html
+                          ? { __html: html }
+                          : undefined
+                    }
+                  >
+                    {style === 'asciidoc' ? (
+                      <div className="content">
+                        <Content blocks={cell.blocks} />
+                      </div>
+                    ) : renderInlineReact ? (
+                      renderCellInlines(cell)
+                    ) : null}
+                  </Tag>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      )}
       {node.footRows.map((row, fIndex) => (
         <tfoot key={fIndex}>
           <tr>
             {row.map((cell, index) => (
               <td key={index} className={getCellClass(cell)}>
-                <p className="tableblock" dangerouslySetInnerHTML={{ __html: cell.text }} />
+                {cellReact(cell) && cell.textInlines ? (
+                  <p className="tableblock">
+                    <RenderInline nodes={cell.textInlines} />
+                  </p>
+                ) : (
+                  <p
+                    className="tableblock"
+                    dangerouslySetInnerHTML={{ __html: cell.text || '' }}
+                  />
+                )}
               </td>
             ))}
           </tr>
@@ -162,19 +217,6 @@ const Table = ({ node }: { node: TableBlock }) => {
       ))}
     </table>
   )
-}
-
-const slugify = (text: string) => {
-  return text
-    .toString() // Cast to string (optional)
-    .normalize('NFKD') // The normalize() using NFKD method returns the Unicode Normalization Form of a given string
-    .replace(/[\u0300-\u036f]/g, '') // Removes the normalized accents the accents
-    .toLowerCase() // Convert the string to lowercase letters
-    .trim() // Remove whitespace from both sides of a string (optional)
-    .replace(/\s+/g, '_') // Replace spaces with -
-    .replace(/[^\w-]+/g, '') // Remove all non-word chars
-    .replace(/--+/g, '-') // Replace multiple - with single -
-    .replace(/-$/g, '') // Remove trailing -
 }
 
 export default Table

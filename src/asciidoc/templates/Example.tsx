@@ -1,27 +1,41 @@
 import cn from 'classnames'
-import parse from 'html-react-parser'
 
-import { Content } from '../'
+import { Content } from '..'
+import RenderInline, { inlineHtml, useInlineRenderMode } from '../RenderInline'
 import { type Block, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
 const Example = ({ node }: { node: Block }) => {
+  const { react, iconsFont } = useInlineRenderMode(node.inlines)
   const isCollapsible = isOption(node.attributes, 'collapsible')
   if (isCollapsible) {
-    const title = node.title || 'Details'
-    const isOpen = node.attributes.open ? true : undefined
+    const isOpen = isOption(node.attributes, 'open')
 
     return (
       <details
-        className={node.role}
+        id={node.id || undefined}
+        className={node.role || undefined}
         open={isOpen}
         {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-        {...(node.id ? { id: node.id } : {})}
       >
-        <summary className="title">{parse(title)}</summary>
+        <summary
+          className="title"
+          dangerouslySetInnerHTML={{
+            __html: node.title || 'Details',
+          }}
+        />
         <div className="content">
-          {node.content && parse(node.content)}
-          <Content blocks={node.blocks} />
+          {node.blocks.length > 0 ? (
+            <Content blocks={node.blocks} />
+          ) : node.inlines ? (
+            react ? (
+              <div>
+                <RenderInline nodes={node.inlines} />
+              </div>
+            ) : (
+              <div dangerouslySetInnerHTML={inlineHtml(node.inlines, iconsFont)} />
+            )
+          ) : null}
         </div>
       </details>
     )
@@ -29,14 +43,22 @@ const Example = ({ node }: { node: Block }) => {
 
   return (
     <div
+      id={node.id || undefined}
       className={cn('exampleblock', node.role)}
       {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-      {...(node.id ? { id: node.id } : {})}
     >
       <Title text={node.title} />
-      <div className="content">
-        {node.content && parse(node.content)}
-        <Content blocks={node.blocks} />
+      <div
+        className="content"
+        {...(node.blocks.length === 0 && node.inlines && !react
+          ? { dangerouslySetInnerHTML: inlineHtml(node.inlines, iconsFont) }
+          : {})}
+      >
+        {node.blocks.length > 0 ? (
+          <Content blocks={node.blocks} />
+        ) : node.inlines && react ? (
+          <RenderInline nodes={node.inlines} />
+        ) : null}
       </div>
     </div>
   )

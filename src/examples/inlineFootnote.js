@@ -8,6 +8,10 @@ Another outrageous statement
 
 // .xref-unresolved
 A bold statement.footnote:disclaimer[]
+
+// .forward-xref
+First use footnote:fn1[].
+Definition comes later footnote:fn1[This is defined after first use.]
 `
 
 export default inlineFootnote

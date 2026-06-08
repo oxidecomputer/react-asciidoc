@@ -1,32 +1,32 @@
 import cn from 'classnames'
 
 import { Title, useConverterContext } from '..'
-import { type LiteralBlock } from '../utils/prepareDocument'
+import { type LiteralBlock, isOption } from '../utils/prepareDocument'
 
 const Listing = ({ node }: { node: LiteralBlock }) => {
   const { document } = useConverterContext()
 
   const docAttrs = document.attributes || {}
-  const nowrap = node.attributes.nowrap || docAttrs['prewrap'] === undefined
+  const nowrap = isOption(node.attributes, 'nowrap') || docAttrs['prewrap'] === undefined
+  const wrapperClass = cn('listingblock', node.role)
 
   if (node.style === 'source') {
     const lang = node.language
 
     return (
       <div
-        className="listingblock"
+        id={node.id || undefined}
+        className={wrapperClass}
         {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
       >
         <Title text={node.title} />
         <div className="content">
-          <pre className={cn('highlight', nowrap ? ' nowrap' : '')}>
+          <pre className={cn('highlight', nowrap && 'nowrap') || undefined}>
             {lang ? (
               <code
-                className={lang ? `language-${lang}` : ''}
+                className={`language-${lang}`}
                 data-lang={lang}
-                dangerouslySetInnerHTML={{
-                  __html: node.content || '',
-                }}
+                dangerouslySetInnerHTML={{ __html: node.content || '' }}
               />
             ) : (
               <code dangerouslySetInnerHTML={{ __html: node.content || '' }} />
@@ -35,25 +35,24 @@ const Listing = ({ node }: { node: LiteralBlock }) => {
         </div>
       </div>
     )
-  } else {
-    // Regular listing blocks are wrapped only in a `pre` tag
-    return (
-      <div
-        className="listingblock"
-        {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-      >
-        <Title text={node.title} />
-        <div className="content">
-          <pre
-            className={cn('highlight !block', nowrap ? 'nowrap' : '')}
-            dangerouslySetInnerHTML={{
-              __html: node.content || '',
-            }}
-          />
-        </div>
-      </div>
-    )
   }
+
+  // Regular listing blocks are wrapped only in a `pre` tag
+  return (
+    <div
+      id={node.id || undefined}
+      className={wrapperClass}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+    >
+      <Title text={node.title} />
+      <div className="content">
+        <pre
+          className={cn(nowrap && 'nowrap') || undefined}
+          dangerouslySetInnerHTML={{ __html: node.content || '' }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export default Listing

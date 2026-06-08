@@ -1,31 +1,48 @@
 import cn from 'classnames'
-import parse from 'html-react-parser'
 
 import { Content } from '../'
+import RenderInline from '../RenderInline'
 import { type ListBlock, type ListItemBlock, isOption } from '../utils/prepareDocument'
 import { Title } from './util'
 
-const OList = ({ node }: { node: ListBlock }) => (
-  <div
-    className={cn('olist', node.role, node.style)}
-    {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-  >
-    <Title text={node.title} />
-    <ol
-      className={node.style}
-      reversed={isOption(node.attributes, 'reversed')}
-      {...(node.attributes['start']
-        ? { start: parseInt(`${node.attributes['start']}`) }
-        : {})}
+const OL_TYPE: Record<string, '1' | 'a' | 'A' | 'i' | 'I'> = {
+  upperalpha: 'A',
+  loweralpha: 'a',
+  upperroman: 'I',
+  lowerroman: 'i',
+}
+
+const OList = ({ node }: { node: ListBlock }) => {
+  const style = node.style
+  const type = style ? OL_TYPE[style] : undefined
+  const start = node.attributes['start']
+    ? parseInt(`${node.attributes['start']}`)
+    : undefined
+
+  return (
+    <div
+      id={node.id || undefined}
+      className={cn('olist', style, node.role)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
     >
-      {node.items.map((item: ListItemBlock, index) => (
-        <li key={index} className={node.role ? node.role : ''}>
-          <p>{parse(item.text || '')}</p>
-          <Content blocks={item.blocks} />
-        </li>
-      ))}
-    </ol>
-  </div>
-)
+      <Title text={node.title} />
+      <ol
+        className={style || undefined}
+        type={type}
+        reversed={isOption(node.attributes, 'reversed') || undefined}
+        start={start}
+      >
+        {node.items.map((item: ListItemBlock, index) => (
+          <li key={index} id={item.id || undefined}>
+            <p>
+              <RenderInline nodes={item.textInlines} />
+            </p>
+            <Content blocks={item.blocks} />
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
 
 export default OList

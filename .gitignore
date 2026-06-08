@@ -40,3 +40,8 @@ tsconfig.tsbuildinfo
 /tests/*.*.ts-snapshots/
 
 /dist
+
+/tests/corpus/rfds
+/tests/corpus/asciidoctor-extracted
+/tests/categorize.mts
+HANDOFF.md

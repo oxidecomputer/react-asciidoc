@@ -18,6 +18,7 @@ import Preamble from './Preamble'
 import Quote from './Quote'
 import Section from './Section'
 import Sidebar from './Sidebar'
+import Stem from './Stem'
 import Table from './Table'
 import TableOfContents from './TableOfContents'
 import ThematicBreak from './ThematicBreak'
@@ -45,6 +46,7 @@ export {
   Preamble,
   Section,
   Sidebar,
+  Stem,
   Table,
   ThematicBreak,
   UList,

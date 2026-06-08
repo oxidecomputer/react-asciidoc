@@ -1,21 +1,34 @@
 import cn from 'classnames'
-import parse from 'html-react-parser'
 
 import { Content } from '../'
+import RenderInline from '../RenderInline'
 import { type Block } from '../utils/prepareDocument'
 import { Title } from './util'
 
-const Sidebar = ({ node }: { node: Block }) => (
-  <div
-    className={cn('sidebarblock', node.role)}
-    {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
-  >
-    <div className="content">
-      <Title text={node.title} />
-      {node.content && parse(node.content)}
-      <Content blocks={node.blocks} />
+const Sidebar = ({ node }: { node: Block }) => {
+  const hasBlocks = node.blocks.length > 0
+
+  return (
+    <div
+      id={node.id || undefined}
+      className={cn('sidebarblock', node.role)}
+      {...(node.lineNumber ? { 'data-lineno': node.lineNumber } : {})}
+    >
+      {hasBlocks ? (
+        <div className="content">
+          <Title text={node.title} />
+          <Content blocks={node.blocks} />
+        </div>
+      ) : (
+        <div className="content">
+          {node.title && (
+            <div className="title" dangerouslySetInnerHTML={{ __html: node.title }} />
+          )}
+          <RenderInline nodes={node.inlines} />
+        </div>
+      )}
     </div>
-  </div>
-)
+  )
+}
 
 export default Sidebar

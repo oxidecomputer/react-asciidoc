@@ -1,6 +1,8 @@
 import parse from 'html-react-parser'
 import { createContext, useContext } from 'react'
 
+import RenderInline, { type InlineOverrides, inlineHtml } from './RenderInline'
+import * as Inline from './inline'
 import {
   Admonition,
   Audio,
@@ -21,6 +23,7 @@ import {
   Quote,
   Section,
   Sidebar,
+  Stem,
   Table,
   TableOfContents,
   ThematicBreak,
@@ -87,6 +90,7 @@ type Overrides = {
   quote?: typeof Quote
   section?: typeof Section
   sidebar?: typeof Sidebar
+  stem?: typeof Stem
   table?: typeof Table
   toc?: typeof TableOfContents
   thematic_break?: typeof ThematicBreak
@@ -95,7 +99,11 @@ type Overrides = {
   video?: typeof Video
 }
 
-export type Options = { overrides?: Overrides; customDocument?: typeof Document }
+export type Options = {
+  overrides?: Overrides
+  inlineOverrides?: InlineOverrides
+  customDocument?: typeof Document
+}
 
 export const Context = createContext<
   Options & {
@@ -184,6 +192,8 @@ const Converter = ({ node }: { node: Block }) => {
       return <Open node={node as Block} />
     case 'pass':
       return <Pass node={node as Block} />
+    case 'stem':
+      return <Stem node={node as Block} />
     case 'page_break':
       return <PageBreak />
     case 'example':
@@ -211,7 +221,19 @@ export const useConverterContext = () => {
   return context
 }
 
-export { Asciidoc, Content, prepareDocument, Title, parse, processDocument, isOption }
+export {
+  Asciidoc,
+  Content,
+  prepareDocument,
+  Title,
+  parse,
+  processDocument,
+  isOption,
+  RenderInline,
+  inlineHtml,
+  Inline,
+}
+export type { InlineOverrides }
 export type {
   AdmonitionBlock,
   AudioBlock,

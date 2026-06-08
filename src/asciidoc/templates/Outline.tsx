@@ -1,5 +1,3 @@
-import parse from 'html-react-parser'
-
 import { useConverterContext } from '..'
 import { type DocumentSection } from '../utils/prepareDocument'
 
@@ -26,32 +24,35 @@ const Outline = ({
     opts?.sectNumLevels || (sectNumLevelsAttr ? parseInt(`${sectNumLevelsAttr}`) : 3)
   const tocLevels = opts?.tocLevels || (tocLevelsAttr ? parseInt(`${tocLevelsAttr}`) : 2)
 
+  // Asciidoctor's `convert_outline` drops anchor tags from TOC entry text
+  // (a TOC entry is itself an `<a>`, so nested links/anchors are stripped).
+  // Mirrors `stitle.gsub(DropAnchorRx, '')` with `DropAnchorRx`.
+  const dropAnchors = (html: string): string =>
+    html.includes('<a') ? html.replace(/<(?:a\b[^>]*|\/a)>/g, '') : html
+
   return (
     <ul className={`sectlevel${sections[0].level}`}>
       {sections.map((section) => {
-        let sectNum = section.num
-        sectNum = sectNum === '.' || sectNum === '..' ? '' : sectNum
-
-        const level = section.level
-
-        let title = section.title
-
-        if (level <= sectNumLevels) {
-          // todo: investigate sectnumlevels overrides not working
-          title = `${sectNum} ${section.title}`
-        }
+        const numeric =
+          section.numbered &&
+          section.num &&
+          section.num !== '.' &&
+          section.num !== '..' &&
+          !section.num.startsWith('.') &&
+          !section.hasCaption
+        const title =
+          numeric && section.level <= sectNumLevels
+            ? `${section.num} ${section.title}`
+            : section.title
 
         return (
           <li key={section.id}>
-            <a href={`#${section.id}`}>{parse(title)}</a>
-            {level < tocLevels && (
-              <Outline
-                sections={section.sections}
-                opts={{
-                  tocLevels,
-                  sectNumLevels,
-                }}
-              />
+            <a
+              href={`#${section.id}`}
+              dangerouslySetInnerHTML={{ __html: dropAnchors(title) }}
+            />
+            {section.level < tocLevels && section.sections.length > 0 && (
+              <Outline sections={section.sections} opts={{ tocLevels, sectNumLevels }} />
             )}
           </li>
         )
