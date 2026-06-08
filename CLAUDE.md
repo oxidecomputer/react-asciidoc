@@ -135,5 +135,5 @@ Adding a new block type:
   separated by blank lines.
 - ESLint ignores `.js` files (the examples are intentionally JS). It enforces `eqeqeq`,
   `no-param-reassign`, `no-return-assign`, and unused-vars (allowing `_`-prefixed args).
-- Releases use `auto shipit` (`npm run release`); version bump and CHANGELOG commits are
-  made automatically — don't edit `CHANGELOG.md` or bump `package.json` version by hand.
+- Releases are triggered manually via the GitHub Actions `workflow_dispatch` event with an
+  explicit version number. Don't bump `package.json` version by hand — the workflow does it.

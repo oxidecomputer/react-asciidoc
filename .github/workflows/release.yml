@@ -1,73 +1,100 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 1.4.0)'
+        required: true
+        type: string
   pull_request:
     types: [opened, synchronize, reopened]
 
-# Enabled permissions on GITHUB_TOKEN
 permissions:
-  # To be able to push to the repo
   contents: write
-  # To update the pr description with canary info
   pull-requests: write
-  # For pr-check to create a status
-  statuses: write
-  # Needed to create PR statuses/checks
-  checks: write
-  # To post comments on PRs
-  issues: write
-  # For trusted publishing
   id-token: write
 
 jobs:
-  install:
+  typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22.x
+          cache: npm
       - run: npm install
       - run: npm run tsc
 
-  validate-labels:
-    runs-on: ubuntu-latest
-    if:
-      "!contains(github.event.head_commit.message, 'ci skip') &&
-      !contains(github.event.head_commit.message, 'skip ci')"
-    steps:
-      - uses: actions/checkout@v5
-      - run: git fetch --unshallow --tags
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22.x
-      - run: npm install
-      - name: Verify Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run:
-          npx auto pr-check
-          --url=https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-
-  release:
+  canary:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     environment: production
-    if:
-      "!contains(github.event.head_commit.message, 'ci skip') &&
-      !contains(github.event.head_commit.message, 'skip ci')"
     steps:
       - uses: actions/checkout@v5
-      - run: git fetch --unshallow --tags
       - uses: actions/setup-node@v5
         with:
           node-version: 22.x
-          cache: 'npm'
-      - run: npm install
+          cache: npm
       - run: npm install -g npm@latest
-      - name: Create Release
-        run: npm run build && npm run release
+      - run: npm install
+      - run: npm run build
+
+      - name: Publish canary
+        id: canary
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          CANARY_VERSION="$(node -p "require('./package.json').version")-canary.${SHA}"
+          npm version "$CANARY_VERSION" --no-git-tag-version
+          npm publish --provenance --access public --tag canary
+          echo "version=$CANARY_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update PR description with canary version
         env:
-          # auto expects GH_TOKEN in the environment
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CANARY_VERSION: ${{ steps.canary.outputs.version }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          CURRENT_BODY=$(gh pr view "$PR_NUMBER" --json body -q .body)
+          CANARY_LINE="**Canary:** \`npm install @oxide/react-asciidoc@${CANARY_VERSION}\`"
+          if echo "$CURRENT_BODY" | grep -q '^\*\*Canary:\*\*'; then
+            UPDATED_BODY=$(echo "$CURRENT_BODY" | sed "s|^\*\*Canary:\*\*.*|${CANARY_LINE}|")
+          else
+            UPDATED_BODY="${CURRENT_BODY}"$'\n\n'"${CANARY_LINE}"
+          fi
+          gh pr edit "$PR_NUMBER" --body "$UPDATED_BODY"
+
+  release:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+          cache: npm
+      - run: npm install -g npm@latest
+      - run: npm install
+      - run: npm run build
+
+      - name: Set version
+        run: npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public --tag latest
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Release v${{ inputs.version }} [skip ci]"
+          git tag "v${{ inputs.version }}"
+          git push origin main --tags
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "v${{ inputs.version }}" --generate-notes

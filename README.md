@@ -381,5 +381,5 @@ documents; the example suite (`renderer.test.tsx`) always runs.
 
 - Prettier: 92-column width, no semicolons, single quotes, trailing commas.
 - ESLint ignores `.js` files (the examples are intentionally plain JS).
-- Releases use `auto shipit` (`npm run release`); the version bump and `CHANGELOG.md` are
-  generated — don't edit them by hand.
+- Releases are triggered manually via the GitHub Actions `workflow_dispatch` event with an
+  explicit version number. Release notes are generated automatically in GitHub Releases.

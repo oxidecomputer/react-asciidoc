@@ -25,7 +25,6 @@
     "build": "npm run clean && vite build && tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "release": "auto shipit",
     "fmt": "prettier --write --ignore-path ./.gitignore  .",
     "fmt:check": "prettier --check --ignore-path ./.gitignore . ",
     "tsc": "tsc"
@@ -43,7 +42,6 @@
     "@types/react": "^18.0.18",
     "@types/react-dom": "^18.0.6",
     "@vitejs/plugin-react": "^5.0.3",
-    "auto": "^9.10.4",
     "classnames": "^2.5.1",
     "eslint": "^9.36.0",
     "html-entities": "^2.6.0",
@@ -65,17 +63,6 @@
     "@asciidoctor/core": "^3.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
-  },
-  "auto": {
-    "plugins": [
-      [
-        "npm",
-        {
-          "setRcToken": false
-        }
-      ],
-      "released"
-    ]
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
