@@ -164,6 +164,7 @@ export const normalise = (html: string): string => {
   s = s
     .replace(/<link\s+rel="preload"[^>]*\/?>/g, '')
     .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\/?tbody>/g, '')
     .replace(/\bcolSpan=/g, 'colspan=')
     .replace(/\browSpan=/g, 'rowspan=')
     .replace(new RegExp('<(' + VOID_TAGS + ')([^>]*?)/>', 'g'), '<$1$2>')
