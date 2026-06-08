@@ -154,12 +154,7 @@ const Table = ({ node }: { node: TableBlock }) => {
                   // Asciidoc cells render via <Content> (React templates),
                   // not dangerouslySetInnerHTML
                 } else {
-                  const content = cell.content as unknown as string | string[]
-                  const arr = Array.isArray(content)
-                    ? content
-                    : typeof content === 'string'
-                      ? [content]
-                      : []
+                  const arr = cell.content || []
                   if (style === 'literal') {
                     html = `<div class="literal"><pre>${arr.join('')}</pre></div>`
                   } else if (style === 'header') {

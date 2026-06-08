@@ -786,6 +786,9 @@ function rebuildAllPlaceholders(
       // Cyclic self-reference (a nested-parse index collision produced a
       // placeholder whose own body references it). Break the loop rather
       // than recurse forever; emit nothing for the cyclic slot.
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[react-asciidoc] Inline placeholder cycle at index ${idx} — content dropped`)
+      }
     }
     lastIndex = match.index + match[0].length
   }

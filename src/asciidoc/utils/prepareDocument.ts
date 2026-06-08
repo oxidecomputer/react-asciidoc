@@ -216,9 +216,9 @@ export interface Cell extends BaseBlock {
   rowSpan: number | undefined
   text: string | undefined
   textInlines?: InlineNode[] | undefined
-  /** Content for cell rendering: a string for asciidoc/literal cells,
-   *  or an array of per-paragraph HTML strings for other styles. */
-  content: string | string[] | undefined
+  /** Per-paragraph HTML strings for cell rendering. Empty array for asciidoc
+   *  cells (rendered via `<Content>`) and for empty cells. */
+  content: string[] | undefined
   /** Per-paragraph inline ASTs mirroring the paragraph boundaries of
    *  `content`. Lets the Table template render cell inline content through
    *  `<RenderInline>` (so `inlineOverrides` apply) instead of injecting the
@@ -447,6 +447,11 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     if (!(k in inlineAttrs)) inlineAttrs[k] = v
   }
 
+  // INVARIANT: each block's source must be parsed exactly once through
+  // inlineState. Parsing any block or cell twice bumps footnote indices and
+  // counter values out of document order. The cell cache (`parsedCellCache`
+  // below) guards against double-visiting table cells; if you add a new
+  // tree-walk, check it against that cache before calling parseInline.
   const inlineState: ParseState = {
     footnoteIndex: 0,
     footnotesById: new Map(),
@@ -640,6 +645,9 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         const body = trimLeadingSpace(bibIdx === -1 ? nodes : nodes.slice(bibIdx + 1))
         if (body.length > 0) bibInlines.set(id, body)
       }
+      // Only the first link in the citation body is captured. Entries with
+      // multiple links or no URL are handled gracefully (url stays undefined),
+      // but only the first link becomes externalHref on matching xref nodes.
       if (id && url) bibUrls.set(id, url)
     }
   }
@@ -1102,21 +1110,21 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
       // Build cell.content: an array of per-paragraph styled HTML strings.
       // This mirrors asciidoctor's getContent() format for table cells:
-      //   - asciidoc: string of block HTML (handled via <Content>)
-      //   - literal:  specialchars-escaped source in a single string
+      //   - asciidoc: [] (rendered via <Content>, not dangerouslySetInnerHTML)
+      //   - literal:  specialchars-escaped source in a single-element array
       //   - emphasis/strong/monospaced: each paragraph wrapped in
       //     <em>/<strong>/<code>
       //   - header: plain text paragraphs (no <p> wrapper)
       //   - default: plain text paragraphs wrapped in <p class="tableblock">
-      let cellContent: string | string[] | undefined
+      let cellContent: string[] | undefined
       // Per-paragraph inline ASTs, populated for the styles whose content is
       // built from cellInlines (everything except asciidoc/literal). Lets the
       // Table template render through <RenderInline> so inlineOverrides apply.
       let cellContentInlines: InlineNode[][] | undefined
       if (cellStyle === 'asciidoc') {
-        cellContent = '' // rendered via <Content>, not dangerouslySetInnerHTML
+        cellContent = [] // rendered via <Content>, not dangerouslySetInnerHTML
       } else if (cellStyle === 'literal') {
-        cellContent = subSpecialchars(adocCell.getSource())
+        cellContent = [subSpecialchars(adocCell.getSource())]
       } else if (rawCellText) {
         // Derive cellContent from the already-parsed cellInlines instead
         // of re-parsing, to avoid double-counting footnotes.

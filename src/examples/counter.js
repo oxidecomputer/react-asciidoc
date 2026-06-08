@@ -11,6 +11,13 @@ First.
 Second.
 
 Step {counter:steps}, step {counter:steps}, seeded {counter:n:5}, next {counter:n}.
+
+// .comment-block-ignored
+////
+:!steps:
+{counter:steps}
+////
+After comment: {counter:steps}.
 `
 
 export default counter
