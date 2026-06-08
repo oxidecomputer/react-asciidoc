@@ -787,7 +787,9 @@ function rebuildAllPlaceholders(
       // placeholder whose own body references it). Break the loop rather
       // than recurse forever; emit nothing for the cyclic slot.
       if (process.env.NODE_ENV !== 'production') {
-        console.warn(`[react-asciidoc] Inline placeholder cycle at index ${idx} — content dropped`)
+        console.warn(
+          `[react-asciidoc] Inline placeholder cycle at index ${idx} — content dropped`,
+        )
       }
     }
     lastIndex = match.index + match[0].length
