@@ -28,11 +28,7 @@ jobs:
       - run: npm run tsc
 
   canary:
-    # Same-repo PRs only: fork PRs can't reach the `production` environment
-    # secrets or get an OIDC token, so publish (and this whole job) can't work.
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -54,22 +50,20 @@ jobs:
           npm publish --provenance --access public --tag canary
           echo "version=$CANARY_VERSION" >> "$GITHUB_OUTPUT"
 
-      # Cosmetic: never fail the canary publish over a PR-body edit.
       - name: Update PR description with canary version
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const version = '${{ steps.canary.outputs.version }}'
-            const line = '**Canary:** `npm install @oxide/react-asciidoc@' + version + '`'
-            const { owner, repo } = context.repo
-            const pull_number = context.payload.pull_request.number
-            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number })
-            const body = pr.body || ''
-            const updated = /^\*\*Canary:\*\*/m.test(body)
-              ? body.replace(/^\*\*Canary:\*\*.*$/m, line)
-              : `${body}\n\n${line}`
-            await github.rest.pulls.update({ owner, repo, pull_number, body: updated })
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CANARY_VERSION: ${{ steps.canary.outputs.version }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          CURRENT_BODY=$(gh pr view "$PR_NUMBER" --json body -q .body)
+          CANARY_LINE="**Canary:** \`npm install @oxide/react-asciidoc@${CANARY_VERSION}\`"
+          if echo "$CURRENT_BODY" | grep -q '^\*\*Canary:\*\*'; then
+            UPDATED_BODY=$(echo "$CURRENT_BODY" | sed "s|^\*\*Canary:\*\*.*|${CANARY_LINE}|")
+          else
+            UPDATED_BODY="${CURRENT_BODY}"$'\n\n'"${CANARY_LINE}"
+          fi
+          gh pr edit "$PR_NUMBER" --body "$UPDATED_BODY"
 
   release:
     if: github.event_name == 'workflow_dispatch'
