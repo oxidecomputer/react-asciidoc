@@ -32,17 +32,21 @@ import {
   Video,
 } from './templates'
 import { Title } from './templates/util'
+import { findSection } from './utils/findSection'
+import { plainText } from './utils/plainText'
 import { isOption, prepareDocument, processDocument } from './utils/prepareDocument'
 import type {
   AdmonitionBlock,
   AudioBlock,
   Block,
+  Cell,
   CoListBlock,
   DListBlock,
   DocumentBlock,
   DocumentSection,
   ImageBlock,
   ListBlock,
+  ListItemBlock,
   LiteralBlock,
   ParagraphBlock,
   SectionBlock,
@@ -229,6 +233,8 @@ export {
   parse,
   processDocument,
   isOption,
+  findSection,
+  plainText,
   RenderInline,
   inlineHtml,
   Inline,
@@ -238,12 +244,14 @@ export type {
   AdmonitionBlock,
   AudioBlock,
   Block,
+  Cell,
   CoListBlock,
   DListBlock,
   DocumentBlock,
   DocumentSection,
   ImageBlock,
   ListBlock,
+  ListItemBlock,
   LiteralBlock,
   ParagraphBlock,
   SectionBlock,

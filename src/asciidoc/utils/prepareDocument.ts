@@ -77,11 +77,15 @@ export type Block =
   | BaseBlock
   | ParagraphBlock
   | AdmonitionBlock
+  | ListBlock
   | CoListBlock
+  | DListBlock
+  | ListItemBlock
   | ImageBlock
   | LiteralBlock
   | SectionBlock
   | TableBlock
+  | Cell
   | AudioBlock
   | VideoBlock
 
