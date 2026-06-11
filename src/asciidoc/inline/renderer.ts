@@ -1,3 +1,5 @@
+import { decodeHTML } from 'entities'
+
 import { InlineNode } from './types'
 
 const QUOTE_TAGS: Record<string, [string, string, boolean?]> = {
@@ -240,4 +242,49 @@ function renderNode(node: InlineNode, iconsFont: boolean): string {
 
 export function renderInlineAsString(nodes: InlineNode[], iconsFont = false): string {
   return renderInline(nodes, iconsFont)
+}
+
+/**
+ * Render an inline AST back to PLAIN TEXT — the substituted source with no HTML
+ * markup. This is the verbatim-source counterpart to `renderInlineAsString`: it
+ * resolves text-level subs (notably `attributes`) but emits the bare code a
+ * syntax highlighter should tokenize rather than HTML5 elements.
+ *
+ *  - `text` nodes: emitted as-is, with `specialcharacters` entities decoded back
+ *    to literal `< > &` when `decodeEntities` is set (verbatim blocks include
+ *    `specialcharacters` by default, so normally `true`). `raw` passthrough
+ *    nodes (`pass:[]` / `+++`) are already-final author HTML — emitted verbatim,
+ *    never decoded.
+ *  - `quoted` / `anchor` / `footnote` / `button`: flattened to their inner text.
+ *    A highlighter wants the code, not `<em>` / `<a>`; these only appear when the
+ *    author opted into `+quotes` / `+macros` on the block.
+ *  - `callout`: preserved raw as `<N>` — the highlighter resolves callouts itself.
+ *  - `break`: a newline.
+ *  - `image` / `kbd` / `menu` / `indexterm`: no meaningful verbatim text — skipped.
+ */
+export function renderInlineAsText(nodes: InlineNode[], decodeEntities = true): string {
+  let out = ''
+  for (const node of nodes) {
+    switch (node.type) {
+      case 'text':
+        out += node.raw ? node.text : decodeEntities ? decodeHTML(node.text) : node.text
+        break
+      case 'quoted':
+      case 'anchor':
+      case 'footnote':
+      case 'button':
+        out += renderInlineAsText(node.text, decodeEntities)
+        break
+      case 'callout':
+        out += `<${node.number}>`
+        break
+      case 'break':
+        out += '\n'
+        break
+      // image / kbd / menu / indexterm: no meaningful verbatim text — skip.
+      default:
+        break
+    }
+  }
+  return out
 }

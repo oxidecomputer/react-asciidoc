@@ -4,6 +4,7 @@ import {
   type ParseState,
   parseInline,
   renderInlineAsString,
+  renderInlineAsText,
   subCallouts,
   subSpecialchars,
 } from '../inline'
@@ -174,6 +175,13 @@ export interface LiteralBlock extends BaseBlock {
   type: 'listing'
   source: string
   language: string | undefined
+  /** `source` with the block's resolved text-level substitutions applied
+   *  (notably `attributes`), un-escaped and un-highlighted — the plain code a
+   *  syntax highlighter should tokenize. Equals `source` when the block's subs
+   *  make no text-level change. Callout markers are preserved in raw `<N>` form
+   *  (resolve them with `subCalloutsRaw`). Quote/macro subs, if enabled, are
+   *  flattened to their text. */
+  subbedSource: string
 }
 
 export interface SectionBlock extends BaseBlock {
@@ -892,11 +900,11 @@ export const prepareDocument = (document: AdocTypes.Document) => {
     if (type === 'listing' || type === 'literal') {
       if ('getSource' in block) {
         const listingBlock = processedBlock as LiteralBlock
-        listingBlock.source = block.getSource()
+        const source = block.getSource()
+        listingBlock.source = source
         listingBlock.language = block.getAttribute('language')
         const iconsFont = docAttrs['icons'] === 'font'
         const lineComment = block.getAttribute('line-comment') as string | undefined
-        const verbatimSource = sourceFromBlock(block as AdocTypes.AbstractBlock)
         const subs: string[] =
           block.getSubstitutions && typeof block.getSubstitutions === 'function'
             ? (block.getSubstitutions() as string[])
@@ -911,8 +919,15 @@ export const prepareDocument = (document: AdocTypes.Document) => {
           // the normal verbatim ones, render the inline AST to HTML and
           // then apply callouts on top (callout markers survive the inline
           // parser as escaped &lt;N&gt; text which subCallouts recognises).
+          //
+          // Parse the FULL `source` (not the edge-stripped `sourceFromBlock`),
+          // so the SAME AST yields both `content` — blank-edge-trimmed to match
+          // asciidoctor's HTML — and `subbedSource`, which must keep `source`'s
+          // exact line structure. Deriving both from one parse is what keeps
+          // `{counter:}` / `{set:}` firing exactly once (a second pass would
+          // double-count); the blank-edge trim is applied to the HTML only.
           const inlines = resolveXrefs(
-            parseInline(verbatimSource, {
+            parseInline(source, {
               attributes: inlineAttrsFor(block),
               state: inlineState,
               // Honour the block's exact subs list (e.g. `subs=+macros` runs
@@ -926,12 +941,23 @@ export const prepareDocument = (document: AdocTypes.Document) => {
             content = subCallouts(content, iconsFont, lineComment)
           }
           processedBlock.content = stripVerbatimEdges(content)
+          // Plain subbed source from the same AST: callouts stay raw `<N>`
+          // (never run subCallouts), and no blank-line trim — `subbedSource`
+          // tracks `source`'s line structure, not the trimmed HTML's.
+          listingBlock.subbedSource = renderInlineAsText(
+            inlines ?? [],
+            subs.includes('specialcharacters'),
+          )
         } else {
+          const verbatimSource = sourceFromBlock(block as AdocTypes.AbstractBlock)
           let content = subSpecialchars(verbatimSource)
           if (subs.includes('callouts')) {
             content = subCallouts(content, iconsFont, lineComment)
           }
           processedBlock.content = stripVerbatimEdges(content)
+          // No text-level subs: nothing to resolve — `subbedSource` is the raw
+          // source verbatim (already un-escaped, callout markers intact).
+          listingBlock.subbedSource = source
         }
       }
     }
