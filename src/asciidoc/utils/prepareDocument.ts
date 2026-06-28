@@ -198,7 +198,6 @@ export interface TableBlock extends BaseBlock {
   type: 'table'
   caption: string
   columns: Column[]
-  rows: Row
   headRows: Cell[][]
   bodyRows: Cell[][]
   footRows: Cell[][]
@@ -216,12 +215,6 @@ export type Column = {
   style: string | undefined
 }
 
-export type Row = {
-  head: Cell[][]
-  body: Cell[][]
-  foot: Cell[][]
-}
-
 export interface Cell extends BaseBlock {
   type: 'table_cell'
   columnSpan: number | undefined
@@ -237,9 +230,6 @@ export interface Cell extends BaseBlock {
    *  serialized HTML string. Undefined for asciidoc/literal cells, which
    *  don't go through the inline-string path. */
   contentInlines?: InlineNode[][] | undefined
-  source: string
-  lines: string[]
-  column: Column | undefined
   width: string | undefined
   columnPercentageWidth: string | undefined
 }
@@ -1087,7 +1077,6 @@ export const prepareDocument = (document: AdocTypes.Document) => {
       const headRows = processCellArray(adocTable.getHeadRows())
       const bodyRows = processCellArray(adocTable.getBodyRows())
       const footRows = processCellArray(adocTable.getFootRows())
-      tableBlock.rows = { head: headRows, body: bodyRows, foot: footRows }
 
       tableBlock = {
         ...tableBlock,
@@ -1106,8 +1095,6 @@ export const prepareDocument = (document: AdocTypes.Document) => {
 
     if (type === 'table_cell') {
       const adocCell = block as unknown as AdocTypes.Table.Cell
-
-      const col = adocCell.getColumn()
 
       const rawCellText =
         typeof (adocCell as unknown as { text?: string }).text === 'string'
@@ -1194,21 +1181,8 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         textInlines: cellInlines,
         columnSpan: adocCell.getColumnSpan(),
         rowSpan: adocCell.getRowSpan(),
-        source: adocCell.getSource(),
-        lines: adocCell.getLines(),
         width: adocCell.getWidth(),
         columnPercentageWidth: adocCell.getColumnPercentageWidth(),
-        column: col
-          ? {
-              // @ts-ignore
-              attributes: col.getAttributes(),
-              columnNumber: col.getColumnNumber(),
-              width: col.getWidth(),
-              horizontalAlign: col.getHorizontalAlign(),
-              verticalAlign: col.getVerticalAlign(),
-              style: col.getStyle(),
-            }
-          : undefined,
       }
 
       processedBlock = tableCellBlock
@@ -1286,9 +1260,8 @@ export const prepareDocument = (document: AdocTypes.Document) => {
         }
       }
       // Handle table cells
-      if ('rows' in b && b.rows) {
-        const row = b.rows as Row
-        for (const cellGroup of [row.head, row.body, row.foot]) {
+      if ('bodyRows' in b) {
+        for (const cellGroup of [b.headRows, b.bodyRows, b.footRows]) {
           for (const rowCells of cellGroup) {
             for (const cell of rowCells) {
               if (cell.textInlines) {

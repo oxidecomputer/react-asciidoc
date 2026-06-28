@@ -14,8 +14,8 @@ const childBlocks = (block: Block): Block[] => {
     }
   }
 
-  if ('rows' in block && block.rows) {
-    for (const group of [block.rows.head, block.rows.body, block.rows.foot])
+  if ('bodyRows' in block) {
+    for (const group of [block.headRows, block.bodyRows, block.footRows])
       for (const row of group) children.push(...row)
   }
 
