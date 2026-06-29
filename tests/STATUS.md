@@ -38,9 +38,9 @@ cells).
 ## Serialized AST size (`measure-size.ts`)
 
 `prepareDocument` → `JSON.stringify` byte counts. Run `npx vite-node tests/measure-size.ts`
-(measures the fetched RFD corpus if present, plus a deterministic synthetic table-heavy doc
-the harness generates in-memory — the per-cell-duplication pathology, no committed fixture
-needed).
+(measures the in-repo corpus under `tests/corpus` — the RFD and `asciidoctor-extracted`
+shards — plus a deterministic synthetic table-heavy doc the harness generates in-memory: the
+per-cell-duplication pathology, no committed fixture needed).
 
 **2026-06-28** — two changes, both verified by **byte-identical rendered HTML** across all
 707 RFDs (render-hash diff empty) with examples at **79 / 79**, confirming nothing reads the
@@ -54,14 +54,20 @@ dropped data:
    rewired to them. (docs already stripped `rows` in its own slim pass — this moves that
    upstream.)
 
+**2026-06-29** — re-ran the harness over the **full 2001-doc corpus** (694 RFDs + 1307
+`asciidoctor-extracted`; 14.12 MB source). The `asciidoctor-extracted` shard *is* present
+in-repo under `tests/corpus`, so the earlier RFD-only figure is now superseded. The
+intermediate "+ cell fields" column was reconstructed by dropping only the three cell fields
+on `main` (keeping `rows`); the final column is the branch HEAD.
+
 | Measure                | main (v2.1.1) | + cell fields | + drop `rows` |
 | ---------------------- | ------------- | ------------- | ------------- |
-| Corpus (707 RFDs)      | 88.53 MB      | 69.46 MB      | 52.99 MB      |
+| Corpus (2001 docs)     | 90.99 MB      | 71.77 MB      | 55.20 MB      |
+| Corpus ratio to src    | 6.4×          | 5.1×          | 3.9×          |
 | Synthetic tables       | 17.34 MB      | 10.98 MB      | 5.64 MB       |
 | Synthetic ratio to src | 40.6×         | 25.7×         | 13.2×         |
 
-Cumulative: corpus **−40%**, synthetic table-heavy doc **−67%**. (For reference, the docs
-app's real `metrics/timeseries-schemas` page measured 8.75 MB → 3.09 MB, −65% — same
-pathology; the synthetic doc stands in so no 185 KB blob lives in the repo. The full
-2001-doc corpus count wasn't re-run: the `asciidoctor-extracted` shard has no in-repo fetch
-path. Render-hash invariance is the stronger check for these changes.)
+Cumulative: full corpus **−39%** (cell fields −21%, then `rows` −23%), synthetic table-heavy
+doc **−67%**. (For reference, the docs app's real `metrics/timeseries-schemas` page measured
+8.75 MB → 3.09 MB, −65% — same pathology; the synthetic doc stands in so no 185 KB blob
+lives in the repo. Render-hash invariance is the stronger check for these changes.)
