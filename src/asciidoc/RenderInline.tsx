@@ -34,7 +34,11 @@ export const inlineHtml = (
  * faithfully rebuilt as a React tree, so the template must fall back to the
  * `dangerouslySetInnerHTML` string path. Two forms:
  *
- *  - `raw` text nodes (`+++…+++`, `pass:[…]`) — explicit no-subs passthroughs.
+ *  - `raw` text nodes (`+++…+++`, `pass:[…]`) — explicit no-subs passthroughs —
+ *    but only when they actually contain markup (`<`/`>`) or an entity-starting
+ *    `&`. A raw node of plain text (e.g. a resolved xref label) renders
+ *    identically on the React path, and falling back would needlessly strip
+ *    `inlineOverrides` from every sibling node in the run.
  *  - text nodes holding a bare `<`/`>`. The substitution pipeline escapes every
  *    real `<`/`>` to `&lt;`/`&gt;` *before* quotes/macros run, so a bare angle
  *    bracket surviving into a text node can only be passthrough HTML where
@@ -49,7 +53,7 @@ export const hasRawInline = (nodes: InlineNode[] | undefined): boolean => {
   if (!nodes) return false
   for (const node of nodes) {
     if (node.type === 'text') {
-      if (node.raw || /[<>]/.test(node.text)) return true
+      if (node.raw ? /[<>&]/.test(node.text) : /[<>]/.test(node.text)) return true
     } else if ('text' in node && Array.isArray(node.text) && hasRawInline(node.text)) {
       return true
     }

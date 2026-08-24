@@ -144,3 +144,42 @@ describe('straddling passthrough HTML falls back to the string path', () => {
     expect(html).not.toContain('&lt;u&gt;')
   })
 })
+
+describe('markup-free raw nodes stay on the React path', () => {
+  // A resolved bibliography xref stores its label as a `raw` text node. Plain
+  // labels carry no markup, so they must not force the string-path fallback —
+  // that would silently drop inlineOverrides for the xref and every sibling
+  // inline in the same run.
+  test('anchor override runs for a xref to a bibliography entry', () => {
+    const source = `See <<rfd48>> and https://example.com/sibling[a sibling link].
+
+[bibliography]
+== References
+
+* [[[rfd48, RFD 48]]] https://rfd.shared.oxide.computer/rfd/48[RFD 48 Control Plane Architecture]`
+    const html = render(source, { anchor: RouterLink })
+    // The xref itself is rewritten, with its resolved label as children.
+    expect(html).toContain('href="/rewritten?rfd48"')
+    expect(html).toContain('[RFD 48]')
+    // Siblings in the same paragraph keep their overrides too.
+    expect(html).toContain('href="/rewritten?https://example.com/sibling"')
+  })
+
+  test('markup-free pass macro keeps sibling overrides', () => {
+    const source = `A pass:[plain passthrough] next to https://example.com/n[n].`
+    const html = render(source, { anchor: RouterLink })
+    expect(html).toContain('plain passthrough')
+    expect(html).toContain('href="/rewritten?https://example.com/n"')
+  })
+
+  // A raw node holding an entity must keep the string path: the React text
+  // path would re-escape `&amp;` into visible `&amp;amp;`.
+  test('entity passthrough still falls back to the string path', () => {
+    const source = `Tom pass:[&amp;] Jerry, see https://example.com/j[j].`
+    const html = render(source, { anchor: RouterLink })
+    expect(html).toContain('Tom &amp; Jerry')
+    expect(html).not.toContain('&amp;amp;')
+    // The fallback drops the override for this run — expected trade-off.
+    expect(html).toContain('href="https://example.com/j"')
+  })
+})
